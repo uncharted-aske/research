@@ -39,7 +39,7 @@ def formatGraph(data):
     }
 
 
-with open('datasets/CHIME-SIR--GrFN.json') as f:
+with open('models/CHIME-SIR--GrFN.json') as f:
     data = json.load(f)
 
     num_edges = 0
@@ -51,7 +51,7 @@ with open('datasets/CHIME-SIR--GrFN.json') as f:
     print('Number of nodes', len(graph['nodes']))
     print('Number of edges', len(graph['edges']))
 
-    with open('datasets/formatted-CHIME-SIR--GrFN.json', 'w') as f:
+    with open('models/formatted-CHIME-SIR--GrFN.json', 'w') as f:
         json.dump(graph, f)
 
 
