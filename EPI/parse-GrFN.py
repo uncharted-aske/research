@@ -1,5 +1,4 @@
 import sys
-import getopt
 import json
 
 def formatGraph(data): 
