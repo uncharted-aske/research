@@ -1,13 +1,18 @@
 import json
+from argparse import ArgumentParser
 
 if __name__ == '__main__':
-    gtri_json_filename = "models/CHIME-SIR-GTRI.json"
-    output_json_filename = "models/formatted-CHIME-SIR-GTRI.json"
+    parser = ArgumentParser()
+    parser.add_argument('--input', required=True,
+                        help='Input GTRI .json file')
+    parser.add_argument('--output', required=True,
+                        help='The location of the resulting output file')
+    args = parser.parse_args()
 
     nodes = []
     edges = []
 
-    with open(gtri_json_filename) as f:
+    with open(args.input) as f:
         data = json.load(f)
 
         node_id = 0
@@ -54,7 +59,7 @@ if __name__ == '__main__':
                 "target": str(len(data["T"]) + int(o["os"])),
             })
 
-    with open(output_json_filename, 'w') as f:
+    with open(args.output, 'w') as f:
         json.dump({
             "nodes": nodes,
             "edges": edges
