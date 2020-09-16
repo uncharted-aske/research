@@ -1,6 +1,23 @@
 import json
 from argparse import ArgumentParser
 
+
+def create_or_update_edge(edge_id, source_id, target_id, established_edges):
+    if (source_id, target_id) in established_edges:
+        established_edges[(source_id, target_id)]["metadata"]["multiplicity"] += 1
+    else:
+        edge_id += 1
+        established_edges[(source_id, target_id)] = {
+            "id": str(edge_id),
+            "source": str(source_id),
+            "target": str(target_id),
+            "metadata": {
+                "multiplicity": 1
+            }
+        }
+    return edge_id
+
+
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--input', required=True,
@@ -43,21 +60,19 @@ if __name__ == '__main__':
 
         edge_id = 0
 
+        established_edges = {}
+
         for i in data["I"]:
-            edge_id += 1
-            edges.append({
-                "id": str(edge_id),
-                "source": str(len(data["T"]) + int(i["is"])),
-                "target": str(i["it"])
-            })
+            source_id = len(data["T"]) + int(i["is"])
+            target_id = i["it"]
+            edge_id = create_or_update_edge(edge_id, source_id, target_id, established_edges)
 
         for o in data["O"]:
-            edge_id += 1
-            edges.append({
-                "id": str(edge_id),
-                "source": str(o["ot"]),
-                "target": str(len(data["T"]) + int(o["os"])),
-            })
+            source_id = o["ot"]
+            target_id = len(data["T"]) + int(o["os"])
+            edge_id = create_or_update_edge(edge_id, source_id, target_id, established_edges)
+
+        edges.extend(established_edges.values())
 
     with open(args.output, 'w') as f:
         json.dump({
