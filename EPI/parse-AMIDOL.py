@@ -13,13 +13,6 @@ def get_nodes_to_class_name(vdsol):
     return nodes_to_class_name
 
 
-def get_keys_to_vals(data):
-    keys_to_vals = {}
-    for key in data:
-        keys_to_vals[key] = data[key]
-    return keys_to_vals
-
-
 def get_initial_value_names(states):
     names = set()
     for state in states:
@@ -184,20 +177,15 @@ if __name__ == '__main__':
     with open(args.ir) as f:
         data = json.load(f)
 
-        constants_to_vals = get_keys_to_vals(data["constants"])
-        expressions_to_vals = get_keys_to_vals(data["expressions"])
-        states_to_vals = get_keys_to_vals(data["states"])
-        events_to_vals = get_keys_to_vals(data["events"])
-
-        nodes_by_id, node_ids_by_node_label = get_nodes(states_to_vals, constants_to_vals, expressions_to_vals)
+        nodes_by_id, node_ids_by_node_label = get_nodes(data["states"], data["constants"], data["expressions"])
 
         edge_id = 0
 
-        expression_edges, edge_id = get_edges_for_expressions(edge_id, expressions_to_vals,
+        expression_edges, edge_id = get_edges_for_expressions(edge_id, data["expressions"],
                                                               nodes_by_id, node_ids_by_node_label)
         edges.extend(expression_edges)
 
-        event_edges, edge_id = get_edges_from_events(edge_id, events_to_vals, nodes_by_id, node_ids_by_node_label)
+        event_edges, edge_id = get_edges_from_events(edge_id, data["events"], nodes_by_id, node_ids_by_node_label)
         edges.extend(event_edges)
 
         nodes.extend(nodes_by_id.values())
