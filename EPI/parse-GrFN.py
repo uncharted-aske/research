@@ -1,5 +1,6 @@
 import sys
 import json
+from argparse import ArgumentParser
 
 def formatGraph(data): 
     nodes = []
@@ -38,30 +39,24 @@ def formatGraph(data):
         'edges': edges
     }
 
+if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument('--input', required=True,
+                        help='Input GrFN .json file')
+    parser.add_argument('--output', required=True,
+                        help='The location of the resulting output file')
+    args = parser.parse_args()
 
+    nodes = []
+    edges = []
 
-def main(argv):
-   inputfile = argv
-   outputfile = inputfile.replace('.json', '')
-   outputfile = outputfile + '_formatted.json'
+    with open(args.input) as f:
+        data = json.load(f)
+        graph = formatGraph(data)
 
-   with open(inputfile) as f:
-    data = json.load(f)
-
-    num_edges = 0
-    num_nodes = 0
-
- 
-    graph = formatGraph(data)
-    print('Number of nodes', len(graph['nodes']))
-    print('Number of edges', len(graph['edges']))
-
-    with open(outputfile, 'w') as f:
+    with open(args.output, 'w') as f:
         json.dump(graph, f)
- 
 
-if __name__ == "__main__":
-   main(sys.argv[1])
 
 
 
