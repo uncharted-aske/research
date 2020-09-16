@@ -1,4 +1,5 @@
 import json
+from argparse import ArgumentParser
 
 def formatGraph(data): 
     nodes = []
@@ -8,8 +9,7 @@ def formatGraph(data):
     for key,value in data.items():
         if key == 'variables':
             for item in value:  
-                label =  item['identifier'].replace('CHIME-SIR::', '')
-                node = { 'id': item['uid'], 'concept': label, 'label': label, 'type': 'variable' }
+                node = { 'id': item['uid'], 'concept': item['identifier'], 'label': item['identifier'], 'type': 'variable' } # FIXME: We might want to clean up the node labels
                 nodes.append(node)
         if key == 'functions':
             for item in value:  
@@ -18,7 +18,7 @@ def formatGraph(data):
         if key == 'hyper_edges':
             for item in value: 
                 if len(item['inputs']) > 0:
-                    for i in item['inputs']:
+                    for i in item['inputs']: # Inputs array is sometimes empty
                         first_edge = { 'source': i, 'target': item['function']}
                         edges.append(first_edge)
                 
@@ -28,7 +28,7 @@ def formatGraph(data):
 
         if key == 'subgraphs':
             for item in value: 
-                group = { 'id': item['basename'], 'members': item['nodes'] }
+                group = { 'id': item['scope'], 'members': item['nodes'] }
                 groups.append(group) 
 
 
@@ -38,21 +38,24 @@ def formatGraph(data):
         'edges': edges
     }
 
+if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument('--input', required=True,
+                        help='Input GrFN .json file')
+    parser.add_argument('--output', required=True,
+                        help='The location of the resulting output file')
+    args = parser.parse_args()
 
-with open('models/CHIME-SIR--GrFN.json') as f:
-    data = json.load(f)
+    nodes = []
+    edges = []
 
-    num_edges = 0
-    num_nodes = 0
+    with open(args.input) as f:
+        data = json.load(f)
+        graph = formatGraph(data)
 
- 
-    graph = formatGraph(data)
-    aggregatedGraph = formatAggregatedGraph(graph)
-    print('Number of nodes', len(graph['nodes']))
-    print('Number of edges', len(graph['edges']))
-
-    with open('models/formatted-CHIME-SIR--GrFN.json', 'w') as f:
+    with open(args.output, 'w') as f:
         json.dump(graph, f)
+
 
 
 
