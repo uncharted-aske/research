@@ -46,9 +46,6 @@ if __name__ == '__main__':
                         help='The location of the resulting output file')
     args = parser.parse_args()
 
-    nodes = []
-    edges = []
-
     with open(args.input) as f:
         data = json.load(f)
         graph = formatGraph(data)
