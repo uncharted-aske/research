@@ -28,7 +28,7 @@ def formatGraph(data):
 
         if key == 'subgraphs':
             for item in value: 
-                group = { 'id': item['scope'], 'members': item['nodes'] }
+                group = { 'id': item['basename'], 'members': item['nodes'] }
                 groups.append(group) 
 
 
