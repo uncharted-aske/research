@@ -8,8 +8,9 @@ def formatGraph(data):
 
     for key,value in data.items():
         if key == 'variables':
-            for item in value:  
-                node = { 'id': item['uid'], 'concept': item['identifier'], 'label': item['identifier'], 'type': 'variable' } # FIXME: We might want to clean up the node labels
+            for item in value: 
+                splitted_identifier = item['identifier'].split('::')
+                node = { 'id': item['uid'], 'concept': item['identifier'], 'label': splitted_identifier[len(splitted_identifier)-2], 'type': 'variable', 'metadata': splitted_identifier[len(splitted_identifier)-1]  } 
                 nodes.append(node)
         if key == 'functions':
             for item in value:  

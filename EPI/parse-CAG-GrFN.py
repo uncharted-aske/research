@@ -8,7 +8,8 @@ def formatGraph(data):
     for key,value in data.items():
         if key == 'variables':
             for item in value:  
-                node = { 'id': item['uid'], 'concept': item['identifier'], 'label': item['identifier'] } 
+                splitted_identifier = item['identifier'].split('::')
+                node = { 'id': item['uid'], 'concept': item['identifier'], 'label': splitted_identifier[len(splitted_identifier)-2], 'metadata': splitted_identifier[len(splitted_identifier)-1]  }
                 nodes.append(node)
         if key == 'edges':
             for item in value: 
