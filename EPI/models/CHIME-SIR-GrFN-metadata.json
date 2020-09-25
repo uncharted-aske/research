@@ -1,0 +1,4904 @@
+{
+  "uid": "ec36e223-7343-4680-94ff-e640a6c01017",
+  "identifier": "@container::CHIME-SIR::@global::main",
+  "date_created": "2020-09-24",
+  "version": "0.0.1",
+  "hyper_edges": [
+    {
+      "inputs": [],
+      "function": "abc99848-b32f-4dec-8087-9c06975ec8b2",
+      "outputs": [
+        "e16f4853-8703-400e-bd61-e9fcf1850987"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "a36bb062-ab05-453c-91ce-58ba0d780a44",
+      "outputs": [
+        "d42860e1-70b7-4c67-b250-0bc4420e38ba"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "d5a9a73c-eae6-41df-8afe-4d712bc4f6d8",
+      "outputs": [
+        "f71583e9-5480-48a6-8783-f6b6c42f1687"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "9b478340-adaa-4f22-b53a-02278fc144b0",
+      "outputs": [
+        "1b9b8be6-58d3-4182-80ad-d0e3e657102c"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "68859935-160c-4675-9b04-9c075f43ef2d",
+      "outputs": [
+        "2ed9beba-8428-480c-820d-7125e74fee44"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "2fe44e04-9e70-4ee2-9e7d-03af62be149d",
+      "outputs": [
+        "73b1cf1d-cd27-4206-be8f-fd334065b36c"
+      ]
+    },
+    {
+      "inputs": [
+        "2ed9beba-8428-480c-820d-7125e74fee44"
+      ],
+      "function": "ad4ae72d-99be-4f5f-b041-8b1006fb81a2",
+      "outputs": [
+        "49cf82bb-7bf8-4590-8ab0-ae483390f39f"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "45d4ff8a-a2f9-4d5d-ad58-0eed7fa06633",
+      "outputs": [
+        "c74247b4-0d48-4f79-8811-69d9c7596e7f"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "535e47b0-da8c-4e06-b8fa-ef9bc789668a",
+      "outputs": [
+        "9828d3f2-27b0-4613-8ed6-75750b31b04f"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "dc340ffe-0845-43a1-9b74-d3877729821e",
+      "outputs": [
+        "2450dcb1-95d1-408a-bded-c081a7924081"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "2c65b5fe-b99b-40ba-8d84-cf20ee7b950b",
+      "outputs": [
+        "40b5f6a1-f63a-411a-a00d-6446d3edd093"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "e450e561-0b03-4f0b-a320-93ebb666e5af",
+      "outputs": [
+        "564b7488-dbba-40ce-8375-b78747fd066a"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "2c7f02c3-ee72-4136-b797-bfbe93923575",
+      "outputs": [
+        "d583e766-210c-4d58-9b73-a00b528bf168"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "9fbfff8a-53e1-4c39-827d-02ac48b7182e",
+      "outputs": [
+        "08c1d171-6d79-4fb3-9183-326d070f7126"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "a490349e-5c2e-4ebc-a3d7-10c1f532879f",
+      "outputs": [
+        "3ca29049-d9c6-459e-be33-5912e8a1433b"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "2a6b8205-7951-48a3-8122-0ddd7b59928e",
+      "outputs": [
+        "5eadedee-6516-46fa-a69e-ef856299c58f"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "0b99d844-4d8e-4535-b7c9-bc7fcbd9156e",
+      "outputs": [
+        "7ef314e2-e4ab-4e22-b154-70eafbe8d0b8"
+      ]
+    },
+    {
+      "inputs": [
+        "f71583e9-5480-48a6-8783-f6b6c42f1687",
+        "49cf82bb-7bf8-4590-8ab0-ae483390f39f",
+        "3ca29049-d9c6-459e-be33-5912e8a1433b",
+        "73b1cf1d-cd27-4206-be8f-fd334065b36c",
+        "c74247b4-0d48-4f79-8811-69d9c7596e7f",
+        "d42860e1-70b7-4c67-b250-0bc4420e38ba",
+        "9828d3f2-27b0-4613-8ed6-75750b31b04f"
+      ],
+      "function": "3fa817cc-a588-4c39-88c2-7d245fcdc479",
+      "outputs": [
+        "ed1e6eb4-948b-46a2-81f0-a3759086815d",
+        "c8123c6b-b5e9-44a0-bbb5-b5b2b552e124",
+        "645cffa6-0787-4703-8229-5e2ebca1d3b9",
+        "2d4e8312-c9f0-4882-9daf-868b3998d5d3",
+        "318deeac-a893-4aa0-9206-590ed3f23444",
+        "97208f76-1dc4-456c-ae92-98d6e330d383",
+        "81ba9e8a-a65c-4512-84dc-162d4d3635d4"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "8c36ed79-0f20-425d-884b-18c69974d9ea",
+      "outputs": [
+        "b1b80413-b1f7-4605-a1c3-e84955145082"
+      ]
+    },
+    {
+      "inputs": [
+        "b1b80413-b1f7-4605-a1c3-e84955145082",
+        "ed1e6eb4-948b-46a2-81f0-a3759086815d"
+      ],
+      "function": "b3850647-7917-4001-add3-924f11f9ed1d",
+      "outputs": [
+        "7e8e4474-a047-4d7a-9798-bea8361136b5"
+      ]
+    },
+    {
+      "inputs": [
+        "7e8e4474-a047-4d7a-9798-bea8361136b5"
+      ],
+      "function": "288004b3-0fd8-48f4-b4ed-9d413cc59d05",
+      "outputs": [
+        "76989620-0fd4-432b-a6be-c92f6f7c0ee8"
+      ]
+    },
+    {
+      "inputs": [
+        "b1b80413-b1f7-4605-a1c3-e84955145082"
+      ],
+      "function": "5f519c2c-8f7d-4ea9-9d3c-e73003dec650",
+      "outputs": [
+        "4f8f229a-aab4-4db4-844b-64f68920dfad"
+      ]
+    },
+    {
+      "inputs": [
+        "4f8f229a-aab4-4db4-844b-64f68920dfad"
+      ],
+      "function": "8b98802b-9192-46e2-9ee5-e403fff0e038",
+      "outputs": [
+        "cdceee77-8f28-4fe7-ba80-c76d88fd078d"
+      ]
+    },
+    {
+      "inputs": [
+        "cdceee77-8f28-4fe7-ba80-c76d88fd078d"
+      ],
+      "function": "94869593-f1e7-47f3-b83a-94e75d30d661",
+      "outputs": [
+        "efdff1a1-3eae-4735-9075-7f8a77cae7ff"
+      ]
+    },
+    {
+      "inputs": [
+        "efdff1a1-3eae-4735-9075-7f8a77cae7ff"
+      ],
+      "function": "d7b7824f-1572-4680-9a37-3437f9212eac",
+      "outputs": [
+        "9d85aa4e-2a80-42a9-a8fb-33d10932f2ac"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "9fd2a794-a4fc-4262-9e40-a646c17c4dcb",
+      "outputs": [
+        "a23196a5-6af7-4ddb-8908-f23b283932aa"
+      ]
+    },
+    {
+      "inputs": [
+        "efdff1a1-3eae-4735-9075-7f8a77cae7ff"
+      ],
+      "function": "2c33154b-2641-4269-a10f-5417853b3940",
+      "outputs": [
+        "c1ecdfd8-ff8c-41c4-8ef7-00f43b9a6e96"
+      ]
+    },
+    {
+      "inputs": [
+        "9d85aa4e-2a80-42a9-a8fb-33d10932f2ac",
+        "a23196a5-6af7-4ddb-8908-f23b283932aa",
+        "c1ecdfd8-ff8c-41c4-8ef7-00f43b9a6e96"
+      ],
+      "function": "9c34f23b-9a24-4c1c-bd2e-f3d55c43d9c2",
+      "outputs": [
+        "4a3659ff-9c44-4352-9d3e-f592b2597b5a"
+      ]
+    },
+    {
+      "inputs": [
+        "4a3659ff-9c44-4352-9d3e-f592b2597b5a"
+      ],
+      "function": "5712e21d-c0a7-40ec-b7ad-772ff70756a1",
+      "outputs": [
+        "88c053c8-7bc5-4938-b069-31cf796d6c28"
+      ]
+    },
+    {
+      "inputs": [
+        "88c053c8-7bc5-4938-b069-31cf796d6c28"
+      ],
+      "function": "cd366c1d-d09c-4cc3-bb59-85e1866121d9",
+      "outputs": [
+        "b11d501d-78d1-4f3a-b0c9-ba2591007dac"
+      ]
+    },
+    {
+      "inputs": [
+        "b11d501d-78d1-4f3a-b0c9-ba2591007dac",
+        "c8123c6b-b5e9-44a0-bbb5-b5b2b552e124",
+        "645cffa6-0787-4703-8229-5e2ebca1d3b9",
+        "2d4e8312-c9f0-4882-9daf-868b3998d5d3"
+      ],
+      "function": "7af5521c-36a2-46a0-9822-db486a72d70c",
+      "outputs": [
+        "26f0ec12-51a6-42e5-a5fd-afdad6d21f4e",
+        "4e21d684-87c9-42e0-ac32-ec00fe5f1cc5",
+        "77373021-7c62-46e3-809f-adc795c1e054",
+        "66b30b04-2a4d-454d-ae9c-7aa495781b0b"
+      ]
+    },
+    {
+      "inputs": [
+        "66b30b04-2a4d-454d-ae9c-7aa495781b0b"
+      ],
+      "function": "8529de6d-f89c-4380-afb5-f3e08827a25d",
+      "outputs": [
+        "1df47f33-858f-45be-b486-5db095e460cd"
+      ]
+    },
+    {
+      "inputs": [
+        "26f0ec12-51a6-42e5-a5fd-afdad6d21f4e",
+        "4e21d684-87c9-42e0-ac32-ec00fe5f1cc5"
+      ],
+      "function": "5e36e970-b6b0-4589-9daa-7174fbfe31b8",
+      "outputs": [
+        "a9840a0e-8a1a-4eda-a9ca-7746f23d3677"
+      ]
+    },
+    {
+      "inputs": [
+        "a9840a0e-8a1a-4eda-a9ca-7746f23d3677",
+        "77373021-7c62-46e3-809f-adc795c1e054",
+        "1df47f33-858f-45be-b486-5db095e460cd"
+      ],
+      "function": "74fc64a0-609b-4cc8-badd-ef7466617df9",
+      "outputs": [
+        "4aa6aa7d-31bc-4c43-9462-087640c2bc3f"
+      ]
+    },
+    {
+      "inputs": [
+        "4aa6aa7d-31bc-4c43-9462-087640c2bc3f"
+      ],
+      "function": "662dd90b-d875-4984-a24d-ffab92a7f168",
+      "outputs": [
+        "d87cb1b0-17bf-406d-b0ea-cfa61f09bf47"
+      ]
+    },
+    {
+      "inputs": [
+        "318deeac-a893-4aa0-9206-590ed3f23444",
+        "b1b80413-b1f7-4605-a1c3-e84955145082",
+        "d87cb1b0-17bf-406d-b0ea-cfa61f09bf47"
+      ],
+      "function": "f3f0b634-ce71-423a-a2e0-b8673498d384",
+      "outputs": [
+        "aa5a9672-d3f7-4c4a-95e2-d0a1a77197d0"
+      ]
+    },
+    {
+      "inputs": [
+        "97208f76-1dc4-456c-ae92-98d6e330d383",
+        "b1b80413-b1f7-4605-a1c3-e84955145082"
+      ],
+      "function": "5475dccc-499a-43a8-b5d0-5b27182ac6b3",
+      "outputs": [
+        "137f74ee-2c3a-4698-a6a8-79c17fd24dad"
+      ]
+    },
+    {
+      "inputs": [
+        "81ba9e8a-a65c-4512-84dc-162d4d3635d4",
+        "b1b80413-b1f7-4605-a1c3-e84955145082",
+        "137f74ee-2c3a-4698-a6a8-79c17fd24dad"
+      ],
+      "function": "07f128fd-3440-4dbb-a5fd-42018b1368d8",
+      "outputs": [
+        "4b7ac628-dc3e-4ec1-91fd-1aebe2c4204d"
+      ]
+    },
+    {
+      "inputs": [
+        "b1b80413-b1f7-4605-a1c3-e84955145082"
+      ],
+      "function": "c80a1bf8-79fc-4d08-b859-30dd3c90fde8",
+      "outputs": [
+        "69bd6a44-590e-4e75-84ba-7b304ab5ab0e"
+      ]
+    },
+    {
+      "inputs": [
+        "4f8f229a-aab4-4db4-844b-64f68920dfad",
+        "b11d501d-78d1-4f3a-b0c9-ba2591007dac",
+        "d87cb1b0-17bf-406d-b0ea-cfa61f09bf47",
+        "aa5a9672-d3f7-4c4a-95e2-d0a1a77197d0",
+        "137f74ee-2c3a-4698-a6a8-79c17fd24dad",
+        "4b7ac628-dc3e-4ec1-91fd-1aebe2c4204d"
+      ],
+      "function": "4a8eb129-c503-4592-8cc2-e45b93bd8c26",
+      "outputs": [
+        "da36675a-564c-4e8e-a75e-d55a5ce685af",
+        "bb92795b-a907-4e3e-bb91-9d1c93b52856",
+        "1f38c235-101b-4fa8-a880-3dd17382c1f9",
+        "024f553a-5070-482f-a94f-82b97dbdd88d",
+        "1e44326d-bb72-4e58-8a48-a967b985395e",
+        "a707eb56-36f0-4188-ab13-64f1ad59b76c"
+      ]
+    },
+    {
+      "inputs": [
+        "3ca29049-d9c6-459e-be33-5912e8a1433b",
+        "5eadedee-6516-46fa-a69e-ef856299c58f",
+        "7ef314e2-e4ab-4e22-b154-70eafbe8d0b8",
+        "49cf82bb-7bf8-4590-8ab0-ae483390f39f",
+        "e16f4853-8703-400e-bd61-e9fcf1850987",
+        "f71583e9-5480-48a6-8783-f6b6c42f1687",
+        "1b9b8be6-58d3-4182-80ad-d0e3e657102c",
+        "024f553a-5070-482f-a94f-82b97dbdd88d",
+        "a707eb56-36f0-4188-ab13-64f1ad59b76c",
+        "2450dcb1-95d1-408a-bded-c081a7924081",
+        "40b5f6a1-f63a-411a-a00d-6446d3edd093",
+        "564b7488-dbba-40ce-8375-b78747fd066a",
+        "d583e766-210c-4d58-9b73-a00b528bf168",
+        "08c1d171-6d79-4fb3-9183-326d070f7126"
+      ],
+      "function": "f0ca40d1-b8f2-4d10-81c3-08cf796d9acd",
+      "outputs": [
+        "8b688482-ef36-42d0-9972-69ce2ce823c7",
+        "2e91ce98-3f1d-4b1b-8d39-796420e4f3ac",
+        "db6f039d-c140-4949-bbc9-3e92ca2fbdbf",
+        "616dcb14-66cd-4e57-9730-a40eb9bf3094",
+        "524c7d9e-a1c4-4fdd-a093-66b729a58b76",
+        "725dd80c-e5c8-46ab-8df1-8f8fa9f3515a",
+        "6890333e-a2f6-453d-b0c4-229bdf78bbc5",
+        "475fca7c-194c-4abb-b19b-0aa28a0bb5d3",
+        "9afbb5fe-1aae-4603-bf84-48744add0b78",
+        "c203e554-3950-4bcf-9f79-8f7a8baab2d4",
+        "afe4e5df-8a9a-4659-9fb8-65505c24e8f0",
+        "cecf8f13-2660-453f-8518-ca5270681ef3",
+        "7c063f20-17b2-4ad8-bb33-89028a4b881b",
+        "f20e0cae-4974-425e-8371-c3a47ee8967b"
+      ]
+    },
+    {
+      "inputs": [
+        "8b688482-ef36-42d0-9972-69ce2ce823c7",
+        "2e91ce98-3f1d-4b1b-8d39-796420e4f3ac",
+        "db6f039d-c140-4949-bbc9-3e92ca2fbdbf"
+      ],
+      "function": "bf22b186-d43f-4a77-a358-893d68039b9b",
+      "outputs": [
+        "64533316-9141-4cee-b5bb-fbc0f75ecdb4"
+      ]
+    },
+    {
+      "inputs": [
+        "524c7d9e-a1c4-4fdd-a093-66b729a58b76"
+      ],
+      "function": "be14ad46-b28d-4caf-934f-b70a7c2e5629",
+      "outputs": [
+        "f679b9f5-2e1a-4ffb-8038-79de515dbe33"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "83c76730-dd3d-4e8f-af7c-d099d05cf69a",
+      "outputs": [
+        "b1f3427b-cf91-45b3-8951-0b25daad43b7"
+      ]
+    },
+    {
+      "inputs": [
+        "725dd80c-e5c8-46ab-8df1-8f8fa9f3515a",
+        "475fca7c-194c-4abb-b19b-0aa28a0bb5d3",
+        "9afbb5fe-1aae-4603-bf84-48744add0b78",
+        "c203e554-3950-4bcf-9f79-8f7a8baab2d4",
+        "b1f3427b-cf91-45b3-8951-0b25daad43b7",
+        "f679b9f5-2e1a-4ffb-8038-79de515dbe33",
+        "afe4e5df-8a9a-4659-9fb8-65505c24e8f0",
+        "8b688482-ef36-42d0-9972-69ce2ce823c7",
+        "7c063f20-17b2-4ad8-bb33-89028a4b881b",
+        "2e91ce98-3f1d-4b1b-8d39-796420e4f3ac",
+        "f20e0cae-4974-425e-8371-c3a47ee8967b",
+        "db6f039d-c140-4949-bbc9-3e92ca2fbdbf",
+        "616dcb14-66cd-4e57-9730-a40eb9bf3094",
+        "64533316-9141-4cee-b5bb-fbc0f75ecdb4"
+      ],
+      "function": "7ce1948c-b271-42d8-9b4b-29df3da5fdde",
+      "outputs": [
+        "b3b988de-4d6d-4c2b-8645-3710f7b99f43",
+        "91fe43d5-c0de-4a0e-92cd-a07bd357673e",
+        "cbd18415-e252-4963-9cf7-fd2ebe220724",
+        "0e1f1d8c-2f80-4aa1-853c-8d9b8a03c2aa",
+        "61cfc557-2dc2-4d80-b975-8df54fec2842",
+        "4f34fea8-e411-4d2b-9db1-66d2837d519a",
+        "5e261778-eabb-46b5-81e3-3ada3e2e3333",
+        "15511022-c802-4131-8499-b919c0c32ea4",
+        "3320e5cb-28d3-4f73-b037-db28f7580524",
+        "b59b0c0d-f12b-490e-b2e6-d456af444cb0",
+        "a42c0857-c803-44d8-be96-dd011b7383d9",
+        "5d895216-1e4b-4e05-ae13-e5cbc7803b5f",
+        "58e73594-51e8-4058-9352-affefa4ece2d",
+        "d8cfe47f-ab07-4e25-8e87-2a1ebfca0aec"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "de4cb279-feee-4983-b07b-65aaf67bdde5",
+      "outputs": [
+        "a4f8346f-7f49-426c-8bdf-c0b9e70a8a83"
+      ]
+    },
+    {
+      "inputs": [
+        "a4f8346f-7f49-426c-8bdf-c0b9e70a8a83",
+        "b3b988de-4d6d-4c2b-8645-3710f7b99f43"
+      ],
+      "function": "c41b7bef-cd86-499b-8bcc-59952b5fa589",
+      "outputs": [
+        "7af6c674-1b4c-4385-b547-4e1fe5c0d999"
+      ]
+    },
+    {
+      "inputs": [
+        "7af6c674-1b4c-4385-b547-4e1fe5c0d999"
+      ],
+      "function": "a24191e0-6444-4167-9bed-fa60f6437c99",
+      "outputs": [
+        "bf0baec9-9b56-468c-9fe1-7d0f54b370e1"
+      ]
+    },
+    {
+      "inputs": [
+        "91fe43d5-c0de-4a0e-92cd-a07bd357673e",
+        "a4f8346f-7f49-426c-8bdf-c0b9e70a8a83"
+      ],
+      "function": "a68c63e1-61de-472e-9927-415ca60fead2",
+      "outputs": [
+        "b33a5e7a-35f3-4ec0-a9f4-b4b57e4bd524"
+      ]
+    },
+    {
+      "inputs": [
+        "cbd18415-e252-4963-9cf7-fd2ebe220724",
+        "a4f8346f-7f49-426c-8bdf-c0b9e70a8a83"
+      ],
+      "function": "a63fc6f5-8ff3-4412-ba16-4b219635a044",
+      "outputs": [
+        "b3419d5e-3262-4ea3-99a5-9c9b3624eb92"
+      ]
+    },
+    {
+      "inputs": [
+        "b3419d5e-3262-4ea3-99a5-9c9b3624eb92",
+        "0e1f1d8c-2f80-4aa1-853c-8d9b8a03c2aa",
+        "61cfc557-2dc2-4d80-b975-8df54fec2842",
+        "4f34fea8-e411-4d2b-9db1-66d2837d519a",
+        "5e261778-eabb-46b5-81e3-3ada3e2e3333",
+        "15511022-c802-4131-8499-b919c0c32ea4",
+        "3320e5cb-28d3-4f73-b037-db28f7580524",
+        "b59b0c0d-f12b-490e-b2e6-d456af444cb0",
+        "a42c0857-c803-44d8-be96-dd011b7383d9",
+        "5d895216-1e4b-4e05-ae13-e5cbc7803b5f",
+        "b33a5e7a-35f3-4ec0-a9f4-b4b57e4bd524",
+        "58e73594-51e8-4058-9352-affefa4ece2d",
+        "d8cfe47f-ab07-4e25-8e87-2a1ebfca0aec"
+      ],
+      "function": "e1d3a02d-12f9-4b77-b35c-80695a219a5e",
+      "outputs": [
+        "bb9e5da6-ace5-404a-a844-065dea7e6f86",
+        "d7b9b167-1291-4793-be06-e67edad8b426",
+        "42b978ce-2cfc-41b5-97ab-696c62e0c20d",
+        "896a0321-6092-4a31-92f5-5e0ab93ed6e4",
+        "65eaa365-1ec4-459b-a29c-38564930a933",
+        "b2a9f511-b7ec-48c5-9b6e-183821bf39c3",
+        "2be771bd-5d59-460d-aa98-c036d6cdba13",
+        "5872d030-b1a5-493a-a62a-17629ef19d32",
+        "57ce2e47-d9df-41a6-a9ec-32ec399f6d2a",
+        "ec9cb4d7-16da-4ef4-91ff-52fcb95100f3",
+        "d5d94819-a4ed-4c9a-bffc-ec4f79367e2a",
+        "4e3a20d3-328c-41c9-a19d-a5d857f0192b",
+        "3817204d-63da-4879-9127-77cbe051dde4"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "f1facddd-9dfa-4287-8f3a-a14e728c6952",
+      "outputs": [
+        "687170e5-9d49-4df8-a93d-e1b6a2de92b9"
+      ]
+    },
+    {
+      "inputs": [
+        "687170e5-9d49-4df8-a93d-e1b6a2de92b9",
+        "bb9e5da6-ace5-404a-a844-065dea7e6f86"
+      ],
+      "function": "b93dec5e-fd4d-4d6f-ac07-702e39370b6f",
+      "outputs": [
+        "7f35d8e5-2738-43f1-af48-3ba0235be4ee"
+      ]
+    },
+    {
+      "inputs": [
+        "7f35d8e5-2738-43f1-af48-3ba0235be4ee"
+      ],
+      "function": "01df41bc-b1c7-4a3d-9840-35358484e969",
+      "outputs": [
+        "1a0afe6e-fc51-484d-83c7-1880f1107d86"
+      ]
+    },
+    {
+      "inputs": [
+        "d7b9b167-1291-4793-be06-e67edad8b426",
+        "42b978ce-2cfc-41b5-97ab-696c62e0c20d",
+        "896a0321-6092-4a31-92f5-5e0ab93ed6e4"
+      ],
+      "function": "81ee5960-2e7c-4e1f-b9be-f5c589bae421",
+      "outputs": [
+        "cb8aeaa9-cfd7-447f-ad19-0afd81e0236c"
+      ]
+    },
+    {
+      "inputs": [
+        "65eaa365-1ec4-459b-a29c-38564930a933",
+        "42b978ce-2cfc-41b5-97ab-696c62e0c20d",
+        "b2a9f511-b7ec-48c5-9b6e-183821bf39c3"
+      ],
+      "function": "44a71cc0-a8be-4ee7-aa74-e15d022aaf9d",
+      "outputs": [
+        "9d71ba94-651d-4152-a36c-1b6f9f4a3e13"
+      ]
+    },
+    {
+      "inputs": [
+        "2be771bd-5d59-460d-aa98-c036d6cdba13",
+        "42b978ce-2cfc-41b5-97ab-696c62e0c20d",
+        "5872d030-b1a5-493a-a62a-17629ef19d32"
+      ],
+      "function": "2260b598-8cc1-423d-adab-049d97c98982",
+      "outputs": [
+        "18921538-c0c4-4156-9c0b-e8064bf59e97"
+      ]
+    },
+    {
+      "inputs": [
+        "57ce2e47-d9df-41a6-a9ec-32ec399f6d2a",
+        "42b978ce-2cfc-41b5-97ab-696c62e0c20d",
+        "ec9cb4d7-16da-4ef4-91ff-52fcb95100f3"
+      ],
+      "function": "3e1895ed-c120-4b3a-8e72-1c359165759e",
+      "outputs": [
+        "91ae12d7-ea6f-4edc-8f67-7db6d26493c6"
+      ]
+    },
+    {
+      "inputs": [
+        "42b978ce-2cfc-41b5-97ab-696c62e0c20d"
+      ],
+      "function": "98062a4c-d095-47ec-9fa1-1f4a7263d858",
+      "outputs": [
+        "f12501b7-3756-4632-861a-133b27ebbb91"
+      ]
+    },
+    {
+      "inputs": [
+        "b2a9f511-b7ec-48c5-9b6e-183821bf39c3",
+        "5872d030-b1a5-493a-a62a-17629ef19d32",
+        "ec9cb4d7-16da-4ef4-91ff-52fcb95100f3",
+        "d5d94819-a4ed-4c9a-bffc-ec4f79367e2a",
+        "4e3a20d3-328c-41c9-a19d-a5d857f0192b",
+        "3817204d-63da-4879-9127-77cbe051dde4"
+      ],
+      "function": "620874cf-3a25-43e1-9848-dde986bcad1f",
+      "outputs": [
+        "519bfcde-096d-47ad-87ae-310119f22d0a",
+        "49368978-ad80-42ea-92b4-84ded455ed4c",
+        "4d040f49-3f3f-4446-94f3-a0bf368e9ac7",
+        "aa94c3cc-5193-4122-b0ed-e83faefc214d",
+        "33047fc9-c24e-46b1-8b1d-4b0c9fb8fd22",
+        "a56e2426-c60e-45ca-83a1-58c5cf94ecf3"
+      ]
+    },
+    {
+      "inputs": [
+        "aa94c3cc-5193-4122-b0ed-e83faefc214d",
+        "519bfcde-096d-47ad-87ae-310119f22d0a",
+        "49368978-ad80-42ea-92b4-84ded455ed4c"
+      ],
+      "function": "ef3ed63b-1bbc-4de7-a9d7-457b91e1a30d",
+      "outputs": [
+        "a414982f-51fb-4d41-abf8-b736e9fc6ac1"
+      ]
+    },
+    {
+      "inputs": [
+        "aa94c3cc-5193-4122-b0ed-e83faefc214d",
+        "519bfcde-096d-47ad-87ae-310119f22d0a",
+        "49368978-ad80-42ea-92b4-84ded455ed4c",
+        "33047fc9-c24e-46b1-8b1d-4b0c9fb8fd22"
+      ],
+      "function": "c95f228b-a9cf-434c-9fab-4cb85d2f935c",
+      "outputs": [
+        "c9836fbe-50e3-4d5e-9e45-a0f2001c4096"
+      ]
+    },
+    {
+      "inputs": [
+        "33047fc9-c24e-46b1-8b1d-4b0c9fb8fd22",
+        "49368978-ad80-42ea-92b4-84ded455ed4c",
+        "4d040f49-3f3f-4446-94f3-a0bf368e9ac7"
+      ],
+      "function": "73034a85-8303-49d1-85b4-e88b06f14260",
+      "outputs": [
+        "2c37afb7-22c5-4011-9ed7-c8ac63a3ca1f"
+      ]
+    },
+    {
+      "inputs": [
+        "a56e2426-c60e-45ca-83a1-58c5cf94ecf3",
+        "a414982f-51fb-4d41-abf8-b736e9fc6ac1",
+        "c9836fbe-50e3-4d5e-9e45-a0f2001c4096",
+        "2c37afb7-22c5-4011-9ed7-c8ac63a3ca1f"
+      ],
+      "function": "b522930e-8a34-4eed-88b7-9970f1182653",
+      "outputs": [
+        "9f453636-78a5-4e8e-ae33-0025730e4f4d"
+      ]
+    },
+    {
+      "inputs": [
+        "a414982f-51fb-4d41-abf8-b736e9fc6ac1",
+        "9f453636-78a5-4e8e-ae33-0025730e4f4d"
+      ],
+      "function": "4e9f2344-29a6-4457-93cf-da8589382e3d",
+      "outputs": [
+        "9d2259db-62cc-444f-a4d4-03f5769ba39b"
+      ]
+    },
+    {
+      "inputs": [
+        "c9836fbe-50e3-4d5e-9e45-a0f2001c4096",
+        "9f453636-78a5-4e8e-ae33-0025730e4f4d"
+      ],
+      "function": "5d2d286c-f555-4cf5-8094-d8105ea50c2e",
+      "outputs": [
+        "c1d4c8d3-be5a-486d-bc1c-d2ef4ee07f33"
+      ]
+    },
+    {
+      "inputs": [
+        "2c37afb7-22c5-4011-9ed7-c8ac63a3ca1f",
+        "9f453636-78a5-4e8e-ae33-0025730e4f4d"
+      ],
+      "function": "df05d57d-ff1d-4a9e-849d-755c2671df17",
+      "outputs": [
+        "0bab2498-2677-48a7-8a7f-9b84c64b982b"
+      ]
+    },
+    {
+      "inputs": [
+        "9d2259db-62cc-444f-a4d4-03f5769ba39b",
+        "c1d4c8d3-be5a-486d-bc1c-d2ef4ee07f33",
+        "0bab2498-2677-48a7-8a7f-9b84c64b982b"
+      ],
+      "function": "662883b9-257d-43ac-9cef-d7c8c3cbd007",
+      "outputs": [
+        "f133b072-7eb7-4ee6-99b1-e19b1e9e7e52",
+        "69d1fc83-c08c-4299-86b7-2678673c920f",
+        "ace66e7c-ca54-4c8a-9d66-33b8fda432a1"
+      ]
+    },
+    {
+      "inputs": [
+        "896a0321-6092-4a31-92f5-5e0ab93ed6e4"
+      ],
+      "function": "ab15fdee-ecdb-4a26-b713-225852fa82cf",
+      "outputs": [
+        "1ee98465-a048-4be1-873d-c4e75707b89a"
+      ]
+    },
+    {
+      "inputs": [
+        "687170e5-9d49-4df8-a93d-e1b6a2de92b9"
+      ],
+      "function": "8300abd8-c84b-4ead-afe4-221b6ff55e03",
+      "outputs": [
+        "58dfb090-40f2-4de5-ac35-8353d279ae25"
+      ]
+    },
+    {
+      "inputs": [
+        "cb8aeaa9-cfd7-447f-ad19-0afd81e0236c",
+        "9d71ba94-651d-4152-a36c-1b6f9f4a3e13",
+        "18921538-c0c4-4156-9c0b-e8064bf59e97",
+        "91ae12d7-ea6f-4edc-8f67-7db6d26493c6",
+        "f12501b7-3756-4632-861a-133b27ebbb91",
+        "f133b072-7eb7-4ee6-99b1-e19b1e9e7e52",
+        "69d1fc83-c08c-4299-86b7-2678673c920f",
+        "ace66e7c-ca54-4c8a-9d66-33b8fda432a1",
+        "1ee98465-a048-4be1-873d-c4e75707b89a"
+      ],
+      "function": "43a98885-9a8a-4edf-9cf9-b51955f55d81",
+      "outputs": [
+        "da93c902-5ee9-4865-b645-cf6a83134675",
+        "639d9f18-997d-475c-ac8d-be29a4d96306",
+        "607087b2-2719-4b9f-92a3-5edf6b2f0602",
+        "38e9190e-8a0d-4c5d-bab5-a3f2a6e84e35",
+        "90b49c27-867a-4cc2-a5fb-7b2da9cacba3",
+        "bea9f869-3336-45ad-ab0c-054f3ad0c887",
+        "e6fcc426-84d6-414b-9e31-beda18a48bd0",
+        "664ca43a-518f-4a28-a5b7-0dc4d4368064",
+        "556f5d65-8158-497b-9fae-54621630e1ed"
+      ]
+    },
+    {
+      "inputs": [
+        "a4f8346f-7f49-426c-8bdf-c0b9e70a8a83"
+      ],
+      "function": "35f75c26-37b1-4565-a64c-08866b0f8a99",
+      "outputs": [
+        "218640a0-69c8-443e-85eb-9472559f6bfc"
+      ]
+    },
+    {
+      "inputs": [
+        "b33a5e7a-35f3-4ec0-a9f4-b4b57e4bd524",
+        "b3419d5e-3262-4ea3-99a5-9c9b3624eb92",
+        "da93c902-5ee9-4865-b645-cf6a83134675",
+        "639d9f18-997d-475c-ac8d-be29a4d96306",
+        "607087b2-2719-4b9f-92a3-5edf6b2f0602",
+        "38e9190e-8a0d-4c5d-bab5-a3f2a6e84e35",
+        "90b49c27-867a-4cc2-a5fb-7b2da9cacba3",
+        "bea9f869-3336-45ad-ab0c-054f3ad0c887",
+        "e6fcc426-84d6-414b-9e31-beda18a48bd0",
+        "664ca43a-518f-4a28-a5b7-0dc4d4368064",
+        "556f5d65-8158-497b-9fae-54621630e1ed"
+      ],
+      "function": "516da296-8d53-4873-af51-8df0b420d2f4",
+      "outputs": [
+        "0a1d3d15-9f1f-4d1b-8550-3db1106ba83c",
+        "e0660863-4c0b-4b9c-bfeb-7097d9f280f2",
+        "8d7ef690-ed75-4eb3-913e-2cfb01ecaa1d",
+        "c057b28d-44e3-40c2-a56e-a96e4ff318b8",
+        "0ebfc29c-65d9-415b-a9f3-b0c3e2899cf3",
+        "64075a13-2d4e-4ac5-82cf-9688fa40bc29",
+        "4d78fa51-ceea-4688-8665-beed08afe956",
+        "5e582052-38cb-4edc-bc79-e6a54d0b9eb5",
+        "5c5fb7ff-5c47-4e96-8d92-745e7b0d743b",
+        "d0d9baff-a08a-40d4-b9c7-5a29cfadf510",
+        "21be2bd9-84d9-4a4c-bdb2-ecc9fed01152"
+      ]
+    },
+    {
+      "inputs": [
+        "8d7ef690-ed75-4eb3-913e-2cfb01ecaa1d",
+        "4d78fa51-ceea-4688-8665-beed08afe956",
+        "21be2bd9-84d9-4a4c-bdb2-ecc9fed01152"
+      ],
+      "function": "543abbb7-a4bb-4754-93da-84f1309da4c8",
+      "outputs": [
+        "102cc008-8e77-45dd-9707-d421bcebc261"
+      ]
+    },
+    {
+      "inputs": [
+        "c057b28d-44e3-40c2-a56e-a96e4ff318b8",
+        "4d78fa51-ceea-4688-8665-beed08afe956",
+        "5e582052-38cb-4edc-bc79-e6a54d0b9eb5"
+      ],
+      "function": "e8c0f14f-35d0-48e1-826b-b75fd04b53fb",
+      "outputs": [
+        "368c1c8f-25c3-495d-aaff-7af49828ca84"
+      ]
+    },
+    {
+      "inputs": [
+        "0ebfc29c-65d9-415b-a9f3-b0c3e2899cf3",
+        "4d78fa51-ceea-4688-8665-beed08afe956",
+        "5c5fb7ff-5c47-4e96-8d92-745e7b0d743b"
+      ],
+      "function": "ba4fd9b1-785f-4d31-b431-8e5e2495936d",
+      "outputs": [
+        "6ed4fff0-3960-4778-ac2f-a5cc679986ff"
+      ]
+    },
+    {
+      "inputs": [
+        "64075a13-2d4e-4ac5-82cf-9688fa40bc29",
+        "4d78fa51-ceea-4688-8665-beed08afe956",
+        "d0d9baff-a08a-40d4-b9c7-5a29cfadf510"
+      ],
+      "function": "cafadb7a-b8c9-405a-b2c5-c06a2bd0f6ab",
+      "outputs": [
+        "b7c13569-409e-4cbf-a78c-32152771159e"
+      ]
+    },
+    {
+      "inputs": [
+        "6890333e-a2f6-453d-b0c4-229bdf78bbc5",
+        "6ed4fff0-3960-4778-ac2f-a5cc679986ff",
+        "b7c13569-409e-4cbf-a78c-32152771159e",
+        "cecf8f13-2660-453f-8518-ca5270681ef3"
+      ],
+      "function": "d31a8b2b-32bf-48d6-b308-11ba31d551d6",
+      "outputs": [
+        "1909a1e5-8631-4256-8258-4c22b211f782",
+        "df5028b5-d793-460e-b9c6-97e9d302313d",
+        "75553373-49fa-44eb-bd7c-22a9994fe9d6",
+        "fc74600a-0cc7-49d6-abb4-5f8163bdbdd7"
+      ]
+    },
+    {
+      "inputs": [],
+      "function": "c3dad74c-58f5-4837-acb5-35845b83c79c",
+      "outputs": [
+        "abcfb814-b5c0-4e96-b243-293cf58b613e"
+      ]
+    },
+    {
+      "inputs": [
+        "abcfb814-b5c0-4e96-b243-293cf58b613e",
+        "1909a1e5-8631-4256-8258-4c22b211f782"
+      ],
+      "function": "65a6016a-dc71-4ced-9ac3-2127aa630b98",
+      "outputs": [
+        "d18ae7b0-629b-447f-8ae7-4ff928ea38f9"
+      ]
+    },
+    {
+      "inputs": [
+        "d18ae7b0-629b-447f-8ae7-4ff928ea38f9"
+      ],
+      "function": "5c336eba-cca9-44c6-8df2-50a85bf31429",
+      "outputs": [
+        "a13cbb08-49d5-4994-b4b6-2cded54c9778"
+      ]
+    },
+    {
+      "inputs": [
+        "df5028b5-d793-460e-b9c6-97e9d302313d",
+        "abcfb814-b5c0-4e96-b243-293cf58b613e",
+        "75553373-49fa-44eb-bd7c-22a9994fe9d6"
+      ],
+      "function": "ae745604-3ccf-4bb3-8036-f55e8e3c681e",
+      "outputs": [
+        "de669f1f-ffda-408e-8d91-50923636914c"
+      ]
+    },
+    {
+      "inputs": [
+        "fc74600a-0cc7-49d6-abb4-5f8163bdbdd7",
+        "abcfb814-b5c0-4e96-b243-293cf58b613e",
+        "de669f1f-ffda-408e-8d91-50923636914c"
+      ],
+      "function": "329d2aa8-fef6-49fc-8df2-77f2de013036",
+      "outputs": [
+        "23015ddc-64b3-4edd-a6c2-6c365e341775"
+      ]
+    },
+    {
+      "inputs": [
+        "abcfb814-b5c0-4e96-b243-293cf58b613e"
+      ],
+      "function": "652df076-0e03-44be-b987-5c17239650bd",
+      "outputs": [
+        "91d0d404-96f7-4323-8d8b-30055de34484"
+      ]
+    },
+    {
+      "inputs": [
+        "de669f1f-ffda-408e-8d91-50923636914c",
+        "23015ddc-64b3-4edd-a6c2-6c365e341775"
+      ],
+      "function": "1d2a5095-c1e7-45be-9aa2-e4e2a5dd380f",
+      "outputs": [
+        "79d87234-0bc4-44bb-a0b2-68f226f398a6",
+        "f1c9038f-8052-41d0-9a2b-3d362e779f2f"
+      ]
+    },
+    {
+      "inputs": [
+        "5e582052-38cb-4edc-bc79-e6a54d0b9eb5",
+        "5c5fb7ff-5c47-4e96-8d92-745e7b0d743b",
+        "d0d9baff-a08a-40d4-b9c7-5a29cfadf510",
+        "102cc008-8e77-45dd-9707-d421bcebc261",
+        "368c1c8f-25c3-495d-aaff-7af49828ca84",
+        "f1c9038f-8052-41d0-9a2b-3d362e779f2f"
+      ],
+      "function": "62114f74-1d04-4fed-9f28-46084a13b72b",
+      "outputs": [
+        "43e74999-7971-4bd4-9761-94f223297b35",
+        "b7e984cf-59c5-4973-bf5a-d5426dcd9cc1",
+        "bced30b5-040a-495f-a682-858af8112cb7",
+        "6d225b3e-9e4c-496a-a767-fea5f9eb1f30",
+        "811a7445-146f-4565-b3e5-fdaaab389f52",
+        "b81a935b-1791-46f6-8a34-4b30ad296db9"
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "uid": "e16f4853-8703-400e-bd61-e9fcf1850987",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::i_day::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "d42860e1-70b7-4c67-b250-0bc4420e38ba",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::n_days::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "f71583e9-5480-48a6-8783-f6b6c42f1687",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::n_p::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "1b9b8be6-58d3-4182-80ad-d0e3e657102c",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::n_t::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "2ed9beba-8428-480c-820d-7125e74fee44",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::infectious_days::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "73b1cf1d-cd27-4206-be8f-fd334065b36c",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::relative_contact_rate::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "49cf82bb-7bf8-4590-8ab0-ae483390f39f",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::gamma::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(2, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "γ",
+              "text_definition": "gamma"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "c74247b4-0d48-4f79-8811-69d9c7596e7f",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::policy_betas::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "9828d3f2-27b0-4613-8ed6-75750b31b04f",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::policy_days::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "2450dcb1-95d1-408a-bded-c081a7924081",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::t::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "40b5f6a1-f63a-411a-a00d-6446d3edd093",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::s::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "564b7488-dbba-40ce-8375-b78747fd066a",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::ei::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "d583e766-210c-4d58-9b73-a00b528bf168",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::i::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "08c1d171-6d79-4fb3-9183-326d070f7126",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::r::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "3ca29049-d9c6-459e-be33-5912e8a1433b",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::s_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(4, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "S",
+              "text_definition": "Susceptible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "5eadedee-6516-46fa-a69e-ef856299c58f",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::i_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(20, 24)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "I",
+              "text_definition": "Infected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "7ef314e2-e4ab-4e22-b154-70eafbe8d0b8",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::r_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(26, 30)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "R",
+              "text_definition": "Recovered"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "ed1e6eb4-948b-46a2-81f0-a3759086815d",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::n_p::-1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "c8123c6b-b5e9-44a0-bbb5-b5b2b552e124",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::gamma::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(2, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "γ",
+              "text_definition": "gamma"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "645cffa6-0787-4703-8229-5e2ebca1d3b9",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::s_c::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(4, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "S",
+              "text_definition": "Susceptible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "2d4e8312-c9f0-4882-9daf-868b3998d5d3",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::relative_contact_rate::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "318deeac-a893-4aa0-9206-590ed3f23444",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::policy_betas::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "97208f76-1dc4-456c-ae92-98d6e330d383",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::n_days::-1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "81ba9e8a-a65c-4512-84dc-162d4d3635d4",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::policy_days::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "b1b80413-b1f7-4605-a1c3-e84955145082",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::p_idx::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "7e8e4474-a047-4d7a-9798-bea8361136b5",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::IF_0::0",
+      "type": "boolean",
+      "kind": "binary",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "76989620-0fd4-432b-a6be-c92f6f7c0ee8",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::EXIT::0",
+      "type": "boolean",
+      "kind": "binary",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "4f8f229a-aab4-4db4-844b-64f68920dfad",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::doubling_time::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent25_Interval(6, 8)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "T_d",
+              "text_definition": "doubling time",
+              "parameter_interval": [
+                7,
+                10
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "cdceee77-8f28-4fe7-ba80-c76d88fd078d",
+      "reference": "",
+      "identifier": "CHIME-SIR::get_growth_rate::doubling_time::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent25_Interval(6, 8)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "T_d",
+              "text_definition": "doubling time",
+              "parameter_interval": [
+                7,
+                10
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "efdff1a1-3eae-4735-9075-7f8a77cae7ff",
+      "reference": "",
+      "identifier": "CHIME-SIR::get_growth_rate.IF_0::doubling_time::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent25_Interval(6, 8)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "T_d",
+              "text_definition": "doubling time",
+              "parameter_interval": [
+                7,
+                10
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "9d85aa4e-2a80-42a9-a8fb-33d10932f2ac",
+      "reference": "",
+      "identifier": "CHIME-SIR::get_growth_rate.IF_0::COND_0_0::0",
+      "type": "boolean",
+      "kind": "binary",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "a23196a5-6af7-4ddb-8908-f23b283932aa",
+      "reference": "",
+      "identifier": "CHIME-SIR::get_growth_rate.IF_0::growth_rate::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent25_Interval(3, 6)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "g",
+              "text_definition": "early-phase rate of growth"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "c1ecdfd8-ff8c-41c4-8ef7-00f43b9a6e96",
+      "reference": "",
+      "identifier": "CHIME-SIR::get_growth_rate.IF_0::growth_rate::1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent25_Interval(3, 6)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "g",
+              "text_definition": "early-phase rate of growth"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "4a3659ff-9c44-4352-9d3e-f592b2597b5a",
+      "reference": "",
+      "identifier": "CHIME-SIR::get_growth_rate.IF_0::growth_rate::2",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent25_Interval(3, 6)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "g",
+              "text_definition": "early-phase rate of growth"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "88c053c8-7bc5-4938-b069-31cf796d6c28",
+      "reference": "",
+      "identifier": "CHIME-SIR::get_growth_rate::growth_rate::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent25_Interval(3, 6)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "g",
+              "text_definition": "early-phase rate of growth"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "b11d501d-78d1-4f3a-b0c9-ba2591007dac",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::growth_rate::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent25_Interval(3, 6)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "g",
+              "text_definition": "early-phase rate of growth"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "26f0ec12-51a6-42e5-a5fd-afdad6d21f4e",
+      "reference": "",
+      "identifier": "CHIME-SIR::get_beta::intrinsic_growth_rate::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent25_Interval(3, 6)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "g",
+              "text_definition": "early-phase rate of growth"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "4e21d684-87c9-42e0-ac32-ec00fe5f1cc5",
+      "reference": "",
+      "identifier": "CHIME-SIR::get_beta::gamma::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(2, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "γ",
+              "text_definition": "gamma"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "77373021-7c62-46e3-809f-adc795c1e054",
+      "reference": "",
+      "identifier": "CHIME-SIR::get_beta::s_c::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(4, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "S",
+              "text_definition": "Susceptible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "66b30b04-2a4d-454d-ae9c-7aa495781b0b",
+      "reference": "",
+      "identifier": "CHIME-SIR::get_beta::relative_contact_rate::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "1df47f33-858f-45be-b486-5db095e460cd",
+      "reference": "",
+      "identifier": "CHIME-SIR::get_beta::inv_contact_rate::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "a9840a0e-8a1a-4eda-a9ca-7746f23d3677",
+      "reference": "",
+      "identifier": "CHIME-SIR::get_beta::updated_growth_rate::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "4aa6aa7d-31bc-4c43-9462-087640c2bc3f",
+      "reference": "",
+      "identifier": "CHIME-SIR::get_beta::beta::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent8_Interval(6, 8)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "β",
+              "text_definition": "effective contact rate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "d87cb1b0-17bf-406d-b0ea-cfa61f09bf47",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::beta::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent8_Interval(6, 8)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "β",
+              "text_definition": "effective contact rate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "aa5a9672-d3f7-4c4a-95e2-d0a1a77197d0",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::policy_betas::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "137f74ee-2c3a-4698-a6a8-79c17fd24dad",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::days_for_policy::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "4b7ac628-dc3e-4ec1-91fd-1aebe2c4204d",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::policy_days::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "69bd6a44-590e-4e75-84ba-7b304ab5ab0e",
+      "reference": "",
+      "identifier": "CHIME-SIR::main.loop$3::p_idx::1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "da36675a-564c-4e8e-a75e-d55a5ce685af",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::doubling_time::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent25_Interval(6, 8)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "T_d",
+              "text_definition": "doubling time",
+              "parameter_interval": [
+                7,
+                10
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "bb92795b-a907-4e3e-bb91-9d1c93b52856",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::growth_rate::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent25_Interval(3, 6)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "g",
+              "text_definition": "early-phase rate of growth"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "1f38c235-101b-4fa8-a880-3dd17382c1f9",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::beta::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent8_Interval(6, 8)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "β",
+              "text_definition": "effective contact rate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "024f553a-5070-482f-a94f-82b97dbdd88d",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::policy_betas::1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "1e44326d-bb72-4e58-8a48-a967b985395e",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::days_for_policy::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "a707eb56-36f0-4188-ab13-64f1ad59b76c",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::policy_days::1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "8b688482-ef36-42d0-9972-69ce2ce823c7",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::s_c::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(4, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "S",
+              "text_definition": "Susceptible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "2e91ce98-3f1d-4b1b-8d39-796420e4f3ac",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::i_c::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(20, 24)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "I",
+              "text_definition": "Infected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "db6f039d-c140-4949-bbc9-3e92ca2fbdbf",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::r_c::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(26, 30)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "R",
+              "text_definition": "Recovered"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "616dcb14-66cd-4e57-9730-a40eb9bf3094",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::gamma::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(2, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "γ",
+              "text_definition": "gamma"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "524c7d9e-a1c4-4fdd-a093-66b729a58b76",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::i_day::-1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "725dd80c-e5c8-46ab-8df1-8f8fa9f3515a",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::n_p::-1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "6890333e-a2f6-453d-b0c4-229bdf78bbc5",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::n_t::-1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "475fca7c-194c-4abb-b19b-0aa28a0bb5d3",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::betas::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "9afbb5fe-1aae-4603-bf84-48744add0b78",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::days::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "c203e554-3950-4bcf-9f79-8f7a8baab2d4",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::t::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "afe4e5df-8a9a-4659-9fb8-65505c24e8f0",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::s::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "cecf8f13-2660-453f-8518-ca5270681ef3",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::ei::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "7c063f20-17b2-4ad8-bb33-89028a4b881b",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::i::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "f20e0cae-4974-425e-8371-c3a47ee8967b",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::r::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "64533316-9141-4cee-b5bb-fbc0f75ecdb4",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::n::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "f679b9f5-2e1a-4ffb-8038-79de515dbe33",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::d::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "b1f3427b-cf91-45b3-8951-0b25daad43b7",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::idx::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "b3b988de-4d6d-4c2b-8645-3710f7b99f43",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::n_p::-1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "91fe43d5-c0de-4a0e-92cd-a07bd357673e",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::betas::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "cbd18415-e252-4963-9cf7-fd2ebe220724",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::days::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "0e1f1d8c-2f80-4aa1-853c-8d9b8a03c2aa",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::t::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "61cfc557-2dc2-4d80-b975-8df54fec2842",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::idx::-1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "4f34fea8-e411-4d2b-9db1-66d2837d519a",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::d::-1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "5e261778-eabb-46b5-81e3-3ada3e2e3333",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::s::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "15511022-c802-4131-8499-b919c0c32ea4",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::s_c::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(4, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "S",
+              "text_definition": "Susceptible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "3320e5cb-28d3-4f73-b037-db28f7580524",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::i::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "b59b0c0d-f12b-490e-b2e6-d456af444cb0",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::i_c::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(20, 24)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "I",
+              "text_definition": "Infected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "a42c0857-c803-44d8-be96-dd011b7383d9",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::r::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "5d895216-1e4b-4e05-ae13-e5cbc7803b5f",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::r_c::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(26, 30)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "R",
+              "text_definition": "Recovered"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "58e73594-51e8-4058-9352-affefa4ece2d",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::gamma::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(2, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "γ",
+              "text_definition": "gamma"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "d8cfe47f-ab07-4e25-8e87-2a1ebfca0aec",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::n::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "a4f8346f-7f49-426c-8bdf-c0b9e70a8a83",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::p_idx::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "7af6c674-1b4c-4385-b547-4e1fe5c0d999",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::IF_0::0",
+      "type": "boolean",
+      "kind": "binary",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "bf0baec9-9b56-468c-9fe1-7d0f54b370e1",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::EXIT::0",
+      "type": "boolean",
+      "kind": "binary",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "b33a5e7a-35f3-4ec0-a9f4-b4b57e4bd524",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::beta::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent8_Interval(6, 8)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "β",
+              "text_definition": "effective contact rate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "b3419d5e-3262-4ea3-99a5-9c9b3624eb92",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::n_d::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "bb9e5da6-ace5-404a-a844-065dea7e6f86",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::n_d::-1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "d7b9b167-1291-4793-be06-e67edad8b426",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::t::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "42b978ce-2cfc-41b5-97ab-696c62e0c20d",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::idx::-1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "896a0321-6092-4a31-92f5-5e0ab93ed6e4",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::d::-1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "65eaa365-1ec4-459b-a29c-38564930a933",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::s::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "b2a9f511-b7ec-48c5-9b6e-183821bf39c3",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::s_c::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(4, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "S",
+              "text_definition": "Susceptible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "2be771bd-5d59-460d-aa98-c036d6cdba13",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::i::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "5872d030-b1a5-493a-a62a-17629ef19d32",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::i_c::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(20, 24)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "I",
+              "text_definition": "Infected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "57ce2e47-d9df-41a6-a9ec-32ec399f6d2a",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::r::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "ec9cb4d7-16da-4ef4-91ff-52fcb95100f3",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::r_c::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(26, 30)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "R",
+              "text_definition": "Recovered"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "d5d94819-a4ed-4c9a-bffc-ec4f79367e2a",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::beta::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent8_Interval(6, 8)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "β",
+              "text_definition": "effective contact rate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "4e3a20d3-328c-41c9-a19d-a5d857f0192b",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::gamma::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(2, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "γ",
+              "text_definition": "gamma"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "3817204d-63da-4879-9127-77cbe051dde4",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::n::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "687170e5-9d49-4df8-a93d-e1b6a2de92b9",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::d_idx::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "7f35d8e5-2738-43f1-af48-3ba0235be4ee",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::IF_0::0",
+      "type": "boolean",
+      "kind": "binary",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "1a0afe6e-fc51-484d-83c7-1880f1107d86",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::EXIT::0",
+      "type": "boolean",
+      "kind": "binary",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "cb8aeaa9-cfd7-447f-ad19-0afd81e0236c",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::t::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "9d71ba94-651d-4152-a36c-1b6f9f4a3e13",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::s::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "18921538-c0c4-4156-9c0b-e8064bf59e97",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::i::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "91ae12d7-ea6f-4edc-8f67-7db6d26493c6",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::r::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "f12501b7-3756-4632-861a-133b27ebbb91",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::idx::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "519bfcde-096d-47ad-87ae-310119f22d0a",
+      "reference": "",
+      "identifier": "CHIME-SIR::sir::s_c::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(4, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "S",
+              "text_definition": "Susceptible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "49368978-ad80-42ea-92b4-84ded455ed4c",
+      "reference": "",
+      "identifier": "CHIME-SIR::sir::i_c::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(20, 24)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "I",
+              "text_definition": "Infected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "4d040f49-3f3f-4446-94f3-a0bf368e9ac7",
+      "reference": "",
+      "identifier": "CHIME-SIR::sir::r_c::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(26, 30)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "R",
+              "text_definition": "Recovered"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "aa94c3cc-5193-4122-b0ed-e83faefc214d",
+      "reference": "",
+      "identifier": "CHIME-SIR::sir::beta::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent8_Interval(6, 8)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "β",
+              "text_definition": "effective contact rate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "33047fc9-c24e-46b1-8b1d-4b0c9fb8fd22",
+      "reference": "",
+      "identifier": "CHIME-SIR::sir::gamma::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(2, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "γ",
+              "text_definition": "gamma"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "a56e2426-c60e-45ca-83a1-58c5cf94ecf3",
+      "reference": "",
+      "identifier": "CHIME-SIR::sir::n::-1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "a414982f-51fb-4d41-abf8-b736e9fc6ac1",
+      "reference": "",
+      "identifier": "CHIME-SIR::sir::s_n::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "c9836fbe-50e3-4d5e-9e45-a0f2001c4096",
+      "reference": "",
+      "identifier": "CHIME-SIR::sir::i_n::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "2c37afb7-22c5-4011-9ed7-c8ac63a3ca1f",
+      "reference": "",
+      "identifier": "CHIME-SIR::sir::r_n::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "9f453636-78a5-4e8e-ae33-0025730e4f4d",
+      "reference": "",
+      "identifier": "CHIME-SIR::sir::scale::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "9d2259db-62cc-444f-a4d4-03f5769ba39b",
+      "reference": "",
+      "identifier": "CHIME-SIR::sir::s_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(4, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "S",
+              "text_definition": "Susceptible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "c1d4c8d3-be5a-486d-bc1c-d2ef4ee07f33",
+      "reference": "",
+      "identifier": "CHIME-SIR::sir::i_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(20, 24)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "I",
+              "text_definition": "Infected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "0bab2498-2677-48a7-8a7f-9b84c64b982b",
+      "reference": "",
+      "identifier": "CHIME-SIR::sir::r_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(26, 30)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "R",
+              "text_definition": "Recovered"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "f133b072-7eb7-4ee6-99b1-e19b1e9e7e52",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::s_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(4, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "S",
+              "text_definition": "Susceptible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "69d1fc83-c08c-4299-86b7-2678673c920f",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::i_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(20, 24)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "I",
+              "text_definition": "Infected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "ace66e7c-ca54-4c8a-9d66-33b8fda432a1",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::r_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(26, 30)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "R",
+              "text_definition": "Recovered"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "1ee98465-a048-4be1-873d-c4e75707b89a",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::d::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "58dfb090-40f2-4de5-ac35-8353d279ae25",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0.loop$1::d_idx::1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "da93c902-5ee9-4865-b645-cf6a83134675",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::t::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "639d9f18-997d-475c-ac8d-be29a4d96306",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::s::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "607087b2-2719-4b9f-92a3-5edf6b2f0602",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::i::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "38e9190e-8a0d-4c5d-bab5-a3f2a6e84e35",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::r::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "90b49c27-867a-4cc2-a5fb-7b2da9cacba3",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::idx::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "bea9f869-3336-45ad-ab0c-054f3ad0c887",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::s_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(4, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "S",
+              "text_definition": "Susceptible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "e6fcc426-84d6-414b-9e31-beda18a48bd0",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::i_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(20, 24)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "I",
+              "text_definition": "Infected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "664ca43a-518f-4a28-a5b7-0dc4d4368064",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::r_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(26, 30)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "R",
+              "text_definition": "Recovered"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "556f5d65-8158-497b-9fae-54621630e1ed",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::d::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "218640a0-69c8-443e-85eb-9472559f6bfc",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$0::p_idx::1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "0a1d3d15-9f1f-4d1b-8550-3db1106ba83c",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::beta::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent8_Interval(6, 8)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "β",
+              "text_definition": "effective contact rate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "e0660863-4c0b-4b9c-bfeb-7097d9f280f2",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::n_d::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "8d7ef690-ed75-4eb3-913e-2cfb01ecaa1d",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::t::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "c057b28d-44e3-40c2-a56e-a96e4ff318b8",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::s::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "0ebfc29c-65d9-415b-a9f3-b0c3e2899cf3",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::i::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "64075a13-2d4e-4ac5-82cf-9688fa40bc29",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::r::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "4d78fa51-ceea-4688-8665-beed08afe956",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::idx::1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "5e582052-38cb-4edc-bc79-e6a54d0b9eb5",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::s_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(4, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "S",
+              "text_definition": "Susceptible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "5c5fb7ff-5c47-4e96-8d92-745e7b0d743b",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::i_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(20, 24)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "I",
+              "text_definition": "Infected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "d0d9baff-a08a-40d4-b9c7-5a29cfadf510",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::r_c::0",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(26, 30)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "R",
+              "text_definition": "Recovered"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "21be2bd9-84d9-4a4c-bdb2-ecc9fed01152",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::d::1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "102cc008-8e77-45dd-9707-d421bcebc261",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::t::1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "368c1c8f-25c3-495d-aaff-7af49828ca84",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::s::1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "6ed4fff0-3960-4778-ac2f-a5cc679986ff",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::i::1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "b7c13569-409e-4cbf-a78c-32152771159e",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::r::1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "1909a1e5-8631-4256-8258-4c22b211f782",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$2::n_t::-1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "df5028b5-d793-460e-b9c6-97e9d302313d",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$2::i::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "75553373-49fa-44eb-bd7c-22a9994fe9d6",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$2::r::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "fc74600a-0cc7-49d6-abb4-5f8163bdbdd7",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$2::ei::-1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "abcfb814-b5c0-4e96-b243-293cf58b613e",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$2::t_idx::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "d18ae7b0-629b-447f-8ae7-4ff928ea38f9",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$2::IF_0::0",
+      "type": "boolean",
+      "kind": "binary",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "a13cbb08-49d5-4994-b4b6-2cded54c9778",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$2::EXIT::0",
+      "type": "boolean",
+      "kind": "binary",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "de669f1f-ffda-408e-8d91-50923636914c",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$2::total_inf::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "23015ddc-64b3-4edd-a6c2-6c365e341775",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$2::ei::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "91d0d404-96f7-4323-8d8b-30055de34484",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir.loop$2::t_idx::1",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "79d87234-0bc4-44bb-a0b2-68f226f398a6",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::total_inf::0",
+      "type": "integer",
+      "kind": "discrete",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "f1c9038f-8052-41d0-9a2b-3d362e779f2f",
+      "reference": "",
+      "identifier": "CHIME-SIR::sim_sir::ei::0",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "43e74999-7971-4bd4-9761-94f223297b35",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::s_c::1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent1_Interval(4, 7)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "S",
+              "text_definition": "Susceptible"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "b7e984cf-59c5-4973-bf5a-d5426dcd9cc1",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::i_c::1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(20, 24)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "I",
+              "text_definition": "Infected"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "bced30b5-040a-495f-a682-858af8112cb7",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::r_c::1",
+      "type": "float",
+      "kind": "continuous",
+      "domain": "(and (> v -infty) (< v infty))",
+      "metadata": [
+        {
+          "type": "textual-variable-definition",
+          "provenance": {
+            "method": "AutoMATES-link-assembly",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "text_location": "sent0_Interval(26, 30)"
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "text_identifier": "R",
+              "text_definition": "Recovered"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "6d225b3e-9e4c-496a-a767-fea5f9eb1f30",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::t::1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "811a7445-146f-4565-b3e5-fdaaab389f52",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::s::1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    },
+    {
+      "uid": "b81a935b-1791-46f6-8a34-4b30ad296db9",
+      "reference": "",
+      "identifier": "CHIME-SIR::main::ei::1",
+      "type": "array",
+      "kind": "none",
+      "domain": "(and (> v -infty) (< v infty))"
+    }
+  ],
+  "functions": [
+    {
+      "uid": "abc99848-b32f-4dec-8087-9c06975ec8b2",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :17"
+    },
+    {
+      "uid": "a36bb062-ab05-453c-91ce-58ba0d780a44",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :20"
+    },
+    {
+      "uid": "d5a9a73c-eae6-41df-8afe-4d712bc4f6d8",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :3"
+    },
+    {
+      "uid": "9b478340-adaa-4f22-b53a-02278fc144b0",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :121"
+    },
+    {
+      "uid": "68859935-160c-4675-9b04-9c075f43ef2d",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :14"
+    },
+    {
+      "uid": "2fe44e04-9e70-4ee2-9e7d-03af62be149d",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :0.05"
+    },
+    {
+      "uid": "ad4ae72d-99be-4f5f-b041-8b1006fb81a2",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda infectious_days:(1.0/infectious_days)"
+    },
+    {
+      "uid": "45d4ff8a-a2f9-4d5d-ad58-0eed7fa06633",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda n_p:[0] * (n_p - 1)"
+    },
+    {
+      "uid": "535e47b0-da8c-4e06-b8fa-ef9bc789668a",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda n_p:[0] * (n_p - 1)"
+    },
+    {
+      "uid": "dc340ffe-0845-43a1-9b74-d3877729821e",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda n_t:[0] * (n_t - 1)"
+    },
+    {
+      "uid": "2c65b5fe-b99b-40ba-8d84-cf20ee7b950b",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda n_t:[0] * (n_t - 1)"
+    },
+    {
+      "uid": "e450e561-0b03-4f0b-a320-93ebb666e5af",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda n_t:[0] * (n_t - 1)"
+    },
+    {
+      "uid": "2c7f02c3-ee72-4136-b797-bfbe93923575",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda n_t:[0] * (n_t - 1)"
+    },
+    {
+      "uid": "9fbfff8a-53e1-4c39-827d-02ac48b7182e",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda n_t:[0] * (n_t - 1)"
+    },
+    {
+      "uid": "a490349e-5c2e-4ebc-a3d7-10c1f532879f",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :1000"
+    },
+    {
+      "uid": "2a6b8205-7951-48a3-8122-0ddd7b59928e",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :0"
+    },
+    {
+      "uid": "0b99d844-4d8e-4535-b7c9-bc7fcbd9156e",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :0"
+    },
+    {
+      "uid": "3fa817cc-a588-4c39-88c2-7d245fcdc479",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda n_p,gamma,s_c,relative_contact_rate,policy_betas,n_days,policy_days:(n_p,gamma,s_c,relative_contact_rate,policy_betas,n_days,policy_days)"
+    },
+    {
+      "uid": "8c36ed79-0f20-425d-884b-18c69974d9ea",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :1"
+    },
+    {
+      "uid": "b3850647-7917-4001-add3-924f11f9ed1d",
+      "reference": "",
+      "type": "CONDITION",
+      "lambda": "lambda p_idx,n_p:0 <= p_idx < n_p+1"
+    },
+    {
+      "uid": "288004b3-0fd8-48f4-b4ed-9d413cc59d05",
+      "reference": "",
+      "type": "DECISION",
+      "lambda": "lambda IF_0_0:(not IF_0_0)"
+    },
+    {
+      "uid": "5f519c2c-8f7d-4ea9-9d3c-e73003dec650",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda p_idx:((p_idx-1.0)*5.0)"
+    },
+    {
+      "uid": "8b98802b-9192-46e2-9ee5-e403fff0e038",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda doubling_time:(doubling_time)"
+    },
+    {
+      "uid": "94869593-f1e7-47f3-b83a-94e75d30d661",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda doubling_time:(doubling_time)"
+    },
+    {
+      "uid": "d7b7824f-1572-4680-9a37-3437f9212eac",
+      "reference": "",
+      "type": "CONDITION",
+      "lambda": "lambda doubling_time:(doubling_time == 0.0)"
+    },
+    {
+      "uid": "9fd2a794-a4fc-4262-9e40-a646c17c4dcb",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :0.0"
+    },
+    {
+      "uid": "2c33154b-2641-4269-a10f-5417853b3940",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda doubling_time:((2.0**(1.0/doubling_time))-1.0)",
+      "metadata": [
+        {
+          "type": "textual-equation-definition",
+          "provenance": {
+            "method": "AutoMATES-MESA-grounding",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "eqn_number": 6
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "eqn_source": "g = 2^{1/T_d} - 1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "9c34f23b-9a24-4c1c-bd2e-f3d55c43d9c2",
+      "reference": "",
+      "type": "DECISION",
+      "lambda": "lambda COND_0,growth_0,growth_1:np.where(COND_0,growth_0,growth_1)"
+    },
+    {
+      "uid": "5712e21d-c0a7-40ec-b7ad-772ff70756a1",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda growth_rate:(growth_rate)"
+    },
+    {
+      "uid": "cd366c1d-d09c-4cc3-bb59-85e1866121d9",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda growth_rate:(growth_rate)"
+    },
+    {
+      "uid": "7af5521c-36a2-46a0-9822-db486a72d70c",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda growth_rate,gamma,s_c,relative_contact_rate:(growth_rate,gamma,s_c,relative_contact_rate)"
+    },
+    {
+      "uid": "8529de6d-f89c-4380-afb5-f3e08827a25d",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda relative_contact_rate:(1.0-relative_contact_rate)"
+    },
+    {
+      "uid": "5e36e970-b6b0-4589-9daa-7174fbfe31b8",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda intrinsic_growth_rate,gamma:(intrinsic_growth_rate+gamma)"
+    },
+    {
+      "uid": "74fc64a0-609b-4cc8-badd-ef7466617df9",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda updated_growth_rate,s_c,inv_contact_rate:((updated_growth_rate/s_c)*inv_contact_rate)"
+    },
+    {
+      "uid": "662dd90b-d875-4984-a24d-ffab92a7f168",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda beta:(beta)"
+    },
+    {
+      "uid": "f3f0b634-ce71-423a-a2e0-b8673498d384",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda policy_betas,p_idx,beta:(policy_betas.__setitem__(p_idx,Float32(beta)),policy_betas)[1]"
+    },
+    {
+      "uid": "5475dccc-499a-43a8-b5d0-5b27182ac6b3",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda n_days,p_idx:int((n_days*p_idx))"
+    },
+    {
+      "uid": "07f128fd-3440-4dbb-a5fd-42018b1368d8",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda policy_days,p_idx,days_for_policy:(policy_days.__setitem__(p_idx,int(days_for_policy)),policy_days)[1]"
+    },
+    {
+      "uid": "c80a1bf8-79fc-4d08-b859-30dd3c90fde8",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda p_idx:p_idx + 1"
+    },
+    {
+      "uid": "4a8eb129-c503-4592-8cc2-e45b93bd8c26",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda doubling_time,growth_rate,beta,policy_betas,days_for_policy,policy_days:(doubling_time,growth_rate,beta,policy_betas,days_for_policy,policy_days)"
+    },
+    {
+      "uid": "f0ca40d1-b8f2-4d10-81c3-08cf796d9acd",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda s_c,i_c,r_c,gamma,i_day,n_p,n_t,policy_betas,policy_days,t,s,ei,i,r:(s_c,i_c,r_c,gamma,i_day,n_p,n_t,policy_betas,policy_days,t,s,ei,i,r)"
+    },
+    {
+      "uid": "bf22b186-d43f-4a77-a358-893d68039b9b",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda s_c,i_c,r_c:((s_c+i_c)+r_c)"
+    },
+    {
+      "uid": "be14ad46-b28d-4caf-934f-b70a7c2e5629",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda i_day:i_day"
+    },
+    {
+      "uid": "83c76730-dd3d-4e8f-af7c-d099d05cf69a",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :1"
+    },
+    {
+      "uid": "7ce1948c-b271-42d8-9b4b-29df3da5fdde",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda n_p,betas,days,t,idx,d,s,s_c,i,i_c,r,r_c,gamma,n:(n_p,betas,days,t,idx,d,s,s_c,i,i_c,r,r_c,gamma,n)"
+    },
+    {
+      "uid": "de4cb279-feee-4983-b07b-65aaf67bdde5",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :1"
+    },
+    {
+      "uid": "c41b7bef-cd86-499b-8bcc-59952b5fa589",
+      "reference": "",
+      "type": "CONDITION",
+      "lambda": "lambda p_idx,n_p:0 <= p_idx < n_p+1"
+    },
+    {
+      "uid": "a24191e0-6444-4167-9bed-fa60f6437c99",
+      "reference": "",
+      "type": "DECISION",
+      "lambda": "lambda IF_0_0:(not IF_0_0)"
+    },
+    {
+      "uid": "a68c63e1-61de-472e-9927-415ca60fead2",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda p_idx:betas[p_idx]"
+    },
+    {
+      "uid": "a63fc6f5-8ff3-4412-ba16-4b219635a044",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda p_idx:days[p_idx]"
+    },
+    {
+      "uid": "e1d3a02d-12f9-4b77-b35c-80695a219a5e",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda n_d,t,idx,d,s,s_c,i,i_c,r,r_c,beta,gamma,n:(n_d,t,idx,d,s,s_c,i,i_c,r,r_c,beta,gamma,n)"
+    },
+    {
+      "uid": "f1facddd-9dfa-4287-8f3a-a14e728c6952",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :1"
+    },
+    {
+      "uid": "b93dec5e-fd4d-4d6f-ac07-702e39370b6f",
+      "reference": "",
+      "type": "CONDITION",
+      "lambda": "lambda d_idx,n_d:0 <= d_idx < n_d+1"
+    },
+    {
+      "uid": "01df41bc-b1c7-4a3d-9840-35358484e969",
+      "reference": "",
+      "type": "DECISION",
+      "lambda": "lambda IF_0_0:(not IF_0_0)"
+    },
+    {
+      "uid": "81ee5960-2e7c-4e1f-b9be-f5c589bae421",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda t,idx,d:(t.__setitem__(idx,int(d)),t)[1]"
+    },
+    {
+      "uid": "44a71cc0-a8be-4ee7-aa74-e15d022aaf9d",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda s,idx,s_c:(s.__setitem__(idx,Float32(s_c)),s)[1]"
+    },
+    {
+      "uid": "2260b598-8cc1-423d-adab-049d97c98982",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda i,idx,i_c:(i.__setitem__(idx,Float32(i_c)),i)[1]"
+    },
+    {
+      "uid": "3e1895ed-c120-4b3a-8e72-1c359165759e",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda r,idx,r_c:(r.__setitem__(idx,Float32(r_c)),r)[1]"
+    },
+    {
+      "uid": "98062a4c-d095-47ec-9fa1-1f4a7263d858",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda idx:(idx+1)"
+    },
+    {
+      "uid": "620874cf-3a25-43e1-9848-dde986bcad1f",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda s_c,i_c,r_c,beta,gamma,n:(s_c,i_c,r_c,beta,gamma,n)"
+    },
+    {
+      "uid": "ef3ed63b-1bbc-4de7-a9d7-457b91e1a30d",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda beta,s_c,i_c:(-(((beta*s_c)*i_c))+s_c)",
+      "metadata": [
+        {
+          "type": "textual-equation-definition",
+          "provenance": {
+            "method": "AutoMATES-MESA-grounding",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "eqn_number": 1
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "eqn_source": "S_{t+1} = S_t - \\beta S_t I_t"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "c95f228b-a9cf-434c-9fab-4cb85d2f935c",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda beta,s_c,i_c,gamma:((((beta*s_c)*i_c)-(gamma*i_c))+i_c)",
+      "metadata": [
+        {
+          "type": "textual-equation-definition",
+          "provenance": {
+            "method": "AutoMATES-MESA-grounding",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "eqn_number": 2
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "eqn_source": "I_{t+1} = I_t + \\beta S_t I_t - \\gamma I_t"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "73034a85-8303-49d1-85b4-e88b06f14260",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda gamma,i_c,r_c:((gamma*i_c)+r_c)",
+      "metadata": [
+        {
+          "type": "textual-equation-definition",
+          "provenance": {
+            "method": "AutoMATES-MESA-grounding",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "document_source": "2020-08-04-CHIME-documentation.pdf",
+                "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "eqn_number": 3
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "eqn_source": "R_{t+1} = R_t + \\gamma I_t"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "uid": "b522930e-8a34-4eed-88b7-9970f1182653",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda n,s_n,i_n,r_n:(n/((s_n+i_n)+r_n))"
+    },
+    {
+      "uid": "4e9f2344-29a6-4457-93cf-da8589382e3d",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda s_n,scale:(s_n*scale)"
+    },
+    {
+      "uid": "5d2d286c-f555-4cf5-8094-d8105ea50c2e",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda i_n,scale:(i_n*scale)"
+    },
+    {
+      "uid": "df05d57d-ff1d-4a9e-849d-755c2671df17",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda r_n,scale:(r_n*scale)"
+    },
+    {
+      "uid": "662883b9-257d-43ac-9cef-d7c8c3cbd007",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda s_c,i_c,r_c:(s_c,i_c,r_c)"
+    },
+    {
+      "uid": "ab15fdee-ecdb-4a26-b713-225852fa82cf",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda d:(d+1)"
+    },
+    {
+      "uid": "8300abd8-c84b-4ead-afe4-221b6ff55e03",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda d_idx:d_idx + 1"
+    },
+    {
+      "uid": "43a98885-9a8a-4edf-9cf9-b51955f55d81",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda t,s,i,r,idx,s_c,i_c,r_c,d:(t,s,i,r,idx,s_c,i_c,r_c,d)"
+    },
+    {
+      "uid": "35f75c26-37b1-4565-a64c-08866b0f8a99",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda p_idx:p_idx + 1"
+    },
+    {
+      "uid": "516da296-8d53-4873-af51-8df0b420d2f4",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda beta,n_d,t,s,i,r,idx,s_c,i_c,r_c,d:(beta,n_d,t,s,i,r,idx,s_c,i_c,r_c,d)"
+    },
+    {
+      "uid": "543abbb7-a4bb-4754-93da-84f1309da4c8",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda t,idx,d:(t.__setitem__(idx,int(d)),t)[1]"
+    },
+    {
+      "uid": "e8c0f14f-35d0-48e1-826b-b75fd04b53fb",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda s,idx,s_c:(s.__setitem__(idx,Float32(s_c)),s)[1]"
+    },
+    {
+      "uid": "ba4fd9b1-785f-4d31-b431-8e5e2495936d",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda i,idx,i_c:(i.__setitem__(idx,Float32(i_c)),i)[1]"
+    },
+    {
+      "uid": "cafadb7a-b8c9-405a-b2c5-c06a2bd0f6ab",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda r,idx,r_c:(r.__setitem__(idx,Float32(r_c)),r)[1]"
+    },
+    {
+      "uid": "d31a8b2b-32bf-48d6-b308-11ba31d551d6",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda n_t,i,r,ei:(n_t,i,r,ei)"
+    },
+    {
+      "uid": "c3dad74c-58f5-4837-acb5-35845b83c79c",
+      "reference": "",
+      "type": "LITERAL",
+      "lambda": "lambda :1"
+    },
+    {
+      "uid": "65a6016a-dc71-4ced-9ac3-2127aa630b98",
+      "reference": "",
+      "type": "CONDITION",
+      "lambda": "lambda t_idx,n_t:0 <= t_idx < n_t+1"
+    },
+    {
+      "uid": "5c336eba-cca9-44c6-8df2-50a85bf31429",
+      "reference": "",
+      "type": "DECISION",
+      "lambda": "lambda IF_0_0:(not IF_0_0)"
+    },
+    {
+      "uid": "ae745604-3ccf-4bb3-8036-f55e8e3c681e",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda t_idx:(i[t_idx]+r[t_idx])"
+    },
+    {
+      "uid": "329d2aa8-fef6-49fc-8df2-77f2de013036",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda ei,t_idx,total_inf:(ei.__setitem__(t_idx,Float32(total_inf)),ei)[1]"
+    },
+    {
+      "uid": "652df076-0e03-44be-b987-5c17239650bd",
+      "reference": "",
+      "type": "ASSIGN",
+      "lambda": "lambda t_idx:t_idx + 1"
+    },
+    {
+      "uid": "1d2a5095-c1e7-45be-9aa2-e4e2a5dd380f",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda total_inf,ei:(total_inf,ei)"
+    },
+    {
+      "uid": "62114f74-1d04-4fed-9f28-46084a13b72b",
+      "reference": "",
+      "type": "PASS",
+      "lambda": "lambda s_c,i_c,r_c,t,s,ei:(s_c,i_c,r_c,t,s,ei)"
+    }
+  ],
+  "subgraphs": [
+    {
+      "namespace": "CHIME-SIR",
+      "scope": "get_growth_rate",
+      "basename": "get_growth_rate.IF_0",
+      "occurrence_num": 0,
+      "type": "CondContainer",
+      "nodes": [
+        "94869593-f1e7-47f3-b83a-94e75d30d661",
+        "efdff1a1-3eae-4735-9075-7f8a77cae7ff",
+        "d7b7824f-1572-4680-9a37-3437f9212eac",
+        "9d85aa4e-2a80-42a9-a8fb-33d10932f2ac",
+        "9fd2a794-a4fc-4262-9e40-a646c17c4dcb",
+        "a23196a5-6af7-4ddb-8908-f23b283932aa",
+        "2c33154b-2641-4269-a10f-5417853b3940",
+        "c1ecdfd8-ff8c-41c4-8ef7-00f43b9a6e96",
+        "9c34f23b-9a24-4c1c-bd2e-f3d55c43d9c2",
+        "4a3659ff-9c44-4352-9d3e-f592b2597b5a",
+        "5712e21d-c0a7-40ec-b7ad-772ff70756a1"
+      ],
+      "metadata": [
+        {
+          "type": "container-code-role",
+          "provenance": {
+            "method": "AutoMATES-code-role-decision-tree",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "source_file": "CHIME_SIR.for",
+                "source_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "lineno": [
+                  15,
+                  19
+                ]
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "code_role": "model"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "namespace": "CHIME-SIR",
+      "scope": "@global",
+      "basename": "get_growth_rate",
+      "occurrence_num": 0,
+      "type": "FuncContainer",
+      "nodes": [
+        "8b98802b-9192-46e2-9ee5-e403fff0e038",
+        "cdceee77-8f28-4fe7-ba80-c76d88fd078d",
+        "88c053c8-7bc5-4938-b069-31cf796d6c28",
+        "cd366c1d-d09c-4cc3-bb59-85e1866121d9"
+      ],
+      "metadata": [
+        {
+          "type": "container-code-role",
+          "provenance": {
+            "method": "AutoMATES-code-role-decision-tree",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "source_file": "CHIME_SIR.for",
+                "source_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "lineno": [
+                  12,
+                  20
+                ]
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "code_role": "model"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "namespace": "CHIME-SIR",
+      "scope": "main",
+      "basename": "main.loop$3",
+      "occurrence_num": 0,
+      "type": "LoopContainer",
+      "nodes": [
+        "3fa817cc-a588-4c39-88c2-7d245fcdc479",
+        "ed1e6eb4-948b-46a2-81f0-a3759086815d",
+        "c8123c6b-b5e9-44a0-bbb5-b5b2b552e124",
+        "645cffa6-0787-4703-8229-5e2ebca1d3b9",
+        "2d4e8312-c9f0-4882-9daf-868b3998d5d3",
+        "318deeac-a893-4aa0-9206-590ed3f23444",
+        "97208f76-1dc4-456c-ae92-98d6e330d383",
+        "81ba9e8a-a65c-4512-84dc-162d4d3635d4",
+        "8c36ed79-0f20-425d-884b-18c69974d9ea",
+        "b1b80413-b1f7-4605-a1c3-e84955145082",
+        "b3850647-7917-4001-add3-924f11f9ed1d",
+        "7e8e4474-a047-4d7a-9798-bea8361136b5",
+        "288004b3-0fd8-48f4-b4ed-9d413cc59d05",
+        "76989620-0fd4-432b-a6be-c92f6f7c0ee8",
+        "5f519c2c-8f7d-4ea9-9d3c-e73003dec650",
+        "4f8f229a-aab4-4db4-844b-64f68920dfad",
+        "b11d501d-78d1-4f3a-b0c9-ba2591007dac",
+        "d87cb1b0-17bf-406d-b0ea-cfa61f09bf47",
+        "f3f0b634-ce71-423a-a2e0-b8673498d384",
+        "aa5a9672-d3f7-4c4a-95e2-d0a1a77197d0",
+        "5475dccc-499a-43a8-b5d0-5b27182ac6b3",
+        "137f74ee-2c3a-4698-a6a8-79c17fd24dad",
+        "07f128fd-3440-4dbb-a5fd-42018b1368d8",
+        "4b7ac628-dc3e-4ec1-91fd-1aebe2c4204d",
+        "c80a1bf8-79fc-4d08-b859-30dd3c90fde8",
+        "69bd6a44-590e-4e75-84ba-7b304ab5ab0e",
+        "4a8eb129-c503-4592-8cc2-e45b93bd8c26"
+      ],
+      "metadata": [
+        {
+          "type": "container-code-role",
+          "provenance": {
+            "method": "AutoMATES-code-role-decision-tree",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "source_file": "CHIME_SIR.for",
+                "source_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "lineno": [
+                  88,
+                  96
+                ]
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "code_role": "solver"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "namespace": "CHIME-SIR",
+      "scope": "@global",
+      "basename": "get_beta",
+      "occurrence_num": 0,
+      "type": "FuncContainer",
+      "nodes": [
+        "7af5521c-36a2-46a0-9822-db486a72d70c",
+        "26f0ec12-51a6-42e5-a5fd-afdad6d21f4e",
+        "4e21d684-87c9-42e0-ac32-ec00fe5f1cc5",
+        "77373021-7c62-46e3-809f-adc795c1e054",
+        "66b30b04-2a4d-454d-ae9c-7aa495781b0b",
+        "8529de6d-f89c-4380-afb5-f3e08827a25d",
+        "1df47f33-858f-45be-b486-5db095e460cd",
+        "5e36e970-b6b0-4589-9daa-7174fbfe31b8",
+        "a9840a0e-8a1a-4eda-a9ca-7746f23d3677",
+        "74fc64a0-609b-4cc8-badd-ef7466617df9",
+        "4aa6aa7d-31bc-4c43-9462-087640c2bc3f",
+        "662dd90b-d875-4984-a24d-ffab92a7f168"
+      ],
+      "metadata": [
+        {
+          "type": "container-code-role",
+          "provenance": {
+            "method": "AutoMATES-code-role-decision-tree",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "source_file": "CHIME_SIR.for",
+                "source_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "lineno": [
+                  1,
+                  10
+                ]
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "code_role": "model"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "namespace": "CHIME-SIR",
+      "scope": "@global",
+      "basename": "main",
+      "occurrence_num": 0,
+      "type": "FuncContainer",
+      "nodes": [
+        "abc99848-b32f-4dec-8087-9c06975ec8b2",
+        "e16f4853-8703-400e-bd61-e9fcf1850987",
+        "a36bb062-ab05-453c-91ce-58ba0d780a44",
+        "d42860e1-70b7-4c67-b250-0bc4420e38ba",
+        "d5a9a73c-eae6-41df-8afe-4d712bc4f6d8",
+        "f71583e9-5480-48a6-8783-f6b6c42f1687",
+        "9b478340-adaa-4f22-b53a-02278fc144b0",
+        "1b9b8be6-58d3-4182-80ad-d0e3e657102c",
+        "68859935-160c-4675-9b04-9c075f43ef2d",
+        "2ed9beba-8428-480c-820d-7125e74fee44",
+        "2fe44e04-9e70-4ee2-9e7d-03af62be149d",
+        "73b1cf1d-cd27-4206-be8f-fd334065b36c",
+        "ad4ae72d-99be-4f5f-b041-8b1006fb81a2",
+        "49cf82bb-7bf8-4590-8ab0-ae483390f39f",
+        "45d4ff8a-a2f9-4d5d-ad58-0eed7fa06633",
+        "c74247b4-0d48-4f79-8811-69d9c7596e7f",
+        "535e47b0-da8c-4e06-b8fa-ef9bc789668a",
+        "9828d3f2-27b0-4613-8ed6-75750b31b04f",
+        "dc340ffe-0845-43a1-9b74-d3877729821e",
+        "2450dcb1-95d1-408a-bded-c081a7924081",
+        "2c65b5fe-b99b-40ba-8d84-cf20ee7b950b",
+        "40b5f6a1-f63a-411a-a00d-6446d3edd093",
+        "e450e561-0b03-4f0b-a320-93ebb666e5af",
+        "564b7488-dbba-40ce-8375-b78747fd066a",
+        "2c7f02c3-ee72-4136-b797-bfbe93923575",
+        "d583e766-210c-4d58-9b73-a00b528bf168",
+        "9fbfff8a-53e1-4c39-827d-02ac48b7182e",
+        "08c1d171-6d79-4fb3-9183-326d070f7126",
+        "a490349e-5c2e-4ebc-a3d7-10c1f532879f",
+        "3ca29049-d9c6-459e-be33-5912e8a1433b",
+        "2a6b8205-7951-48a3-8122-0ddd7b59928e",
+        "5eadedee-6516-46fa-a69e-ef856299c58f",
+        "0b99d844-4d8e-4535-b7c9-bc7fcbd9156e",
+        "7ef314e2-e4ab-4e22-b154-70eafbe8d0b8",
+        "da36675a-564c-4e8e-a75e-d55a5ce685af",
+        "bb92795b-a907-4e3e-bb91-9d1c93b52856",
+        "1f38c235-101b-4fa8-a880-3dd17382c1f9",
+        "024f553a-5070-482f-a94f-82b97dbdd88d",
+        "1e44326d-bb72-4e58-8a48-a967b985395e",
+        "a707eb56-36f0-4188-ab13-64f1ad59b76c",
+        "43e74999-7971-4bd4-9761-94f223297b35",
+        "b7e984cf-59c5-4973-bf5a-d5426dcd9cc1",
+        "bced30b5-040a-495f-a682-858af8112cb7",
+        "6d225b3e-9e4c-496a-a767-fea5f9eb1f30",
+        "811a7445-146f-4565-b3e5-fdaaab389f52",
+        "b81a935b-1791-46f6-8a34-4b30ad296db9"
+      ],
+      "metadata": [
+        {
+          "type": "container-code-role",
+          "provenance": {
+            "method": "AutoMATES-code-role-decision-tree",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "source_file": "CHIME_SIR.for",
+                "source_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "lineno": [
+                  71,
+                  103
+                ]
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "code_role": "solver"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "namespace": "CHIME-SIR",
+      "scope": "@global",
+      "basename": "sir",
+      "occurrence_num": 0,
+      "type": "FuncContainer",
+      "nodes": [
+        "620874cf-3a25-43e1-9848-dde986bcad1f",
+        "519bfcde-096d-47ad-87ae-310119f22d0a",
+        "49368978-ad80-42ea-92b4-84ded455ed4c",
+        "4d040f49-3f3f-4446-94f3-a0bf368e9ac7",
+        "aa94c3cc-5193-4122-b0ed-e83faefc214d",
+        "33047fc9-c24e-46b1-8b1d-4b0c9fb8fd22",
+        "a56e2426-c60e-45ca-83a1-58c5cf94ecf3",
+        "ef3ed63b-1bbc-4de7-a9d7-457b91e1a30d",
+        "a414982f-51fb-4d41-abf8-b736e9fc6ac1",
+        "c95f228b-a9cf-434c-9fab-4cb85d2f935c",
+        "c9836fbe-50e3-4d5e-9e45-a0f2001c4096",
+        "73034a85-8303-49d1-85b4-e88b06f14260",
+        "2c37afb7-22c5-4011-9ed7-c8ac63a3ca1f",
+        "b522930e-8a34-4eed-88b7-9970f1182653",
+        "9f453636-78a5-4e8e-ae33-0025730e4f4d",
+        "4e9f2344-29a6-4457-93cf-da8589382e3d",
+        "9d2259db-62cc-444f-a4d4-03f5769ba39b",
+        "5d2d286c-f555-4cf5-8094-d8105ea50c2e",
+        "c1d4c8d3-be5a-486d-bc1c-d2ef4ee07f33",
+        "df05d57d-ff1d-4a9e-849d-755c2671df17",
+        "0bab2498-2677-48a7-8a7f-9b84c64b982b",
+        "662883b9-257d-43ac-9cef-d7c8c3cbd007"
+      ],
+      "metadata": [
+        {
+          "type": "container-code-role",
+          "provenance": {
+            "method": "AutoMATES-code-role-decision-tree",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "source_file": "CHIME_SIR.for",
+                "source_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "lineno": [
+                  22,
+                  33
+                ]
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "code_role": "model"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "namespace": "CHIME-SIR",
+      "scope": "sim_sir.loop$0",
+      "basename": "sim_sir.loop$0.loop$1",
+      "occurrence_num": 0,
+      "type": "LoopContainer",
+      "nodes": [
+        "e1d3a02d-12f9-4b77-b35c-80695a219a5e",
+        "bb9e5da6-ace5-404a-a844-065dea7e6f86",
+        "d7b9b167-1291-4793-be06-e67edad8b426",
+        "42b978ce-2cfc-41b5-97ab-696c62e0c20d",
+        "896a0321-6092-4a31-92f5-5e0ab93ed6e4",
+        "65eaa365-1ec4-459b-a29c-38564930a933",
+        "b2a9f511-b7ec-48c5-9b6e-183821bf39c3",
+        "2be771bd-5d59-460d-aa98-c036d6cdba13",
+        "5872d030-b1a5-493a-a62a-17629ef19d32",
+        "57ce2e47-d9df-41a6-a9ec-32ec399f6d2a",
+        "ec9cb4d7-16da-4ef4-91ff-52fcb95100f3",
+        "d5d94819-a4ed-4c9a-bffc-ec4f79367e2a",
+        "4e3a20d3-328c-41c9-a19d-a5d857f0192b",
+        "3817204d-63da-4879-9127-77cbe051dde4",
+        "f1facddd-9dfa-4287-8f3a-a14e728c6952",
+        "687170e5-9d49-4df8-a93d-e1b6a2de92b9",
+        "b93dec5e-fd4d-4d6f-ac07-702e39370b6f",
+        "7f35d8e5-2738-43f1-af48-3ba0235be4ee",
+        "01df41bc-b1c7-4a3d-9840-35358484e969",
+        "1a0afe6e-fc51-484d-83c7-1880f1107d86",
+        "81ee5960-2e7c-4e1f-b9be-f5c589bae421",
+        "cb8aeaa9-cfd7-447f-ad19-0afd81e0236c",
+        "44a71cc0-a8be-4ee7-aa74-e15d022aaf9d",
+        "9d71ba94-651d-4152-a36c-1b6f9f4a3e13",
+        "2260b598-8cc1-423d-adab-049d97c98982",
+        "18921538-c0c4-4156-9c0b-e8064bf59e97",
+        "3e1895ed-c120-4b3a-8e72-1c359165759e",
+        "91ae12d7-ea6f-4edc-8f67-7db6d26493c6",
+        "98062a4c-d095-47ec-9fa1-1f4a7263d858",
+        "f12501b7-3756-4632-861a-133b27ebbb91",
+        "f133b072-7eb7-4ee6-99b1-e19b1e9e7e52",
+        "69d1fc83-c08c-4299-86b7-2678673c920f",
+        "ace66e7c-ca54-4c8a-9d66-33b8fda432a1",
+        "ab15fdee-ecdb-4a26-b713-225852fa82cf",
+        "1ee98465-a048-4be1-873d-c4e75707b89a",
+        "8300abd8-c84b-4ead-afe4-221b6ff55e03",
+        "58dfb090-40f2-4de5-ac35-8353d279ae25",
+        "43a98885-9a8a-4edf-9cf9-b51955f55d81"
+      ],
+      "metadata": [
+        {
+          "type": "container-code-role",
+          "provenance": {
+            "method": "AutoMATES-code-role-decision-tree",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "source_file": "CHIME_SIR.for",
+                "source_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "lineno": [
+                  49,
+                  57
+                ]
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "code_role": "solver"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "namespace": "CHIME-SIR",
+      "scope": "sim_sir",
+      "basename": "sim_sir.loop$0",
+      "occurrence_num": 0,
+      "type": "LoopContainer",
+      "nodes": [
+        "7ce1948c-b271-42d8-9b4b-29df3da5fdde",
+        "b3b988de-4d6d-4c2b-8645-3710f7b99f43",
+        "91fe43d5-c0de-4a0e-92cd-a07bd357673e",
+        "cbd18415-e252-4963-9cf7-fd2ebe220724",
+        "0e1f1d8c-2f80-4aa1-853c-8d9b8a03c2aa",
+        "61cfc557-2dc2-4d80-b975-8df54fec2842",
+        "4f34fea8-e411-4d2b-9db1-66d2837d519a",
+        "5e261778-eabb-46b5-81e3-3ada3e2e3333",
+        "15511022-c802-4131-8499-b919c0c32ea4",
+        "3320e5cb-28d3-4f73-b037-db28f7580524",
+        "b59b0c0d-f12b-490e-b2e6-d456af444cb0",
+        "a42c0857-c803-44d8-be96-dd011b7383d9",
+        "5d895216-1e4b-4e05-ae13-e5cbc7803b5f",
+        "58e73594-51e8-4058-9352-affefa4ece2d",
+        "d8cfe47f-ab07-4e25-8e87-2a1ebfca0aec",
+        "de4cb279-feee-4983-b07b-65aaf67bdde5",
+        "a4f8346f-7f49-426c-8bdf-c0b9e70a8a83",
+        "c41b7bef-cd86-499b-8bcc-59952b5fa589",
+        "7af6c674-1b4c-4385-b547-4e1fe5c0d999",
+        "a24191e0-6444-4167-9bed-fa60f6437c99",
+        "bf0baec9-9b56-468c-9fe1-7d0f54b370e1",
+        "a68c63e1-61de-472e-9927-415ca60fead2",
+        "b33a5e7a-35f3-4ec0-a9f4-b4b57e4bd524",
+        "a63fc6f5-8ff3-4412-ba16-4b219635a044",
+        "b3419d5e-3262-4ea3-99a5-9c9b3624eb92",
+        "da93c902-5ee9-4865-b645-cf6a83134675",
+        "639d9f18-997d-475c-ac8d-be29a4d96306",
+        "607087b2-2719-4b9f-92a3-5edf6b2f0602",
+        "38e9190e-8a0d-4c5d-bab5-a3f2a6e84e35",
+        "90b49c27-867a-4cc2-a5fb-7b2da9cacba3",
+        "bea9f869-3336-45ad-ab0c-054f3ad0c887",
+        "e6fcc426-84d6-414b-9e31-beda18a48bd0",
+        "664ca43a-518f-4a28-a5b7-0dc4d4368064",
+        "556f5d65-8158-497b-9fae-54621630e1ed",
+        "35f75c26-37b1-4565-a64c-08866b0f8a99",
+        "218640a0-69c8-443e-85eb-9472559f6bfc",
+        "516da296-8d53-4873-af51-8df0b420d2f4"
+      ],
+      "metadata": [
+        {
+          "type": "container-code-role",
+          "provenance": {
+            "method": "AutoMATES-code-role-decision-tree",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "source_file": "CHIME_SIR.for",
+                "source_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "lineno": [
+                  46,
+                  58
+                ]
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "code_role": "solver"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "namespace": "CHIME-SIR",
+      "scope": "@global",
+      "basename": "sim_sir",
+      "occurrence_num": 0,
+      "type": "FuncContainer",
+      "nodes": [
+        "f0ca40d1-b8f2-4d10-81c3-08cf796d9acd",
+        "8b688482-ef36-42d0-9972-69ce2ce823c7",
+        "2e91ce98-3f1d-4b1b-8d39-796420e4f3ac",
+        "db6f039d-c140-4949-bbc9-3e92ca2fbdbf",
+        "616dcb14-66cd-4e57-9730-a40eb9bf3094",
+        "524c7d9e-a1c4-4fdd-a093-66b729a58b76",
+        "725dd80c-e5c8-46ab-8df1-8f8fa9f3515a",
+        "6890333e-a2f6-453d-b0c4-229bdf78bbc5",
+        "475fca7c-194c-4abb-b19b-0aa28a0bb5d3",
+        "9afbb5fe-1aae-4603-bf84-48744add0b78",
+        "c203e554-3950-4bcf-9f79-8f7a8baab2d4",
+        "afe4e5df-8a9a-4659-9fb8-65505c24e8f0",
+        "cecf8f13-2660-453f-8518-ca5270681ef3",
+        "7c063f20-17b2-4ad8-bb33-89028a4b881b",
+        "f20e0cae-4974-425e-8371-c3a47ee8967b",
+        "bf22b186-d43f-4a77-a358-893d68039b9b",
+        "64533316-9141-4cee-b5bb-fbc0f75ecdb4",
+        "be14ad46-b28d-4caf-934f-b70a7c2e5629",
+        "f679b9f5-2e1a-4ffb-8038-79de515dbe33",
+        "83c76730-dd3d-4e8f-af7c-d099d05cf69a",
+        "b1f3427b-cf91-45b3-8951-0b25daad43b7",
+        "0a1d3d15-9f1f-4d1b-8550-3db1106ba83c",
+        "e0660863-4c0b-4b9c-bfeb-7097d9f280f2",
+        "8d7ef690-ed75-4eb3-913e-2cfb01ecaa1d",
+        "c057b28d-44e3-40c2-a56e-a96e4ff318b8",
+        "0ebfc29c-65d9-415b-a9f3-b0c3e2899cf3",
+        "64075a13-2d4e-4ac5-82cf-9688fa40bc29",
+        "4d78fa51-ceea-4688-8665-beed08afe956",
+        "5e582052-38cb-4edc-bc79-e6a54d0b9eb5",
+        "5c5fb7ff-5c47-4e96-8d92-745e7b0d743b",
+        "d0d9baff-a08a-40d4-b9c7-5a29cfadf510",
+        "21be2bd9-84d9-4a4c-bdb2-ecc9fed01152",
+        "543abbb7-a4bb-4754-93da-84f1309da4c8",
+        "102cc008-8e77-45dd-9707-d421bcebc261",
+        "e8c0f14f-35d0-48e1-826b-b75fd04b53fb",
+        "368c1c8f-25c3-495d-aaff-7af49828ca84",
+        "ba4fd9b1-785f-4d31-b431-8e5e2495936d",
+        "6ed4fff0-3960-4778-ac2f-a5cc679986ff",
+        "cafadb7a-b8c9-405a-b2c5-c06a2bd0f6ab",
+        "b7c13569-409e-4cbf-a78c-32152771159e",
+        "79d87234-0bc4-44bb-a0b2-68f226f398a6",
+        "f1c9038f-8052-41d0-9a2b-3d362e779f2f",
+        "62114f74-1d04-4fed-9f28-46084a13b72b"
+      ],
+      "metadata": [
+        {
+          "type": "container-code-role",
+          "provenance": {
+            "method": "AutoMATES-code-role-decision-tree",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "source_file": "CHIME_SIR.for",
+                "source_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "lineno": [
+                  35,
+                  69
+                ]
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "code_role": "solver"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "namespace": "CHIME-SIR",
+      "scope": "sim_sir",
+      "basename": "sim_sir.loop$2",
+      "occurrence_num": 0,
+      "type": "LoopContainer",
+      "nodes": [
+        "d31a8b2b-32bf-48d6-b308-11ba31d551d6",
+        "1909a1e5-8631-4256-8258-4c22b211f782",
+        "df5028b5-d793-460e-b9c6-97e9d302313d",
+        "75553373-49fa-44eb-bd7c-22a9994fe9d6",
+        "fc74600a-0cc7-49d6-abb4-5f8163bdbdd7",
+        "c3dad74c-58f5-4837-acb5-35845b83c79c",
+        "abcfb814-b5c0-4e96-b243-293cf58b613e",
+        "65a6016a-dc71-4ced-9ac3-2127aa630b98",
+        "d18ae7b0-629b-447f-8ae7-4ff928ea38f9",
+        "5c336eba-cca9-44c6-8df2-50a85bf31429",
+        "a13cbb08-49d5-4994-b4b6-2cded54c9778",
+        "ae745604-3ccf-4bb3-8036-f55e8e3c681e",
+        "de669f1f-ffda-408e-8d91-50923636914c",
+        "329d2aa8-fef6-49fc-8df2-77f2de013036",
+        "23015ddc-64b3-4edd-a6c2-6c365e341775",
+        "652df076-0e03-44be-b987-5c17239650bd",
+        "91d0d404-96f7-4323-8d8b-30055de34484",
+        "1d2a5095-c1e7-45be-9aa2-e4e2a5dd380f"
+      ],
+      "metadata": [
+        {
+          "type": "container-code-role",
+          "provenance": {
+            "method": "AutoMATES-code-role-decision-tree",
+            "timestamp": "2020-09-24::15:23:17",
+            "sources": [
+              {
+                "source_file": "CHIME_SIR.for",
+                "source_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+                "lineno": [
+                  65,
+                  68
+                ]
+              }
+            ]
+          },
+          "attributes": [
+            {
+              "code_role": "solver"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": [
+    {
+      "type": "model-identifiers",
+      "provenance": {
+        "method": "AutoMATES-network-analysis",
+        "timestamp": "2020-09-24::15:23:17"
+      },
+      "attributes": [
+        {
+          "inputs": [
+            "4f8f229a-aab4-4db4-844b-64f68920dfad",
+            "49cf82bb-7bf8-4590-8ab0-ae483390f39f",
+            "73b1cf1d-cd27-4206-be8f-fd334065b36c",
+            "a23196a5-6af7-4ddb-8908-f23b283932aa",
+            "64533316-9141-4cee-b5bb-fbc0f75ecdb4",
+            "3ca29049-d9c6-459e-be33-5912e8a1433b",
+            "5eadedee-6516-46fa-a69e-ef856299c58f",
+            "7ef314e2-e4ab-4e22-b154-70eafbe8d0b8",
+            "1df47f33-858f-45be-b486-5db095e460cd"
+          ],
+          "outputs": [
+            "9d2259db-62cc-444f-a4d4-03f5769ba39b",
+            "c1d4c8d3-be5a-486d-bc1c-d2ef4ee07f33",
+            "0bab2498-2677-48a7-8a7f-9b84c64b982b"
+          ],
+          "parameters": [
+            "4f8f229a-aab4-4db4-844b-64f68920dfad",
+            "49cf82bb-7bf8-4590-8ab0-ae483390f39f",
+            "73b1cf1d-cd27-4206-be8f-fd334065b36c",
+            "a23196a5-6af7-4ddb-8908-f23b283932aa",
+            "64533316-9141-4cee-b5bb-fbc0f75ecdb4",
+            "1df47f33-858f-45be-b486-5db095e460cd"
+          ],
+          "model_variables": [
+            "4a3659ff-9c44-4352-9d3e-f592b2597b5a",
+            "4aa6aa7d-31bc-4c43-9462-087640c2bc3f",
+            "a414982f-51fb-4d41-abf8-b736e9fc6ac1",
+            "c9836fbe-50e3-4d5e-9e45-a0f2001c4096",
+            "2c37afb7-22c5-4011-9ed7-c8ac63a3ca1f",
+            "9d2259db-62cc-444f-a4d4-03f5769ba39b",
+            "c1d4c8d3-be5a-486d-bc1c-d2ef4ee07f33",
+            "0bab2498-2677-48a7-8a7f-9b84c64b982b"
+          ],
+          "initial_conditions": [
+            "3ca29049-d9c6-459e-be33-5912e8a1433b",
+            "5eadedee-6516-46fa-a69e-ef856299c58f",
+            "7ef314e2-e4ab-4e22-b154-70eafbe8d0b8"
+          ],
+          "internal_variables": [
+            "c1ecdfd8-ff8c-41c4-8ef7-00f43b9a6e96",
+            "9d85aa4e-2a80-42a9-a8fb-33d10932f2ac",
+            "a9840a0e-8a1a-4eda-a9ca-7746f23d3677",
+            "9f453636-78a5-4e8e-ae33-0025730e4f4d"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "GrFN-identifier",
+      "provenance": {
+        "method": "AutoMATES-model-identification",
+        "timestamp": "2020-09-24::15:23:17",
+        "sources": [
+          {
+            "document_source": "2020-08-04-CHIME-documentation.pdf",
+            "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+            "text_location": "sent0_Interval(2, 7)"
+          }
+        ]
+      },
+      "attributes": [
+        {
+          "model_name": "COVID-19 Hospital Impact Model for Epidemics",
+          "model_description": "designed to assist hospitals and public health officials understand hospital capacity needs as they relate to the COVID-19 pandemic"
+        }
+      ]
+    },
+    {
+      "type": "GrFN-model-authors",
+      "provenance": {
+        "method": "AutoMATES-author-identification",
+        "timestamp": "2020-09-24::15:23:17",
+        "sources": [
+          {
+            "document_source": "2020-08-04-CHIME-documentation.pdf",
+            "document_location": "ASKE-E/integration-wg/CHIME-SIR-model/",
+            "text_location": "sent3_Interval(9, 29)"
+          }
+        ]
+      },
+      "attributes": [
+        {
+          "authors": [
+            {
+              "name": " Michael Z. Levy",
+              "title": "PhD, Associate Professor of Epidemiology",
+              "institution": "Department of Biostatistics, Epidemiology and Informatics at the Perelman School of Medicine"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -5,16 +5,28 @@ def formatGraph(data):
     nodes = []
     edges = []
     groups = []
+    modelMetadata = {}
 
     for key,value in data.items():
+        if key == 'metadata':
+            modelMetadata = value
         if key == 'variables':
             for item in value: 
                 splitted_identifier = item['identifier'].split('::')
-                node = { 'id': item['uid'], 'concept': item['identifier'], 'label': splitted_identifier[len(splitted_identifier)-2], 'type': 'variable', 'metadata': splitted_identifier[len(splitted_identifier)-1]  } 
+                if 'metadata' in item:
+                    metadata = item['metadata']
+                else:
+                    metadata = {}
+                
+                node = { 'id': item['uid'], 'concept': item['identifier'], 'label': splitted_identifier[len(splitted_identifier)-2], 'type': 'variable', 'metadata': metadata } 
                 nodes.append(node)
         if key == 'functions':
-            for item in value:  
-                node = { 'id': item['uid'], 'concept': item['type'], 'label': item['type'],  'type': 'function'  }
+            for item in value: 
+                if 'metadata' in item:
+                    metadata = item['metadata']
+                else:
+                    metadata = {} 
+                node = { 'id': item['uid'], 'concept': item['type'], 'label': item['type'],  'type': 'function', 'metadata': metadata  }
                 nodes.append(node)
         if key == 'hyper_edges':
             for item in value: 
@@ -29,11 +41,16 @@ def formatGraph(data):
 
         if key == 'subgraphs':
             for item in value: 
-                group = { 'id': item['basename'], 'members': item['nodes'] }
+                if 'metadata' in item:
+                    metadata = item['metadata']
+                else:
+                    metadata = {}
+                group = { 'id': item['basename'], 'members': item['nodes'], 'metadata': metadata }
                 groups.append(group) 
 
 
     return {
+        'metadata': modelMetadata,
         'groups': groups,
         'nodes': nodes,
         'edges': edges

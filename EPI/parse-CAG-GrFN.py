@@ -4,22 +4,41 @@ from argparse import ArgumentParser
 def formatGraph(data): 
     nodes = []
     edges = []
+    groups = []
+    modelMetadata = {}
 
     for key,value in data.items():
+        if key == 'metadata':
+            modelMetadata = value
         if key == 'variables':
             for item in value:  
                 splitted_identifier = item['identifier'].split('::')
-                node = { 'id': item['uid'], 'concept': item['identifier'], 'label': splitted_identifier[len(splitted_identifier)-2], 'metadata': splitted_identifier[len(splitted_identifier)-1]  }
+                if 'metadata' in item:
+                    metadata = item['metadata']
+                else:
+                    metadata = {}
+
+                node = { 'id': item['uid'], 'concept': item['identifier'], 'label': splitted_identifier[len(splitted_identifier)-2], 'metadata': metadata  }
                 nodes.append(node)
         if key == 'edges':
             for item in value: 
                 edges.append({'source': item[0], 'target': item[1]})
+        if key == 'subgraphs':
+            for item in value: 
+                if 'metadata' in item:
+                    metadata = item['metadata']
+                else:
+                    metadata = {}
+                group = { 'id': item['basename'], 'members': item['nodes'], 'metadata': metadata }
+                groups.append(group) 
                 
 
 
     return {
+        'metadata': modelMetadata,
         'nodes': nodes,
-        'edges': edges
+        'edges': edges,
+        'groups': groups
     }
 
 if __name__ == '__main__':
