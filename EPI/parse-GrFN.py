@@ -9,7 +9,7 @@ def formatGraph(data):
 
     for key,value in data.items():
         if key == 'metadata':
-            modelMetadata = value
+            modelMetadata = { 'name': value[1]['attributes'][0]['model_name'], 'description': value[1]['attributes'][0]['model_description'], 'authors': value[2]['attributes'][0], 'sources': value[1]['provenance']['sources'][0] }
         if key == 'variables':
             for item in value: 
                 splitted_identifier = item['identifier'].split('::')
