@@ -1,0 +1,6 @@
+BIO/data/**/*.csv filter=lfs diff=lfs merge=lfs -text
+BIO/data/**/*.json filter=lfs diff=lfs merge=lfs -text
+BIO/data/**/*.jsonl filter=lfs diff=lfs merge=lfs -text
+EPI/**/*.csv filter=lfs diff=lfs merge=lfs -text
+EPI/**/*.json filter=lfs diff=lfs merge=lfs -text
+EPI/**/*.jsonl filter=lfs diff=lfs merge=lfs -text
