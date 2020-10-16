@@ -126,6 +126,11 @@ __ = [print(f"  * {i} ({j}, {j / len(nodes) * 100:3.1f}%)") for i, j in zip(z, k
 #   * CO (1, 0.0%)
 #   * RGD (1, 0.0%)
 
+# %%[markdown]
+# Note from Ben Gyori: 
+# The Indra BioOntology has an explicit priority order amongst the namespaces. 
+# This order is currently `[‘FPLX’, ‘UPPRO’, ‘HGNC’, ‘UP’, ‘CHEBI’, ‘GO’, ‘MESH’, ‘MIRBASE’, ‘DOID’, ‘HP’, ‘EFO’]`.
+
 # %%
 # Filter by ontology
 
