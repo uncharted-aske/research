@@ -259,10 +259,4 @@ with open('./dist/nodeLayoutClustering_sphCart.jsonl', 'w') as x:
 with open('./dist/nodeLayoutClustering_sphCart.pkl', 'wb') as x:
     pickle.dump(outputNodes, x)
 
-outputClusters = [
-    {
-        'clusterID': int(i),
-        'clusterLabel': c
-    }
-    for i, c in enumerate(clusterLabel)
-]
+# %%
