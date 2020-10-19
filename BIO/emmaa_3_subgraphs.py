@@ -48,7 +48,7 @@ with open('./data/covid19-snapshot_sep18-2020/processed/collapsedEdges.jsonl', '
 x = None
 del x
 
-# %%
+# %%[markdown]
 %%time
 
 # Collate CollapseEdges with edges data
@@ -60,6 +60,13 @@ for edge in edges:
 edges_ = None
 del edges_
 
+# %% [markdown]
+# Load previous layout and cluster results
+
+with open('./dist/nodeLayoutClustering.pkl', 'rb') as x:
+    outputNodes = pickle.load(x)
+
+with open('./dist/nodeClusters.pkl', 'rb') as x:
+    outputClusters = pickle.load(x)
+
 # %%
-
-

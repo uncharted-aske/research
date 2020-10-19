@@ -138,26 +138,28 @@ posNodes = posNodes - posCentroid
 # Try with just node types:
 # ['chemical', 'protein', 'not-grounded', 'general', 'tissue', 'bioprocess']
 
-clusterLabel = [list(set([y[i] for y in nodes])) if not isinstance(nodes[0][i], dict) else [] for i in nodes[0].keys()][3]
-clusterID = np.asarray([np.sum([i if node['type'] == nodeType else 0 for i, nodeType in enumerate(clusterLabel)]) for node in nodes])
+clusterLabels = [list(set([y[i] for y in nodes])) if not isinstance(nodes[0][i], dict) else [] for i in nodes[0].keys()][3]
+clusterIDs = np.asarray([np.sum([i if node['type'] == nodeType else 0 for i, nodeType in enumerate(clusterLabels)]) for node in nodes])
 
 # %%[markdown]
 # ## Plot results
 
-emlib.plot_emb(coor = posNodes, labels = clusterID, cmap_name = 'qual', colorbar = True, str_title = 'Dimensionally Reduced Laplacian Node Embeddings')
+markerSize = np.log10(nodeDegreeCounts.sum(axis = 1) + 2) ** 4
+
+emlib.plot_emb(coor = posNodes, labels = clusterIDs, cmap_name = 'qual', colorbar = True, str_title = 'Dimensionally Reduced Laplacian Node Embeddings')
 
 # %%[markdown]
 # ## Plot results
 
 # %%
 # 2D projection
-fig, ax = emlib.plot_emb(coor = posNodes[:, :2], labels = clusterID, marker_size = np.log10(nodeDegreeCounts.sum(axis = 1) + 2) ** 4, marker_alpha = 0.5, cmap_name = 'qual', colorbar = True, str_title = 'Dimensionally Reduced Laplacian Node Embeddings')
+fig, ax = emlib.plot_emb(coor = posNodes[:, :2], labels = clusterIDs, marker_size = markerSize, marker_alpha = 0.5, cmap_name = 'qual', colorbar = True, str_title = 'Dimensionally Reduced Laplacian Node Embeddings')
 
 fig.savefig('./figures/nodeLaplacianDimRed_2D.png', dpi = 150)
 
 # %%
 # Full 3D
-fig, ax = emlib.plot_emb(coor = posNodes, labels = clusterID, marker_size = np.log10(nodeDegreeCounts.sum(axis = 1) + 2) ** 4, marker_alpha = 0.1, cmap_name = 'qual', colorbar = True, str_title = 'Dimensionally Reduced Laplacian Node Embeddings')
+fig, ax = emlib.plot_emb(coor = posNodes, labels = clusterIDs, marker_size = markerSize, marker_alpha = 0.1, cmap_name = 'qual', colorbar = True, str_title = 'Dimensionally Reduced Laplacian Node Embeddings')
 
 fig.savefig('./figures/nodeLaplacianDimRed_3D.png', dpi = 150)
 
@@ -171,6 +173,7 @@ fig.savefig('./figures/nodeLaplacianDimRed_3D.png', dpi = 150)
 #   'x': <float>,
 #   'y': <float>,
 #   'z': <float>,
+#   'size': <float>,
 #   'group': [<int>, ...];
 #   'score': [<float>, ...];
 # }
@@ -182,7 +185,8 @@ outputNodes = [
         'x': float(posNodes[i, 0]),
         'y': float(posNodes[i, 1]),
         'z': float(posNodes[i, 2]), 
-        'clusterID': [int(clusterID[i])], 
+        'size': markerSize[i],
+        'clusterID': [int(clusterIDs[i])], 
         'clusterScore': [float(0.0)]
     }
     for i, node in enumerate(nodes)]
@@ -203,7 +207,7 @@ outputClusters = [
         'clusterID': int(i),
         'clusterLabel': c
     }
-    for i, c in enumerate(clusterLabel)
+    for i, c in enumerate(clusterLabels)
 ]
 
 with open('./dist/nodeClusters.jsonl', 'w') as x:
@@ -214,9 +218,14 @@ with open('./dist/nodeClusters.jsonl', 'w') as x:
 with open('./dist/nodeClusters.pkl', 'wb') as x:
     pickle.dump(outputClusters, x)
 
+# %%
+# Workspace variables
+with open('./dist/emmaa_2_layout-clustering.pkl', 'wb') as x:
+    pickle.dump([nodes, edges, nodeDegreeCounts, posNodes, clusterIDs, clusterLabels], x)
+
+
 # %%[markdown]
 # ## Experiment: Dimensional Reduction on a Sphere
-
 %%time
 
 numDimEmb = 2
@@ -234,7 +243,7 @@ posNodes_sphCart[:, 2] = np.cos(posNodes_sph[:, 0])
 # %%
 # Plot result
 
-fig, ax = emlib.plot_emb(coor = posNodes_sphCart, labels = clusterID, marker_size = np.log10(nodeDegreeCounts.sum(axis = 1) + 2) ** 4, marker_alpha = 0.5, cmap_name = 'qual', colorbar = True, str_title = 'Dimensionally Reduced Laplacian Node Embeddings')
+fig, ax = emlib.plot_emb(coor = posNodes_sphCart, labels = clusterIDs, marker_size = np.log10(nodeDegreeCounts.sum(axis = 1) + 2) ** 4, marker_alpha = 0.5, cmap_name = 'qual', colorbar = True, str_title = 'Dimensionally Reduced Laplacian Node Embeddings')
 
 fig.savefig('./figures/nodeLaplacianDimRed_sph.png', dpi = 150)
 
@@ -245,8 +254,9 @@ outputNodes = [
         'id': int(node['id']),
         'x': float(posNodes_sphCart[i, 0]),
         'y': float(posNodes_sphCart[i, 1]),
-        'z': float(posNodes_sphCart[i, 2]), 
-        'clusterID': [int(clusterID[i])], 
+        'z': float(posNodes_sphCart[i, 2]),
+        'size': markerSize[i],
+        'clusterID': [int(clusterIDs[i])], 
         'clusterScore': [float(0.0)]
     }
     for i, node in enumerate(nodes)]
