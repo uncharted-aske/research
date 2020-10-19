@@ -151,25 +151,18 @@ emlib.plot_emb(coor = posNodes, labels = clusterID, cmap_name = 'qual', colorbar
 
 # %%
 # 2D projection
-fig = plt.figure(figsize = (12, 12))
-ax = fig.add_subplot(111)
-emlib.plot_emb(coor = posNodes[:, :2], labels = clusterID, marker_size = np.log10(nodeDegreeCounts.sum(axis = 1) + 2) ** 3, marker_alpha = 0.5, ax = ax, cmap_name = 'qual', colorbar = True, str_title = 'Dimensionally Reduced Laplacian Node Embeddings')
+fig, ax = emlib.plot_emb(coor = posNodes[:, :2], labels = clusterID, marker_size = np.log10(nodeDegreeCounts.sum(axis = 1) + 2) ** 4, marker_alpha = 0.5, cmap_name = 'qual', colorbar = True, str_title = 'Dimensionally Reduced Laplacian Node Embeddings')
 
 fig.savefig('./figures/nodeLaplacianDimRed_2D.png', dpi = 150)
 
 # %%
 # Full 3D
-fig = plt.figure(figsize = (12, 12))
-ax = fig.add_subplot(111, projection = '3d')
-emlib.plot_emb(coor = posNodes, labels = clusterID, marker_size = np.log10(nodeDegreeCounts.sum(axis = 1) + 2) ** 3, marker_alpha = 0.1, ax = ax, cmap_name = 'qual', colorbar = True, str_title = 'Dimensionally Reduced Laplacian Node Embeddings')
+fig, ax = emlib.plot_emb(coor = posNodes, labels = clusterID, marker_size = np.log10(nodeDegreeCounts.sum(axis = 1) + 2) ** 4, marker_alpha = 0.1, cmap_name = 'qual', colorbar = True, str_title = 'Dimensionally Reduced Laplacian Node Embeddings')
 
 fig.savefig('./figures/nodeLaplacianDimRed_3D.png', dpi = 150)
 
 # %%[markdown]
 # ## Output results
-
-
-
 
 # %%[markdown]
 # ```
@@ -222,19 +215,54 @@ with open('./dist/nodeClusters.pkl', 'wb') as x:
     pickle.dump(outputClusters, x)
 
 # %%[markdown]
-# ## Experiment: Dimensional Reduction on Spherical Metric
+# ## Experiment: Dimensional Reduction on a Sphere
 
 %%time
 
-numDimEmb = 3
+numDimEmb = 2
 # modelUMAP = umap.UMAP(n_components = numDimEmb, n_neighbors = 10, min_dist = 0.05, metric = 'euclidean', random_state = 0)
 modelUMAP_sph = umap.UMAP(n_components = numDimEmb, n_neighbors = 10, min_dist = 0.05, metric = 'minkowski', metric_kwds = {'p': 2.0/3.0}, random_state = 0, output_metric = 'haversine')
 posNodes_sph = modelUMAP_sph.fit_transform(L.tolil(copy = False))
 
-posCentroid_sph = np.median(posNodes_sph, axis = 0)
-posNodes_sph = posNodes_sph - posCentroid_sph
+# %%
+# Transform to Cartesian coordinates
+posNodes_sphCart = np.empty((posNodes_sph.shape[0], 3))
+posNodes_sphCart[:, 0] = np.sin(posNodes_sph[:, 0]) * np.cos(posNodes_sph[:, 1])
+posNodes_sphCart[:, 1] = np.sin(posNodes_sph[:, 0]) * np.sin(posNodes_sph[:, 1])
+posNodes_sphCart[:, 2] = np.cos(posNodes_sph[:, 0])
 
+# %%
+# Plot result
 
+fig, ax = emlib.plot_emb(coor = posNodes_sphCart, labels = clusterID, marker_size = np.log10(nodeDegreeCounts.sum(axis = 1) + 2) ** 4, marker_alpha = 0.5, cmap_name = 'qual', colorbar = True, str_title = 'Dimensionally Reduced Laplacian Node Embeddings')
 
+fig.savefig('./figures/nodeLaplacianDimRed_sph.png', dpi = 150)
 
+# %%
 
+outputNodes = [
+    {
+        'id': int(node['id']),
+        'x': float(posNodes_sphCart[i, 0]),
+        'y': float(posNodes_sphCart[i, 1]),
+        'z': float(posNodes_sphCart[i, 2]), 
+        'clusterID': [int(clusterID[i])], 
+        'clusterScore': [float(0.0)]
+    }
+    for i, node in enumerate(nodes)]
+
+with open('./dist/nodeLayoutClustering_sphCart.jsonl', 'w') as x:
+    for i in outputNodes:
+        json.dump(i, x)
+        x.write('\n')
+
+with open('./dist/nodeLayoutClustering_sphCart.pkl', 'wb') as x:
+    pickle.dump(outputNodes, x)
+
+outputClusters = [
+    {
+        'clusterID': int(i),
+        'clusterLabel': c
+    }
+    for i, c in enumerate(clusterLabel)
+]

@@ -230,3 +230,6 @@ def plot_emb(coor = np.array([]), labels = [], marker_size = 2.0, marker_alpha =
     if (cmap_name != 'qual') and (colorbar == True): 
         plt.colorbar(plt_obj, ax = plt.getp(fig, 'axes'), extend = 'max', shrink = 0.85)
 
+
+    return fig, ax
+
