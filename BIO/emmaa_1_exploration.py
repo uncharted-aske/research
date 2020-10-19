@@ -156,10 +156,13 @@ print(f"\nTop 10 by out-degree...\nIndex: Name (In-degree, Out-degree)")
 for i in np.argsort(nodeDegreeCounts[:, 0])[::-1][:10]:
     print(f"{i}: {nodes[i]['name']} ({nodeDegreeCounts[i, 0]}, {nodeDegreeCounts[i, 1]})")
 
-
 print(f"\nTop 10 by in-degree...\nIndex: Name (In-degree, Out-degree)")
 for i in np.argsort(nodeDegreeCounts[:, 1])[::-1][:10]:
     print(f"{i}: {nodes[i]['name']} ({nodeDegreeCounts[i, 0]}, {nodeDegreeCounts[i, 1]})")
+
+print(f"\nTop 10 by total degree...\nIndex: Name (In-degree, Out-degree, Total Degree)")
+for i in np.argsort(np.sum(nodeDegreeCounts, axis = 1))[::-1][:10]:
+    print(f"{i}: {nodes[i]['name']} ({nodeDegreeCounts[i, 0]}, {nodeDegreeCounts[i, 1]}, {np.sum(nodeDegreeCounts[i, :])})")
 
 # %%
 # Top 10 by out-degree...
@@ -187,6 +190,19 @@ for i in np.argsort(nodeDegreeCounts[:, 1])[::-1][:10]:
 # 475: Interferon (1143, 1520)
 # 243: Casp14 (1308, 1460)
 # 233: Death (224, 1402)
+
+# Top 10 by total degree...
+# Index: Name (In-degree, Out-degree, Total Degree)
+# 236: Infections (1915, 1774, 3689)
+# 444: Disease (953, 2112, 3065)
+# 411: inflammatory response (392, 2484, 2876)
+# 377: apoptotic process (173, 2605, 2778)
+# 243: Casp14 (1308, 1460, 2768)
+# 475: Interferon (1143, 1520, 2663)
+# 37: TNF (997, 1644, 2641)
+# 42: IL6 (773, 1550, 2323)
+# 103: cyclosporin A (2135, 55, 2190)
+# 118: SGCG (1030, 1055, 2085)
 
 # %%[markdown]
 # ## Node degree distribution by node
