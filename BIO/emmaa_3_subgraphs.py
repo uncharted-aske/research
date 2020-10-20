@@ -5,10 +5,9 @@
 
 # %%[markdown]
 # Idea: 
-# * Assume an undirected graph
-# * Use the graph Laplacian vectors as initial node embeddings
-# * Create 2D/3D layout by dimensional reduction (UMAP)
-# * Learn an ontology by applying hierarchy clustering (HDBSCAN)
+# * Check distribution of belief scores
+# * Extract subgraphs by belief score filtering
+# * Extract subgraphs by tested/untested using the curated/mitre test pathways
 
 # %%
 import json
