@@ -66,12 +66,35 @@ fig.savefig('./figures/nodeBeliefScoresHistogram.png', dpi = 150)
 # %%
 
 k = 0.95
-i = nodeBeliefScores > k
+j = nodeBeliefScores > k
 # markerSize = 100 * nodeBeliefScores ** 2 + 0.1
 markerSize = np.log10(nodeDegreeCounts.sum(axis = 1) + 2) ** 4
 
-fig, ax = emlib.plot_emb(coor = posNodes[i, :2], labels = clusterIDs[i], marker_size = markerSize[i], marker_alpha = 0.5, cmap_name = 'qual', colorbar = True, str_title = f'Belief Score > {k} ({len(np.flatnonzero(i))} Nodes Shown)')
+fig, ax = emlib.plot_emb(coor = posNodes[j, :2], labels = clusterIDs[j], marker_size = markerSize[j], marker_alpha = 0.5, cmap_name = 'qual', colorbar = True, str_title = f'Belief Score > {k} ({len(np.flatnonzero(j))} Nodes Shown)')
 fig.savefig(f'./figures/nodesBeliefScore.png', dpi = 150)
+
+
+# Output belief score filtering results
+outputNodes = [
+    {
+        'id': int(nodes[i]['id']),
+        'x': float(posNodes[i, 0]),
+        'y': float(posNodes[i, 1]),
+        'z': float(posNodes[i, 2]), 
+        'size': markerSize[i],
+        'clusterID': [int(clusterIDs[i])], 
+        'clusterScore': [float(0.0)]
+    }
+    for i in np.flatnonzero(j)]
+
+with open(f'./dist/nodeLayoutClustering_belief{100*k:2.0f}.jsonl', 'w') as x:
+    for i in outputNodes:
+        json.dump(i, x)
+        x.write('\n')
+
+with open(f'./dist/nodeLayoutClustering_belief{100*k:2.0f}.pkl', 'wb') as x:
+    pickle.dump(outputNodes, x)
+
 
 # %%
 %%time
