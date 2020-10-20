@@ -28,7 +28,7 @@ import cmocean
 # %%
 
 # Scatter plot of (un)labeled data points
-def plot_emb(coor = np.array([]), labels = [], marker_size = 2.0, marker_alpha = 0.5, ax = [], cmap_name = 'qual', colorbar = True, str_title = '', xlim = (), ylim = (), zlim = (), vlim = (), hull = []):
+def plot_emb(coor = np.array([]), labels = [], ax = [], figsize = (12, 12), marker_size = 2.0, marker_alpha = 0.5,  cmap_name = 'qual', colorbar = True, str_title = '', xlim = (), ylim = (), zlim = (), vlim = (), hull = []):
 
     # Error handling
     if not isinstance(coor, np.ndarray):
@@ -83,7 +83,7 @@ def plot_emb(coor = np.array([]), labels = [], marker_size = 2.0, marker_alpha =
 
     # Plot figure
     if type(ax).__name__ != 'AxesSubplot':
-        fig = plt.figure(figsize = (12, 12))
+        fig = plt.figure(figsize = figsize)
     else:
         fig = plt.getp(ax, 'figure')
 
