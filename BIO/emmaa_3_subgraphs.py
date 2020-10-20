@@ -95,6 +95,28 @@ with open(f'./dist/nodeLayoutClustering_belief{100*k:2.0f}.jsonl', 'w') as x:
 with open(f'./dist/nodeLayoutClustering_belief{100*k:2.0f}.pkl', 'wb') as x:
     pickle.dump(outputNodes, x)
 
+# Same but for spherical layout
+# Output belief score filtering results
+outputNodes = [
+    {
+        'id': int(nodes[i]['id']),
+        'x': float(posNodes_sphCart[i, 0]),
+        'y': float(posNodes_sphCart[i, 1]),
+        'z': float(posNodes_sphCart[i, 2]), 
+        'size': markerSize[i],
+        'clusterID': [int(clusterIDs[i])], 
+        'clusterScore': [float(0.0)]
+    }
+    for i in np.flatnonzero(j)]
+
+with open(f'./dist/nodeLayoutClustering_sphCart_belief{100*k:2.0f}.jsonl', 'w') as x:
+    for i in outputNodes:
+        json.dump(i, x)
+        x.write('\n')
+
+with open(f'./dist/nodeLayoutClustering_sphCart_belief{100*k:2.0f}.pkl', 'wb') as x:
+    pickle.dump(outputNodes, x)
+
 
 # %%
 %%time
@@ -130,7 +152,7 @@ for numHops in [1, 2]:
     __ = plt.setp(ax, xlim = x, ylim = x, zlim = x)
     fig.savefig(f'./figures/nodes_{texts[0]}_{numHops}hops.png', dpi = 150)
 
-
+    # Output graph data
     with open(f'./dist/nodes_{texts[0]}_{numHops}hops.jsonl', 'w') as x:
         for i in textsNodeIndex:
             json.dump(nodes[i], x)
@@ -140,5 +162,51 @@ for numHops in [1, 2]:
         for i in textsEdgeIndex:
             json.dump(edges[i], x)
             x.write('\n')
+
+
+    # Output layout and clustering data
+    outputNodes = [
+        {
+            'id': int(nodes[i]['id']),
+            'x': float(posNodes[i, 0]),
+            'y': float(posNodes[i, 1]),
+            'z': float(posNodes[i, 2]), 
+            'size': markerSize[i],
+            'clusterID': [int(clusterIDs[i])], 
+            'clusterScore': [float(0.0)]
+        }
+        for i in textsNodeIndex
+    ]
+
+    with open(f'./dist/nodeLayoutClustering_{texts[0]}_{numHops}hops.jsonl', 'w') as x:
+        for i in outputNodes:
+            json.dump(i, x)
+            x.write('\n')
+
+    with open(f'./dist/nodeLayoutClustering_{texts[0]}_{numHops}hops.pkl', 'wb') as x:
+        pickle.dump(outputNodes, x)
+
+
+    # Output layout and clustering data (spherical)
+    outputNodes = [
+        {
+            'id': int(nodes[i]['id']),
+            'x': float(posNodes_sphCart[i, 0]),
+            'y': float(posNodes_sphCart[i, 1]),
+            'z': float(posNodes_sphCart[i, 2]), 
+            'size': markerSize[i],
+            'clusterID': [int(clusterIDs[i])], 
+            'clusterScore': [float(0.0)]
+        }
+        for i in textsNodeIndex
+    ]
+
+    with open(f'./dist/nodeLayoutClustering_sphCart_{texts[0]}_{numHops}hops.jsonl', 'w') as x:
+        for i in outputNodes:
+            json.dump(i, x)
+            x.write('\n')
+
+    with open(f'./dist/nodeLayoutClustering_sphCart_{texts[0]}_{numHops}hops.pkl', 'wb') as x:
+        pickle.dump(outputNodes, x)
 
 # %%
