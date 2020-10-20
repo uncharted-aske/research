@@ -313,17 +313,10 @@ for paths, z in [[paths_curated, 'Curated'], [paths_mitre, 'Mitre']]:
 # Mitre tested paths reference edgeID = 281075 which doesn't exist in `edges.jsonl`
 
 # %%
-# Plot mitre paths
+
 
 
 
 
 # %%
 
-k = 0.95
-j = nodeBeliefScores > k
-# markerSize = 100 * nodeBeliefScores ** 2 + 0.1
-markerSize = np.log10(nodeDegreeCounts.sum(axis = 1) + 2) ** 4
-
-fig, ax = emlib.plot_emb(coor = posNodes[j, :2], labels = clusterIDs[j], marker_size = markerSize[j], marker_alpha = 0.5, cmap_name = 'qual', colorbar = True, str_title = f'Belief Score > {k} ({len(np.flatnonzero(j))} Nodes Shown)')
-fig.savefig(f'./figures/nodesBeliefScore.png', dpi = 150)
