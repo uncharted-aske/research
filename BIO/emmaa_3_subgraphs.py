@@ -31,42 +31,91 @@ import importlib
 np.random.seed(0)
 
 # %%[markdown]
-# ## Load node and edge data from Dario
+# ## Load previous workspace variables
 
-nodes = {}
-with open('./data/covid19-snapshot_sep18-2020/processed/nodes.jsonl', 'r') as x:
-    nodes = [json.loads(i) for i in x]
+with open('./dist/emmaa_2_layout-clustering.pkl', 'rb') as x:
+    [nodes, edges, nodeDegreeCounts, posNodes, posNodes_sphCart, clusterIDs, clusterLabels] = pickle.load(x)
 
-edges = {}
-with open('./data/covid19-snapshot_sep18-2020/processed/edges.jsonl', 'r') as x:
-    edges = [json.loads(i) for i in x]
+# %%
+# ## Facet by belief scores
+# %%
+# Aggregate belief scores by node
+z = [[] for node in nodes]
+for edge in edges:
+    i = edge['source']
+    j = edge['target']
+    z[i].append(edge['belief'])
+    z[j].append(edge['belief'])
 
-edges_ = {}
-with open('./data/covid19-snapshot_sep18-2020/processed/collapsedEdges.jsonl', 'r') as x:
-    edges_ = [json.loads(i) for i in x]
+nodeBeliefScores = np.array([max(i) if len(i) else 0.0 for i in z])
+edgeBeliefScores = np.array([edge['belief'] for edge in edges])
 
-x = None
-del x
+# Plot histogram of belief scores
+k = 25
+y, x = np.histogram(edgeBeliefScores, bins = k, range = (0, 1))
+w, __ = np.histogram(nodeBeliefScores, bins = k, range = (0, 1))
 
-# %%[markdown]
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (8, 6))
+__ = ax.bar(x[:-1], y / len(edges), width = 0.75 * (1.0 / k) * 0.5, align = 'edge', label = 'Per Edges')
+__ = ax.bar(x[:-1] + 0.75 * (1.0 / k) * 0.5, w / len(nodes), width = 0.75 * (1.0 / k) * 0.5, align = 'edge', label = 'Max per Node')
+__ = plt.setp(ax, xlabel = 'Belief Scores', ylabel = 'Fraction of Edges or Nodes', title = 'Distribution of Belief Scores')
+__ = ax.legend()
+
+fig.savefig('./figures/nodeBeliefScoresHistogram.png', dpi = 150)
+
+# %%
+
+k = 0.95
+i = nodeBeliefScores > k
+# markerSize = 100 * nodeBeliefScores ** 2 + 0.1
+markerSize = np.log10(nodeDegreeCounts.sum(axis = 1) + 2) ** 4
+
+fig, ax = emlib.plot_emb(coor = posNodes[i, :2], labels = clusterIDs[i], marker_size = markerSize[i], marker_alpha = 0.5, cmap_name = 'qual', colorbar = True, str_title = f'Belief Score > {k} ({len(np.flatnonzero(i))} Nodes Shown)')
+fig.savefig(f'./figures/nodesBeliefScore.png', dpi = 150)
+
+# %%
 %%time
 
-# Collate CollapseEdges with edges data
-for edge in edges:
-    i = edge['collapsed_id']
-    edge['source'] = edges_[i]['source']
-    edge['target'] = edges_[i]['target']
+# texts = ['SARS-Cov-2', 'chloroquine', 'remdesivir']
+# texts = ['chloroquine']
+# texts = ['personal protective equipment']
+texts = ['BRCA']
 
-edges_ = None
-del edges_
+markerSize = np.log10(nodeDegreeCounts.sum(axis = 1) + 2) ** 4
 
-# %% [markdown]
-# Load previous layout and cluster results
+for numHops in [1, 2]:
 
-with open('./dist/nodeLayoutClustering.pkl', 'rb') as x:
-    outputNodes = pickle.load(x)
+    # Get node/edge indices within the directed hop neighbourhood of given text
+    textsIndex, textsNodeIndex, textsEdgeIndex, nodeFlags, edgeFlags = emlib.getTextNodeEdgeIndices(nodes = nodes, edges = edges, texts = texts, numHops = numHops)
 
-with open('./dist/nodeClusters.pkl', 'rb') as x:
-    outputClusters = pickle.load(x)
+    print(f'{len(textsNodeIndex)} nodes and {len(textsEdgeIndex)} edges within the directed neighbourhood of the given node(s) {textsIndex}\n')
+
+    # Plot results
+    i = nodeFlags
+    fig, ax = emlib.plot_emb(coor = posNodes[i, :], labels = clusterIDs[i], 
+        marker_size = markerSize[i], marker_alpha = 1.0, cmap_name = 'qual', colorbar = True, 
+        str_title = f'{len(textsNodeIndex)} Nodes and {len(textsEdgeIndex)} Edges Shown')
+    
+    # fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
+    __ = [ax.plot(
+        posNodes[[edges[j]['source'], edges[j]['target']], 0], 
+        posNodes[[edges[j]['source'], edges[j]['target']], 1], 
+        posNodes[[edges[j]['source'], edges[j]['target']], 2],
+        color = 'k', linewidth = 0.5, alpha = 0.5, zorder = 0) for j in textsEdgeIndex]
+
+    x = (-1.75, 1.75)
+    __ = plt.setp(ax, xlim = x, ylim = x, zlim = x)
+    fig.savefig(f'./figures/nodes_{texts[0]}_{numHops}hops.png', dpi = 150)
+
+
+    with open(f'./dist/nodes_{texts[0]}_{numHops}hops.jsonl', 'w') as x:
+        for i in textsNodeIndex:
+            json.dump(nodes[i], x)
+            x.write('\n')
+
+    with open(f'./dist/edges_{texts[0]}_{numHops}hops.jsonl', 'w') as x:
+        for i in textsEdgeIndex:
+            json.dump(edges[i], x)
+            x.write('\n')
 
 # %%

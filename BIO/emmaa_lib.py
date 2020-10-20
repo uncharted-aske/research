@@ -77,9 +77,9 @@ def plot_emb(coor = np.array([]), labels = [], marker_size = 2.0, marker_alpha =
         if len(vlim) < 2:
             vlim = (np.min(labels), np.max(labels))
 
-    # Recentre
-    r0 = np.median(coor, axis = 0)
-    coor = coor - r0
+    # # Recentre
+    # r0 = np.median(coor, axis = 0)
+    # coor = coor - r0
 
     # Plot figure
     if type(ax).__name__ != 'AxesSubplot':
@@ -233,3 +233,32 @@ def plot_emb(coor = np.array([]), labels = [], marker_size = 2.0, marker_alpha =
 
     return fig, ax
 
+
+# Get the index of all connecting nodes and edges within N directed hops of the nodes with the given text names
+def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
+
+    # Get node indices with given text names
+    textsIndex = np.array([np.flatnonzero(np.asarray([(text in node['info']['text']) and (node['grounded'] == True) for node in nodes])) for text in texts]).flatten()
+
+    # List of edge sources and targets
+    x = np.array([[edge['source'], edge['target']] for edge in edges])
+
+    # Flag edges 
+    edgeFlags = np.full((len(edges), ), False)
+    z = textsIndex
+    for hop in range(numHops):
+
+        # Match source
+        edgeFlags = edgeFlags + np.sum([x[:, 0] == i for i in z], axis = 0).astype(bool)
+
+        # Get target
+        z = x[edgeFlags, 1]
+
+    # Get node/edge indices
+    textsEdgeIndex = np.flatnonzero(edgeFlags)
+    textsNodeIndex = np.array(list(set([edges[j]['source'] for j in textsEdgeIndex] + [edges[j]['target'] for j in textsEdgeIndex])))
+
+    # Flag nodes
+    nodeFlags = [True if j in textsNodeIndex else False for j, node in enumerate(nodes)]
+
+    return textsIndex, textsNodeIndex, textsEdgeIndex, nodeFlags, edgeFlags

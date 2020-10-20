@@ -218,11 +218,6 @@ with open('./dist/nodeClusters.jsonl', 'w') as x:
 with open('./dist/nodeClusters.pkl', 'wb') as x:
     pickle.dump(outputClusters, x)
 
-# %%
-# Workspace variables
-with open('./dist/emmaa_2_layout-clustering.pkl', 'wb') as x:
-    pickle.dump([nodes, edges, nodeDegreeCounts, posNodes, clusterIDs, clusterLabels], x)
-
 
 # %%[markdown]
 # ## Experiment: Dimensional Reduction on a Sphere
@@ -269,4 +264,9 @@ with open('./dist/nodeLayoutClustering_sphCart.jsonl', 'w') as x:
 with open('./dist/nodeLayoutClustering_sphCart.pkl', 'wb') as x:
     pickle.dump(outputNodes, x)
 
-# %%
+# %%[markdown]
+# ## Output Workspace Variables
+
+with open('./dist/emmaa_2_layout-clustering.pkl', 'wb') as x:
+    pickle.dump([nodes, edges, nodeDegreeCounts, posNodes, posNodes_sphCart, clusterIDs, clusterLabels], x)
+    
