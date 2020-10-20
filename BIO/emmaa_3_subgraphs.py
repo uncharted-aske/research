@@ -230,11 +230,11 @@ print(f'{len(paths_mitre)} mitre paths with {len(x)} unique nodes and {len(y)} e
 # 4818 mitre paths with 1834 unique nodes and 4554 edges.
 
 # %%
-# Plot and output curated paths
+# Plot and output curated paths with belief score filtering
 
 # Belief score threshold
-b = 0.0
-# b = 0.95
+# b = 0.0
+b = 0.95
 
 # for paths, z in [[paths_curated, 'Curated']]:
 for paths, z in [[paths_curated, 'Curated'], [paths_mitre, 'Mitre']]:
@@ -313,9 +313,98 @@ for paths, z in [[paths_curated, 'Curated'], [paths_mitre, 'Mitre']]:
 # Mitre tested paths reference edgeID = 281075 which doesn't exist in `edges.jsonl`
 
 # %%
+# Plot and output curated paths with belief score filtering
+
+# Belief score threshold
+b = 0.95
+# b = 0.0
+
+# for paths, z in [[paths_curated, 'Curated']]:
+for paths, z in [[paths_curated, 'Curated'], [paths_mitre, 'Mitre']]:
+
+    # Conditional indices for the nodes and edges in the tested paths
+    nodeFlags = np.full((len(nodes), ), False)
+    edgeFlags = np.full((len(edges), ), False)
+    x = list(set([i for n in [path['nodes'] for path in paths] for i in n]))
+    y = list(set([i for n in [path['edges'] for path in paths] for m in n for i in m]))
+    k = []
+    l = []
+    for i in x:
+        if i in range(len(nodes)):
+            nodeFlags[i] = True
+        else:
+            k.append(i)
+    for i in y:
+        if i in range(len(edges)):
+            edgeFlags[i] = True
+        else:
+            l.append(i)
+
+    # Conditional index for belief score filtering
+    j = edgeBeliefScores > b
+    x = list(set([m for n in [[edges[n]['source'], edges[n]['target']] for n in np.flatnonzero(j)] for m in n]))
+    y = np.full((len(nodes), ), False)
+    for n in x:
+        y[n] = True
+    i = y
+
+    # Plot
+    title = f'Paths Belief Score > {b:.2f} ({z} Tested?) - {sum(i)} Nodes and {sum(j)} Edges Shown'
+    fig, ax = emlib.plot_emb(
+        coor = posNodes_sphCart[i, :], labels = nodeFlags[i], 
+        marker_size = markerSize[i], marker_alpha = 1.0, 
+        cmap_name = 'qual', colorbar = True, str_title = title)
+    
+    # __ = [ax.plot(
+    #     posNodes_sphCart[[edges[n]['source'], edges[n]['target']], 0], 
+    #     posNodes_sphCart[[edges[n]['source'], edges[n]['target']], 1], 
+    #     posNodes_sphCart[[edges[n]['source'], edges[n]['target']], 2],
+    #     color = 'k', linewidth = 0.5, alpha = 0.1, zorder = 0) for n in np.flatnonzero(j)]
+
+    fig.savefig(f'./figures/nodes_sphCart_belief{100*b:.0f}_{z.lower()}Tested.png', dpi = 150)
 
 
+    # Output data
+    with open(f'./dist/nodes_belief{100*b:.0f}_{z.lower()}Tested.jsonl', 'w') as x:
+        for n in np.flatnonzero(i):
+            json.dump(nodes[n], x)
+            x.write('\n')
 
+    with open(f'./dist/edges_belief{100*b:.0f}_{z.lower()}Tested.jsonl', 'w') as x:
+        for n in np.flatnonzero(j):
+            json.dump(edges[n], x)
+            x.write('\n')
+
+    outputNodes = [
+        {
+            'id': int(nodes[n]['id']),
+            'x': float(posNodes_sphCart[n, 0]),
+            'y': float(posNodes_sphCart[n, 1]),
+            'z': float(posNodes_sphCart[n, 2]), 
+            'size': float(markerSize[n]),
+            'clusterID': [int(nodeFlags[n])], 
+            'clusterScore': [float(0.0)]
+        }
+        for n in np.flatnonzero(i)
+    ]
+
+    with open(f'./dist/nodeLayoutClustering_sphCart_belief{100*b:.0f}_{z.lower()}Tested.jsonl', 'w') as x:
+        for n in outputNodes:
+            json.dump(n, x)
+            x.write('\n')
+
+    outputClusters = [
+        {
+            'clusterID': int(i),
+            'clusterLabel': c
+        }
+        for i, c in enumerate(['untested', 'tested'])
+    ]
+
+    with open(f'./dist/nodeClusters_{z.lower()}Tested.jsonl', 'w') as x:
+        for i in outputClusters:
+            json.dump(i, x)
+            x.write('\n')
 
 
 # %%
