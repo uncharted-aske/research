@@ -14,16 +14,15 @@ def formatGraph(data):
             for item in value: 
                 splitted_identifier = item['identifier'].split('::')
                 if 'metadata' in item:
-                    metadata = item['metadata']
+                    metadata = { 'type': item['type'], 'text_identifier':item['metadata'][0]['attributes'][0]['text_identifier'], 'text_definition': item['metadata'][0]['attributes'][0]['text_definition'], 'knowledge': item['metadata'][0]['provenance']['sources'][0]['document_source'] }
                 else:
                     metadata = {}
-                
                 node = { 'id': item['uid'], 'concept': item['identifier'], 'label': splitted_identifier[len(splitted_identifier)-2], 'type': 'variable', 'metadata': metadata } 
                 nodes.append(node)
         if key == 'functions':
             for item in value: 
                 if 'metadata' in item:
-                    metadata = item['metadata']
+                    metadata = { 'type': item['type'], 'eqn_source':item['metadata'][0]['attributes'][0]['eqn_source'], 'knowledge': item['metadata'][0]['provenance']['sources'][0]['document_source'] }
                 else:
                     metadata = {} 
                 node = { 'id': item['uid'], 'concept': item['type'], 'label': item['type'],  'type': 'function', 'metadata': metadata  }
@@ -48,6 +47,9 @@ def formatGraph(data):
                 group = { 'id': item['basename'], 'members': item['nodes'], 'metadata': metadata }
                 groups.append(group) 
 
+        
+    for i in range(len(edges)):
+        edges[i]['id'] = i 
 
     return {
         'metadata': modelMetadata,
