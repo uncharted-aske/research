@@ -43,17 +43,17 @@ nodesKB = {}
 with open('./data/covid19-snapshot_sep18-2020/processed/nodes.jsonl', 'r') as x:
     nodesKB = [json.loads(i) for i in x]
 
-# `nodes` data from the Covid-19 knowledge base (curated)
-nodesKB_curated = {}
-with open('./dist/nodes_curated_belief0.jsonl', 'r') as x:
-    nodesKB_curated = [json.loads(i) for i in x]
+# # `nodes` data from the Covid-19 knowledge base (curated)
+# nodesKB_curated = {}
+# with open('./dist/nodes_curated_belief0.jsonl', 'r') as x:
+#     nodesKB_curated = [json.loads(i) for i in x]
 
-# `nodes` data from the Covid-19 knowledge base (belief score > 0.95)
-nodesKB_belief95 = {}
-with open('./dist/nodes_belief95_curatedTested.jsonl', 'r') as x:
-    nodesKB_belief95 = [json.loads(i) for i in x]
-with open('./dist/nodes_belief95_curatedTested.jsonl', 'r') as x:
-    nodesKB_belief95.extend([json.loads(i) for i in x])
+# # `nodes` data from the Covid-19 knowledge base (belief score > 0.95)
+# nodesKB_belief95 = {}
+# with open('./dist/nodes_belief95_curatedTested.jsonl', 'r') as x:
+#     nodesKB_belief95 = [json.loads(i) for i in x]
+# with open('./dist/nodes_belief95_curatedTested.jsonl', 'r') as x:
+#     nodesKB_belief95.extend([json.loads(i) for i in x])
 
 
 x = None
@@ -201,7 +201,7 @@ del x, y, z, name, names, node
 
 # %%
 # Generate the id of KB nodes
-nodesKB_id = []
+nodesKB_ontoIDs = []
 for node in nodesKB:
     if len(node['info']['links']) > 0:
         names = [link[0] for link in node['info']['links']]
@@ -215,10 +215,10 @@ for node in nodesKB:
         names = ['not-grounded']
         k = names[0]
 
-    nodesKB_id.append(k)
+    nodesKB_ontoIDs.append(k)
 
 
-x, y = np.unique(nodesKB_id, return_counts = True)
+x, y = np.unique(nodesKB_ontoIDs, return_counts = True)
 i = np.argsort(y)[::-1]
 x = x[i]
 y = y[i]
@@ -267,8 +267,8 @@ print(f"| {'':<16} | {np.sum(y[:j]):>15} |")
 # |                  |            6309 |
 
 
-name = names = node = x = y = z = i = j = k = None
-del i, j, k, x, y, z, name, names, node 
+name = names = node = x = y = z = i = j = k = l = None
+del i, j, k, l, x, y, z, name, names, node 
 
 # %%[markdown]
 # List of link types
@@ -316,23 +316,23 @@ print(nx.info(ontoG))
 # Test graph properties
 
 # Check uniqueness of ontology node ids
-ontoNames = nx.get_node_attributes(ontoG, 'name')
-y = list(ontoNames.keys())
+ontoIDs = nx.nodes(ontoG)
+y = list(ontoIDs)
 i, j = np.unique(y, return_counts = True)
 print(np.sum(j > 2) == 0)
 # True
 
-x = np.sum([True if i in ontoNames.keys() else False for i in nodesKB_id]) / len(nodesKB_id) * 100
+x = np.sum([True if i in ontoIDs else False for i in nodesKB_ontoIDs]) / len(nodesKB_ontoIDs) * 100
 print(f"{x:10.2f}%")
-y = len(set(ontoNames.keys()) & set(nodesKB_id)) / len(set(nodesKB_id)) * 100
+y = len(set(ontoIDs) & set(nodesKB_ontoIDs)) / len(set(nodesKB_ontoIDs)) * 100
 print(f"{y:10.2f}%")
-# 82.01% (96.19%, excluding duplicates) of KB node ids are found in the ontology graph.
+# 82.08% (96.26%, excluding duplicates) of KB node ids are found in the ontology graph.
 
 
-# x = np.sum([True if i in nodesKB_id else False for i in ontoNames.keys()]) / len(ontoNames.keys()) * 100
-x = len(set(ontoNames.keys()) & set(nodesKB_id)) / len(ontoNames.keys()) * 100
+# x = np.sum([True if i in nodesKB_ontoIDs else False for i in ontoIDs]) / len(ontoIDs) * 100
+x = len(set(ontoIDs) & set(nodesKB_ontoIDs)) / len(ontoIDs) * 100
 print(f"{x:10.2f}%")
-# 1.57% of ontology node ids are found in the KB graph (excluding duplicates).
+# 1.45% of ontology node ids are found in the KB graph (excluding duplicates).
 
 print(nx.is_directed_acyclic_graph(ontoG))
 # True
@@ -350,33 +350,32 @@ print(nx.number_weakly_connected_components(ontoG))
 # 1272734
 
 # Generate components, sorted by size
-ontoSub = sorted(nx.weakly_connected_components(ontoG), key = len, reverse = True)
+ontoSubs = sorted(nx.weakly_connected_components(ontoG), key = len, reverse = True)
 
+# %%
 # Check overlap between ontology component nodes and KB nodes
 i = 5000
-x = [len(sub) for sub in ontoSub]
-y = [len(set(nodesKB_id) & set(sub)) for sub in ontoSub[:i]]
-z = np.asarray(y) / len(nodesKB_id) * 100
+x = [len(sub) for sub in ontoSubs]
+y = [len(set(nodesKB_ontoIDs) & set(sub)) for sub in ontoSubs[:i]]
+z = np.asarray(y) / len(nodesKB_ontoIDs) * 100
 
 fig, ax = plt.subplots(nrows = 1, ncols = 2, figsize = (12, 6))
 __ = ax[0].plot(x, label = 'Ontology Component Size')
 __ = ax[0].plot(y, label = 'Intersection with KB Graph')
 __ = plt.setp(ax[0], xlabel = 'Ontology Component Index', ylabel = 'Number of Nodes', xscale = 'log', yscale = 'log', title = 'Size of Ontology Components')
 __ = ax[1].plot(np.cumsum(z))
-__ = ax[1].plot([0, len(ontoNames.keys())], [96.19, 96.19], linestyle = '--', label = 'Total')
+__ = ax[1].plot([0, len(ontoIDs)], [96.26, 96.26], linestyle = '--', label = 'Total')
 __ = plt.setp(ax[1], xlim = plt.getp(ax[0], 'xlim'), ylim = (0, 100), xlabel = 'Ontology Component Index', ylabel = 'Cumulative Fraction of the KB Graph [%]', xscale = 'log', yscale = 'linear', title = '')
 __ = plt.setp(ax[1], title = 'Set Intersection between Ontology Components and KB Graphs')
 __ = ax[0].legend()
 fig.savefig('./figures/ontoComponentSize.png', dpi = 150)
 
 
-
-
 # %% 
 # Re-do for the other two `nodes` datasets
 
 # Generate the id of KB nodes
-nodesKB_id_curated = []
+nodesKB_ontoIDs_curated = []
 for node in nodesKB_curated:
     if len(node['info']['links']) > 0:
         names = [link[0] for link in node['info']['links']]
@@ -390,9 +389,9 @@ for node in nodesKB_curated:
         names = ['not-grounded']
         k = names[0]
 
-    nodesKB_id_curated.append(k)
+    nodesKB_ontoIDs_curated.append(k)
 
-nodesKB_id_belief95 = []
+nodesKB_ontoIDs_belief95 = []
 for node in nodesKB_belief95:
     if len(node['info']['links']) > 0:
         names = [link[0] for link in node['info']['links']]
@@ -406,15 +405,14 @@ for node in nodesKB_belief95:
         names = ['not-grounded']
         k = names[0]
 
-    nodesKB_id_belief95.append(k)
-
+    nodesKB_ontoIDs_belief95.append(k)
 
 
 # Check overlap between ontology component nodes and KB nodes
 i = 5000
-x = [len(sub) for sub in ontoSub]
-y = [len(set(nodesKB_id_curated) & set(sub)) for sub in ontoSub[:i]]
-z = np.asarray(y) / len(nodesKB_id_curated) * 100
+x = [len(sub) for sub in ontoSubs]
+y = [len(set(nodesKB_ontoIDs_curated) & set(sub)) for sub in ontoSubs[:i]]
+z = np.asarray(y) / len(nodesKB_ontoIDs_curated) * 100
 
 fig, ax = plt.subplots(nrows = 1, ncols = 2, figsize = (12, 6))
 __ = ax[0].plot(x, label = 'Ontology Component Size')
@@ -422,8 +420,8 @@ __ = ax[0].plot(y, label = 'Intersection with KB Graph')
 __ = plt.setp(ax[0], xlabel = 'Ontology Component Index', ylabel = 'Number of Nodes', xscale = 'log', yscale = 'log', title = 'Size of Ontology Components')
 __ = ax[1].plot(np.cumsum(z))
 
-j = len(set(ontoNames.keys()) & set(nodesKB_id_curated)) / len(set(nodesKB_id_curated)) * 100
-__ = ax[1].plot([0, len(ontoNames.keys())], [j, j], linestyle = '--', label = 'Total')
+j = len(set(ontoIDs) & set(nodesKB_ontoIDs_curated)) / len(set(nodesKB_ontoIDs_curated)) * 100
+__ = ax[1].plot([0, len(ontoIDs)], [j, j], linestyle = '--', label = 'Total')
 
 __ = plt.setp(ax[1], xlim = plt.getp(ax[0], 'xlim'), ylim = (0, 100), xlabel = 'Ontology Component Index', ylabel = 'Cumulative Fraction of the KB Graph [%]', xscale = 'log', yscale = 'linear', title = '')
 __ = plt.setp(ax[1], title = 'Set Intersection between Ontology Components and KB Graphs')
@@ -432,9 +430,9 @@ fig.savefig('./figures/ontoComponentSize_curated.png', dpi = 150)
 
 
 i = 5000
-x = [len(sub) for sub in ontoSub]
-y = [len(set(nodesKB_id_belief95) & set(sub)) for sub in ontoSub[:i]]
-z = np.asarray(y) / len(nodesKB_id_belief95) * 100
+x = [len(sub) for sub in ontoSubs]
+y = [len(set(nodesKB_ontoIDs_belief95) & set(sub)) for sub in ontoSubs[:i]]
+z = np.asarray(y) / len(nodesKB_ontoIDs_belief95) * 100
 
 fig, ax = plt.subplots(nrows = 1, ncols = 2, figsize = (12, 6))
 __ = ax[0].plot(x, label = 'Ontology Component Size')
@@ -442,8 +440,8 @@ __ = ax[0].plot(y, label = 'Intersection with KB Graph')
 __ = plt.setp(ax[0], xlabel = 'Ontology Component Index', ylabel = 'Number of Nodes', xscale = 'log', yscale = 'log', title = 'Size of Ontology Components')
 __ = ax[1].plot(np.cumsum(z))
 
-j = len(set(ontoNames.keys()) & set(nodesKB_id_belief95)) / len(set(nodesKB_id_belief95)) * 100
-__ = ax[1].plot([0, len(ontoNames.keys())], [j, j], linestyle = '--', label = 'Total')
+j = len(set(ontoIDs) & set(nodesKB_ontoIDs_belief95)) / len(set(nodesKB_ontoIDs_belief95)) * 100
+__ = ax[1].plot([0, len(ontoIDs)], [j, j], linestyle = '--', label = 'Total')
 
 __ = plt.setp(ax[1], xlim = plt.getp(ax[0], 'xlim'), ylim = (0, 100), xlabel = 'Ontology Component Index', ylabel = 'Cumulative Fraction of the KB Graph [%]', xscale = 'log', yscale = 'linear', title = '')
 __ = plt.setp(ax[1], title = 'Set Intersection between Ontology Components and KB Graphs')
@@ -453,10 +451,13 @@ __ = ax[0].legend()
 fig.savefig('./figures/ontoComponentSize_belief95.png', dpi = 150)
 
 
+fig = ax = node = None
+del fig, ax, node
+
 # %%
 # Table of properties for the largest weakly connected components of the ontology graph
 
-k = 30
+k = 20
 y = [[  
         i, 
         nx.is_arborescence(nx.reverse_view(ontoG.subgraph(nodes))),
@@ -467,7 +468,7 @@ y = [[
         np.sum([True if in_degree == 0 else False for __, in_degree in list(ontoG.subgraph(nodes).in_degree())]),
         max([out_degree for __, out_degree in list(ontoG.subgraph(nodes).out_degree())])
     ] 
-    for i, nodes in enumerate(ontoSub[:k])]
+    for i, nodes in enumerate(ontoSubs[:k])]
 
 print(f"| {'Index':<5} | {'Rooted DAG?':<12} | {'# Nodes':<10} | {'Relative # [%]':<15} | {'Max Depth':<10} | {'# Roots':<10} | {'# Leafs':<10} | {'Max # Parents':<15} |")
 print(f"|:{'-' * 5}:|:{'-' * 12}:|:{'-' * 10}:|:{'-' * 15}:|:{'-' * 10}:|:{'-' * 10}:|:{'-' * 10}:|:{'-' * 15}:|")
@@ -497,78 +498,236 @@ print(f"| {'...':>5} | {' ' * 12} | {' ' * 10} | {' ' * 15} | {' ' * 10} | {' ' 
 # |    17 |         True |         69 |            0.00 |          1 |          1 |         68 |               1 |
 # |    18 |        False |         67 |            0.00 |          3 |          1 |         53 |               2 |
 # |    19 |        False |         66 |            0.00 |          1 |          4 |         62 |               2 |
-# |    20 |         True |         65 |            0.00 |          3 |          1 |         49 |               1 |
-# |    21 |        False |         63 |            0.00 |          4 |          2 |         53 |               2 |
-# |    22 |         True |         61 |            0.00 |          5 |          1 |         31 |               1 |
-# |    23 |         True |         60 |            0.00 |          2 |          1 |         35 |               1 |
-# |    24 |         True |         55 |            0.00 |          3 |          1 |         49 |               1 |
-# |    25 |        False |         51 |            0.00 |          2 |          3 |         45 |               2 |
-# |    26 |        False |         48 |            0.00 |          2 |          2 |         44 |               2 |
-# |    27 |         True |         48 |            0.00 |          1 |          1 |         47 |               1 |
-# |    28 |         True |         45 |            0.00 |          1 |          1 |         44 |               1 |
-# |    29 |         True |         45 |            0.00 |          1 |          1 |         44 |               1 |
 # |   ... |              |            |                 |            |            |            |                 |
 
-
-# %%
-
-
-
-
-
-
+x = y = z = i = j = k = l = None
+del i, j, k, l, x, y, z
 
 # %%
 %%time
 
-# Trophic levels vs. length of shortest path to root
+# Find all root nodes (degree = 0 or out-degree = 0)
+x = [True if d < 1 else False for __, d in ontoG.out_degree]
+y = [True if d < 1 else False for __, d in ontoG.degree]
+z = [np.flatnonzero([True if ontoG.out_degree(node) < 1 else False for node in sub]) for sub in ontoSubs]
+ontoSubRoots = [[list(ontoSubs[i])[j] for j in indices] for i, indices in enumerate(z)]
+ontoSubRoots_num = np.sum([True if len(indices) > 1 else False for indices in z])
 
-i = 10
+print(f"{np.sum(x)} ({np.sum(x) / len(ontoIDs) * 100:.2f} %) of the ontology nodes are root nodes, of which {np.sum(x) - np.sum(y)} ({(1.0 - np.sum(y) / np.sum(x)) * 100:.2f} %) have no children.")
+# 1272990 (60.60 %) of the ontology nodes are root nodes, of which 580187 (45.58 %) have children.
 
-# Trophic levels
-y = nx.algorithms.centrality.trophic_levels(ontoG.subgraph(ontoSub[i]))
+
+# Index all KB nodes that can/cannot be mapped to the ontology graph
+# Set the ontological level of the latter to -1
+x = np.flatnonzero([True if i in ontoIDs else False for i in nodesKB_ontoIDs])
+nodesKB_ontoLevels = np.zeros((len(nodesKB), ), dtype = np.int64)
+nodesKB_ontoPaths = list(np.zeros((len(nodesKB), ), dtype = np.int64))
+for i in range(len(nodesKB)):
+    if i not in x:
+        nodesKB_ontoLevels[i] = -1
+        nodesKB_ontoPaths[i] = [nodesKB_ontoIDs[i]]
+
+# Find subgraph index of each mapped KB node (limited to non-trivial subgraphs)
+# Set to -1 if a node is mapped to a trivial subgraph
+y = np.empty(x.shape, dtype = np.int64)
+for i, k in enumerate(x):
+    j = np.flatnonzero([True if nodesKB_ontoIDs[k] in sub else False for sub in ontoSubs[:ontoSubRoots_num]])
+    if len(j) == 1:
+        y[i] = j[0]
+    else:
+        y[i] = -1
 
 # %%
 %%time
 
-# Length of shortest path to a root
-roots = [list(ontoG.subgraph(x[i]))[j] for j in np.flatnonzero([True if out_degree == 0 else False for name, out_degree in list(ontoG.subgraph(x[i]).out_degree())])]
+# Find shortest path between each onto-mapped KB node and any target root node amongst the ontology subgraphs
+for i, j in zip(x, y):
 
-z = []
-for source in y.keys():
+    source = nodesKB_ontoIDs[i]
 
-    w = []
-    for root in roots:
-        try:
-            w.append(nx.algorithms.shortest_paths.generic.shortest_path_length(ontoG.subgraph(x[i]), source = source, target = root))
-        except:
-            w.extend([])
+    # Trivial ontology subgraphs
+    if j == -1:
+        nodesKB_ontoLevels[i] = 0
+        nodesKB_ontoPaths[i] = [source]
 
-    z.append(min(w))
+    # All other subgraphs
+    else:
+
+        z = []
+        for target in ontoSubRoots[j]:
+            try:
+                p = nx.algorithms.shortest_paths.generic.shortest_path(ontoG.subgraph(ontoSubs[j]), source = source, target = target)
+                z.append(p)
+            except:
+                pass
+        
+        # Find shortest path and reverse such that [target, ..., source]
+        z = sorted(z, key = len, reverse = False)
+        nodesKB_ontoPaths[i] = z[0][::-1]
+        nodesKB_ontoLevels[i] = len(z[0]) - 1
+
+i = j = p = x = y = z = source = target = None
+del i, j, p, x, y, z, source, target
+
+# %%    
+# Save intermediate results
+with open('./dist/v1/emmaa_4_indraOntology.pkl', 'wb') as x:
+    for y in [ontoG, nodesKB_ontoIDs, nodesKB_ontoLevels, nodesKB_ontoPaths]:
+        pickle.dump(y, x)
+
+
+# data = []
+# with open('./dist/v0/emmaa_4_indraOntology.pkl', 'rb') as x:
+#     try:
+#         while True:
+#             data.append(pickle.load(x))
+#     except EOFError:
+#         pass
+#
+# ontoG, nodesKB_ontoIDs, nodesKB_ontoLevels, nodesKB_ontoPaths = data
+
 
 # %%
-fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (6, 6))
-ax.scatter(np.asarray(list(y.values())) - 1, z, s = 100, alpha = 0.5, marker = '.')
-__ = plt.setp(ax, xlabel = 'Trophic Level - 1', ylabel = 'Length of Shortest Path to a Root Node', aspect = 1.0)
+# Distribution of the size of onto cluster at each onto level
+# * excluding unmappable nodes
+# * assuming onto clusters do not persist between onto levels
+# * onto cluster size = number of KB nodes mapped to this onto node in the given onto level (onto children are excluded)
+# * shown the `n` largest clusters
+
+i = 0
+j = max(nodesKB_ontoLevels) + 1
+x = range(i, j, 1)
+y = [np.flatnonzero([True if level >= k else False for level in nodesKB_ontoLevels]) for k in x]
+z = [sorted(np.unique([nodesKB_ontoPaths[node][k] for node in nodes], return_counts = True)[1], reverse = True) for k, nodes in enumerate(y)]
+n = 5
+a = [[sizes[k] if len(sizes) > k else 0 for sizes in z] for k in range(n)]
+b = np.vstack((np.zeros((1, len(x))), np.asarray(a).cumsum(axis = 0)))
+c = [[sum(sizes[k:]) if len(sizes) > k else 0 for sizes in z] for k in [n]]
+
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
+__ = [ax.bar(x, a[k], bottom = b[k, :], alpha = 1, label = f"{k + 1}th") for k in range(n)]
+__ = ax.bar(x, c[0], bottom = b[-1, :], alpha = 0.25, color = 'gray', label = 'All Others')
+__ = ax.plot([i, j], [len(nodesKB), len(nodesKB)], linestyle = '--', color = 'black')
+__ = plt.setp(ax, xlabel = 'Onto-Level Threshold', ylabel = 'Number of KB Nodes Mapped to a Onto Cluster', xticks = np.linspace(i, j, j - i + 1), yscale = 'log', 
+    title = 'Size of Onto Clusters at a Given Onto-Level Threshold of the KB Graph', ylim = (0.5, 5e4))
+__ = ax.legend(loc = 'upper right')
+
+
+fig.savefig('./figures/v1/ontoClusters_distribution.png', dpi = 150)
+
+a = b = c = i = j = k = n = x = y = z = fig = ax = None
+del a, b, c, i, j, k, n, x, y, z, fig, ax
+
+# %%
+# Load KB node data
+a = {}
+with open('./dist/v0/nodeLayoutClustering.jsonl', 'r') as x:
+    a = [json.loads(i) for i in x]
+
+nodesKB_pos = np.array([[node['x'], node['y'], node['z']] for node in a])
+
+a = x = None
+del a, x
+
+
+# %%
+# Generate onto cluster meta-data
+ontoClusters, ontoClusters_size = np.unique([node for path in nodesKB_ontoPaths for node in path], return_counts = True)
+i = np.argsort(ontoClusters_size)[::-1]
+ontoClusters = ontoClusters[i]
+ontoClusters_size = ontoClusters_size[i]
+ontoClusters_id = list(range(len(ontoClusters)))
+
+# %%
+%%time
+
+# Calculate onto cluster position
+ontoClusters_nodesKB = [np.flatnonzero([True if ontoCluster in path else False for path in nodesKB_ontoPaths]) for ontoCluster in ontoClusters]
+ontoClusters_pos = np.array([np.median(nodesKB_pos[nodes, :], axis = 0) for nodes in ontoClusters_nodesKB])
+
+
+# %%
+# Output KB node layout/clustering meta-data
+with open(f'./dist/v1/nodeData.jsonl', 'w') as x:
+
+    # Description
+    y = {
+        'id': '<int> unique ID for the node in the KB graph as specified in `nodes.jsonl`',
+        'x': '<float> position of the node in the graph layout (symmetric Laplacian + UMAP 3D)',
+        'y': '<float> position of the node in the graph layout (symmetric Laplacian + UMAP 3D)',
+        'z': '<float> position of the node in the graph layout (symmetric Laplacian + UMAP 3D)',
+        'size': '<float> marker size (total degree of the node in the graph)',
+        'ontoID': '<str> unique ID of the INDRA ontology (v1.3) node to which this KB node is mapped', 
+        'ontoLevel': '<int> hierarchy level of the ontology node (`-1` if not mapped)',
+        'clusterIDs': '<array of int> ordered list of cluster IDs (see `clusters.jsonl`) to which this node is mapped (cluster hierarchy = INDRA ontology v1.3, order = root-to-leaf)'
+    }
+    json.dump(y, x)
+    x.write('\n')
+
+    # Data
+    for i in range(len(nodesKB)):
+        z = {
+            'id': int(nodesKB[i]['id']),
+            'x': float(nodesKB_pos[i, 0]), 
+            'y': float(nodesKB_pos[i, 1]), 
+            'z': float(nodesKB_pos[i, 2]), 
+            'ontoID': nodesKB_ontoIDs[i], 
+            'ontoLevel': int(nodesKB_ontoLevels[i]),
+            'clusterIDs': nodesKB_ontoPaths[i]
+        }
+
+        json.dump(z, x)
+        x.write('\n')
+
+
+i = x = y = z = None
+del i, x, y, z
+
+
+# %%
+# Output cluster meta-data
+with open(f'./dist/v1/clusters.jsonl', 'w') as x:
+
+    # Description
+    y = {
+        'id': '<int> unique ID for the clusters to which `clusterIDs` in nodeData.jsonl` refers',
+        'name': '<str> cluster name (node `id` from the ontology)',
+        'x': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)',
+        'y': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)',
+        'z': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)',
+        'size': '<float> marker size (size of the cluster, i.e. number of KB nodes that is mapped to this ontology node)'
+    }
+    json.dump(y, x)
+    x.write('\n')
+
+    # Data
+    for i in range(len(ontoClusters)):
+        z = {
+            'id': int(ontoClusters_id[i]),
+            'name': str(ontoClusters[i]),
+            'x': float(ontoClusters_pos[i, 0]), 
+            'y': float(ontoClusters_pos[i, 1]), 
+            'z': float(ontoClusters_pos[i, 2]), 
+            'size': float(ontoClusters_size[i]),
+        }
+
+        json.dump(z, x)
+        x.write('\n')
+
+
+i = x = y = z = None
+del i, x, y, z
 
 
 # %%
 
 
 
-i = 9
-print(nx.is_weakly_connected(ontoG.subgraph(x[i])))
-# True
-
-print(nx.is_branching(nx.reverse_view(ontoG.subgraph(x[i]))))
-# True
-
-print(nx.is_arborescence(nx.reverse_view(ontoG.subgraph(x[i]))))
-# True
 
 
 
-print(f'{nx.is_weakly_connected(ontoG.subgraph(x[i]))} {nx.is_branching(nx.reverse_view(ontoG.subgraph(x[i])))} {nx.is_arborescence(nx.reverse_view(ontoG.subgraph(x[i])))}')
+
+
 
 
 
@@ -782,66 +941,4 @@ def hierarchy_pos(G, root, levels=None, width=1., height=1.):
         levels = {l:{TOTAL: levels[l], CURRENT:0} for l in levels}
     vert_gap = height / (max([l for l in levels])+1)
     return make_pos({})
-
-
-
-
-# %%
-# x = nx.algorithms.centrality.trophic_levels(ontoG)
-
-
-# False
-
-
-
-
-nodes = [n for n in ontoG.nodes()]
-
-x = [d for n, d in ontoG.in_degree()]
-y = [d for n, d in ontoG.out_degree()]
-z = np.array([x, y]).transpose()
-w = np.sum(z, axis = 1)
-
-
-print(nx.is_strongly_connected(ontoG))
-print(nx.number_strongly_connected_components(ontoG))
-x = [c for c in sorted(nx.strongly_connected_components(ontoG), key = len, reverse = True)]
-y = [len(c) for c in x]
-
-fig, ax = plt.subplots(1, 1, figsize = (6, 6))
-ax.hist(y, range = (0, 20), bins = 20)
-__ = plt.setp(ax, yscale = 'log')
-
-
-print(nx.is_weakly_connected(ontoG))
-print(nx.number_weakly_connected_components(ontoG))
-x = [c for c in sorted(nx.weakly_connected_components(ontoG), key = len, reverse = True)]
-y = [len(c) for c in x]
-
-fig, ax = plt.subplots(1, 1, figsize = (6, 6))
-ax.hist(y, range = (0, max(y)), bins = max(y))
-__ = plt.setp(ax, xscale = 'log')
-
-
-
-
-x = ontoJSON['nodes'][0]['id']
-
-
-y = nx.algorithms.dag.topological_sort(ontoG)
-z = list(reversed(list(y)))
-
-
-# Leaf nodes?
-z = [True if d == 0 else False for n, d in ontoG.in_degree()]
-
-# Root node?
-z = [True if d == 0 else False for n, d in ontoG.out_degree()]
-
-z = [[n, d] for n, d in ontoG.in_degree()]
-
-
-
-# %%
-
 
