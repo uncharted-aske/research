@@ -4,7 +4,7 @@
 __pycache__/
 .ipynb_checkpoints/
 .venv/
-.pkl
-.jsonl
-.json
-.csv
+*.pkl
+*.jsonl
+*.json
+*.csv
