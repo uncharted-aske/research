@@ -43,6 +43,14 @@ nodesKB = {}
 with open('./data/covid19-snapshot_sep18-2020/processed/nodes.jsonl', 'r') as x:
     nodesKB = [json.loads(i) for i in x]
 
+edgesKB = {}
+with open('./data/covid19-snapshot_sep18-2020/processed/edges.jsonl', 'r') as x:
+    edgesKB = [json.loads(i) for i in x]
+
+edgesKB_ = {}
+with open('./data/covid19-snapshot_sep18-2020/processed/collapsedEdges.jsonl', 'r') as x:
+    edgesKB_ = [json.loads(i) for i in x]
+
 # # `nodes` data from the Covid-19 knowledge base (curated)
 # nodesKB_curated = {}
 # with open('./dist/nodes_curated_belief0.jsonl', 'r') as x:
@@ -55,9 +63,31 @@ with open('./data/covid19-snapshot_sep18-2020/processed/nodes.jsonl', 'r') as x:
 # with open('./dist/nodes_belief95_curatedTested.jsonl', 'r') as x:
 #     nodesKB_belief95.extend([json.loads(i) for i in x])
 
+# %%
+# Collate CollapseEdges with edges data
+for edge in edgesKB:
+    i = edge['collapsed_id']
+    edge['source'] = edgesKB_[i]['source']
+    edge['target'] = edgesKB_[i]['target']
 
-x = None
-del x
+# Count node degree
+z = np.array([[edge['source'], edge['target']] for edge in edgesKB])
+nodesKB_degrees = np.array([[np.sum(z[:, j] == node['id']) for j in range(2)] for node in nodesKB])
+
+# Get node belief score
+x = np.array([edge['belief'] for edge in edgesKB])
+y = [x[(z[:, 0] == node['id']) | (z[:, 1] == node['id'])] for node in nodesKB]
+nodesKB_belief = [max(i) if len(i) > 0 else 0.0 for i in y]
+
+# Get node position
+a = {}
+with open('./dist/v0/nodeLayoutClustering.jsonl', 'r') as x:
+    a = [json.loads(i) for i in x]
+nodesKB_pos = np.array([[node['x'], node['y'], node['z']] for node in a])
+
+
+a = x = y = z = edge = edgesKB_ = None
+del a, x, y, z, edge, edgesKB_
 
 # %%
 # Data structure of the ontology JSON
@@ -98,6 +128,8 @@ for k in nodesKB[0].keys():
     if isinstance(nodesKB[0][k], dict):
         for l in nodesKB[0][k].keys():
             print(f"{'':<6}'{k}': {type(nodesKB[0][k][l])}")
+
+
 
 # %%
 # Count namespace usage in ontology graph
@@ -570,22 +602,23 @@ i = j = p = x = y = z = source = target = None
 del i, j, p, x, y, z, source, target
 
 # %%    
-# Save intermediate results
-with open('./dist/v1/emmaa_4_indraOntology.pkl', 'wb') as x:
-    for y in [ontoG, nodesKB_ontoIDs, nodesKB_ontoLevels, nodesKB_ontoPaths]:
+# Save intermediate nodesKB results
+with open('./dist/v1/emmaa_4_indraOntology_nodesKB.pkl', 'wb') as x:
+    for y in [nodesKB_degrees, nodesKB_belief, nodesKB_ontoIDs, nodesKB_ontoLevels, nodesKB_ontoPaths]:
         pickle.dump(y, x)
 
 
 # data = []
-# with open('./dist/v0/emmaa_4_indraOntology.pkl', 'rb') as x:
+# with open('./dist/v1/emmaa_4_indraOntology.pkl', 'rb') as x:
 #     try:
 #         while True:
-#             data.append(pickle.load(x))
+#             data.extend(pickle.load(x))
 #     except EOFError:
 #         pass
-#
-# ontoG, nodesKB_ontoIDs, nodesKB_ontoLevels, nodesKB_ontoPaths = data
 
+# nodesKB_degrees, nodesKB_belief, nodesKB_ontoIDs, nodesKB_ontoLevels, nodesKB_ontoPaths = data
+# data = None
+# del data
 
 # %%
 # Distribution of the size of onto cluster at each onto level
@@ -619,24 +652,32 @@ a = b = c = i = j = k = n = x = y = z = fig = ax = None
 del a, b, c, i, j, k, n, x, y, z, fig, ax
 
 # %%
-# Load KB node data
-a = {}
-with open('./dist/v0/nodeLayoutClustering.jsonl', 'r') as x:
-    a = [json.loads(i) for i in x]
+%%time
 
-nodesKB_pos = np.array([[node['x'], node['y'], node['z']] for node in a])
-
-a = x = None
-del a, x
-
-
-# %%
 # Generate onto cluster meta-data
 ontoClusters, ontoClusters_size = np.unique([node for path in nodesKB_ontoPaths for node in path], return_counts = True)
 i = np.argsort(ontoClusters_size)[::-1]
 ontoClusters = ontoClusters[i]
 ontoClusters_size = ontoClusters_size[i]
 ontoClusters_id = list(range(len(ontoClusters)))
+
+# Get cluster names from ontology `name` attribute
+x = dict(ontoG.nodes(data = 'name', default = None))
+ontoClusters_name = list(np.empty((len(ontoClusters, ))))
+for i, cluster in enumerate(ontoClusters):
+    try:
+        ontoClusters_name[i] = x[cluster]
+    except:
+        ontoClusters_name[i] = ''
+
+# Get onto level of each cluster
+i = max([len(path) for path in nodesKB_ontoPaths])
+x = [np.unique([path[j] if len(path) > j else '' for path in nodesKB_ontoPaths]) for j in range(i)]
+ontoClusters_ontoLevels = [np.flatnonzero([cluster in y for y in x])[0] for cluster in ontoClusters]
+
+
+i = x = cluster = None
+del i, x, cluster
 
 # %%
 %%time
@@ -645,6 +686,24 @@ ontoClusters_id = list(range(len(ontoClusters)))
 ontoClusters_nodesKB = [np.flatnonzero([True if ontoCluster in path else False for path in nodesKB_ontoPaths]) for ontoCluster in ontoClusters]
 ontoClusters_pos = np.array([np.median(nodesKB_pos[nodes, :], axis = 0) for nodes in ontoClusters_nodesKB])
 
+# %%
+# Save intermediate ontoClusters results
+with open('./dist/v1/emmaa_4_indraOntology_onto.pkl', 'wb') as x:
+    for y in [ontoG, ontoClusters, ontoClusters_id, ontoClusters_name, ontoClusters_ontoLevels, ontoClusters_size, ontoClusters_name, ontoClusters_nodesKB, ontoClusters_pos]:
+        pickle.dump(y, x)
+
+
+# data = []
+# with open('./dist/v1/emmaa_4_indraOntology_onto.pkl', 'rb') as x:
+#     try:
+#         while True:
+#             data.extend(pickle.load(x))
+#     except EOFError:
+#         pass
+
+# ontoG, ontoClusters, ontoClusters_id, ontoClusters_name, ontoClusters_ontoLevels, ontoClusters_size, ontoClusters_name, ontoClusters_nodesKB, ontoClusters_pos = data
+# data = None
+# del data
 
 # %%
 # Output KB node layout/clustering meta-data
@@ -656,9 +715,11 @@ with open(f'./dist/v1/nodeData.jsonl', 'w') as x:
         'x': '<float> position of the node in the graph layout (symmetric Laplacian + UMAP 3D)',
         'y': '<float> position of the node in the graph layout (symmetric Laplacian + UMAP 3D)',
         'z': '<float> position of the node in the graph layout (symmetric Laplacian + UMAP 3D)',
-        'size': '<float> marker size (total degree of the node in the graph)',
+        'degreeIn': '<int> in-degree in the KB graph',
+        'degreeOut': '<int> out-degree in the KB graph',
+        'belief': '<float> max of the belief scores of all adjacent edges in the KB graph',
         'ontoID': '<str> unique ID of the INDRA ontology (v1.3) node to which this KB node is mapped', 
-        'ontoLevel': '<int> hierarchy level of the ontology node (`-1` if not mapped)',
+        'ontoLevel': '<int> hierarchy level of the ontology node (`-1` if not mappable)',
         'clusterIDs': '<array of int> ordered list of cluster IDs (see `clusters.jsonl`) to which this node is mapped (cluster hierarchy = INDRA ontology v1.3, order = root-to-leaf)'
     }
     json.dump(y, x)
@@ -671,6 +732,9 @@ with open(f'./dist/v1/nodeData.jsonl', 'w') as x:
             'x': float(nodesKB_pos[i, 0]), 
             'y': float(nodesKB_pos[i, 1]), 
             'z': float(nodesKB_pos[i, 2]), 
+            'degreeOut': int(nodesKB_degrees[i, 0]),
+            'degreeIn': int(nodesKB_degrees[i, 1]),
+            'belief': int(nodesKB_belief[i]),
             'ontoID': nodesKB_ontoIDs[i], 
             'ontoLevel': int(nodesKB_ontoLevels[i]),
             'clusterIDs': nodesKB_ontoPaths[i]
@@ -683,19 +747,20 @@ with open(f'./dist/v1/nodeData.jsonl', 'w') as x:
 i = x = y = z = None
 del i, x, y, z
 
-
 # %%
-# Output cluster meta-data
+# Output cluster data
 with open(f'./dist/v1/clusters.jsonl', 'w') as x:
 
     # Description
     y = {
         'id': '<int> unique ID for the clusters to which `clusterIDs` in nodeData.jsonl` refers',
-        'name': '<str> cluster name (node `id` from the ontology)',
+        'name': '<str> standard name (node `name` in `indra_ontology_v1.3.json`)', 
+        'ref': '<str> database ref id (node `id` in `indra_ontology_v1.3.json`; can be used to construct an entity url)', 
+        'level': '<int> hierarchical level of this cluster (number of hops to the local root node of the ontology)',
+        'size': '<float> marker size (size of the cluster, i.e. number of KB nodes that is mapped to this ontology node)',
         'x': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)',
         'y': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)',
-        'z': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)',
-        'size': '<float> marker size (size of the cluster, i.e. number of KB nodes that is mapped to this ontology node)'
+        'z': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)'
     }
     json.dump(y, x)
     x.write('\n')
@@ -704,11 +769,13 @@ with open(f'./dist/v1/clusters.jsonl', 'w') as x:
     for i in range(len(ontoClusters)):
         z = {
             'id': int(ontoClusters_id[i]),
-            'name': str(ontoClusters[i]),
+            'name': ontoClusters_name[i],
+            'ref': ontoClusters[i],
+            'level': int(ontoClusters_ontoLevels[i]),
+            'size': float(ontoClusters_size[i]),
             'x': float(ontoClusters_pos[i, 0]), 
             'y': float(ontoClusters_pos[i, 1]), 
-            'z': float(ontoClusters_pos[i, 2]), 
-            'size': float(ontoClusters_size[i]),
+            'z': float(ontoClusters_pos[i, 2])
         }
 
         json.dump(z, x)
@@ -718,7 +785,6 @@ with open(f'./dist/v1/clusters.jsonl', 'w') as x:
 i = x = y = z = None
 del i, x, y, z
 
-
 # %%
 
 
@@ -730,7 +796,7 @@ del i, x, y, z
 
 
 
-
+# %%
 
 i = 9
 y = list((ontoG.subgraph(x[i])).out_degree)
