@@ -1,0 +1,5 @@
+{"id": 42455, "collapsed_id": 42326, "type": "Activation", "belief": 0.65, "statement_id": "8706483665511942", "source": 13668, "target": 772}
+{"id": 42456, "collapsed_id": 42327, "type": "Activation", "belief": 0.65, "statement_id": "26710196732204680", "source": 13668, "target": 377}
+{"id": 42457, "collapsed_id": 42328, "type": "Activation", "belief": 0.65, "statement_id": "-18024498924746151", "source": 13668, "target": 480}
+{"id": 42458, "collapsed_id": 42329, "type": "Activation", "belief": 0.65, "statement_id": "24648314786677090", "source": 13668, "target": 20}
+{"id": 224956, "collapsed_id": 207289, "type": "Inhibition", "belief": 0.65, "statement_id": "20069826097854978", "source": 13668, "target": 74}

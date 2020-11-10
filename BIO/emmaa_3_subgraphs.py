@@ -5,10 +5,9 @@
 
 # %%[markdown]
 # Idea: 
-# * Assume an undirected graph
-# * Use the graph Laplacian vectors as initial node embeddings
-# * Create 2D/3D layout by dimensional reduction (UMAP)
-# * Learn an ontology by applying hierarchy clustering (HDBSCAN)
+# * Check distribution of belief scores
+# * Extract subgraphs by belief score filtering
+# * Extract subgraphs by tested/untested using the curated/mitre test pathways
 
 # %%
 import json
@@ -50,6 +49,7 @@ for edge in edges:
 nodeBeliefScores = np.array([max(i) if len(i) else 0.0 for i in z])
 edgeBeliefScores = np.array([edge['belief'] for edge in edges])
 
+# %%
 # Plot histogram of belief scores
 k = 25
 y, x = np.histogram(edgeBeliefScores, bins = k, range = (0, 1))
@@ -409,3 +409,115 @@ for paths, z in [[paths_curated, 'Curated'], [paths_mitre, 'Mitre']]:
 
 # %%
 
+# %%
+# Plot and output curated paths with belief score filtering (`nodes` and `edges` files are split by tested/untested)
+
+# Belief score threshold
+b = 0.95
+# b = 0.0
+
+# for paths, z in [[paths_curated, 'Curated']]:
+for paths, z in [[paths_curated, 'Curated'], [paths_mitre, 'Mitre']]:
+
+    # Conditional indices for the nodes and edges in the tested paths
+    nodeFlags = np.full((len(nodes), ), False)
+    edgeFlags = np.full((len(edges), ), False)
+    x = list(set([i for n in [path['nodes'] for path in paths] for i in n]))
+    y = list(set([i for n in [path['edges'] for path in paths] for m in n for i in m]))
+    k = []
+    l = []
+    for i in x:
+        if i in range(len(nodes)):
+            nodeFlags[i] = True
+        else:
+            k.append(i)
+    for i in y:
+        if i in range(len(edges)):
+            edgeFlags[i] = True
+        else:
+            l.append(i)
+
+    # Conditional index for belief score filtering
+    j = edgeBeliefScores > b
+    x = list(set([m for n in [[edges[n]['source'], edges[n]['target']] for n in np.flatnonzero(j)] for m in n]))
+    y = np.full((len(nodes), ), False)
+    for n in x:
+        y[n] = True
+    i = y
+
+    # Plot
+    title = f'Paths Belief Score > {b:.2f} ({z} Tested?) - {sum(i)} Nodes and {sum(j)} Edges Shown'
+    fig, ax = emlib.plot_emb(
+        coor = posNodes[i, :], labels = nodeFlags[i], 
+        marker_size = markerSize[i], marker_alpha = 0.1, 
+        cmap_name = 'qual', colorbar = True, str_title = title)
+    
+    # __ = [ax.plot(
+    #     posNodes_sphCart[[edges[n]['source'], edges[n]['target']], 0], 
+    #     posNodes_sphCart[[edges[n]['source'], edges[n]['target']], 1], 
+    #     posNodes_sphCart[[edges[n]['source'], edges[n]['target']], 2],
+    #     color = 'k', linewidth = 0.5, alpha = 0.1, zorder = 0) for n in np.flatnonzero(j)]
+
+    fig.savefig(f'./figures/nodes_belief{100*b:.0f}_{z.lower()}Tested.png', dpi = 150)
+
+
+    # Output data
+    with open(f'./dist/nodes_belief{100*b:.0f}_{z.lower()}Tested.jsonl', 'w') as x:
+        for n in np.flatnonzero(i * nodeFlags):
+            json.dump(nodes[n], x)
+            x.write('\n')
+
+    with open(f'./dist/edges_belief{100*b:.0f}_{z.lower()}Tested.jsonl', 'w') as x:
+        for n in np.flatnonzero(j * edgeFlags):
+            json.dump(edges[n], x)
+            x.write('\n')
+
+    with open(f'./dist/nodes_belief{100*b:.0f}_{z.lower()}Untested.jsonl', 'w') as x:
+        for n in np.flatnonzero(i * (~nodeFlags)):
+            json.dump(nodes[n], x)
+            x.write('\n')
+
+    with open(f'./dist/edges_belief{100*b:.0f}_{z.lower()}Untested.jsonl', 'w') as x:
+        for n in np.flatnonzero(j * (~edgeFlags)):
+            json.dump(edges[n], x)
+            x.write('\n')
+
+    # Tested
+    outputNodes = [
+        {
+            'id': int(nodes[n]['id']),
+            'x': float(posNodes[n, 0]),
+            'y': float(posNodes[n, 1]),
+            'z': float(posNodes[n, 2]), 
+            'size': float(markerSize[n]),
+            'clusterID': [int(nodeFlags[n])], 
+            'clusterScore': [float(0.0)]
+        }
+        for n in np.flatnonzero(i * nodeFlags)
+    ]
+
+    with open(f'./dist/nodeLayoutClustering_belief{100*b:.0f}_{z.lower()}Tested.jsonl', 'w') as x:
+        for n in outputNodes:
+            json.dump(n, x)
+            x.write('\n')
+
+    # Untested
+    outputNodes = [
+        {
+            'id': int(nodes[n]['id']),
+            'x': float(posNodes[n, 0]),
+            'y': float(posNodes[n, 1]),
+            'z': float(posNodes[n, 2]), 
+            'size': float(markerSize[n]),
+            'clusterID': [int(nodeFlags[n])], 
+            'clusterScore': [float(0.0)]
+        }
+        for n in np.flatnonzero(i * (~nodeFlags))
+    ]
+
+    with open(f'./dist/nodeLayoutClustering_belief{100*b:.0f}_{z.lower()}Untested.jsonl', 'w') as x:
+        for n in outputNodes:
+            json.dump(n, x)
+            x.write('\n')
+
+# %%
