@@ -130,7 +130,6 @@ for k in nodesKB[0].keys():
             print(f"{'':<6}'{k}': {type(nodesKB[0][k][l])}")
 
 
-
 # %%
 # Count namespace usage in ontology graph
 x = [re.findall('\w{1,}(?=:)', node['id'])[0] for node in ontoJSON['nodes']]
@@ -693,17 +692,17 @@ with open('./dist/v1/emmaa_4_indraOntology_onto.pkl', 'wb') as x:
         pickle.dump(y, x)
 
 
-# data = []
-# with open('./dist/v1/emmaa_4_indraOntology_onto.pkl', 'rb') as x:
-#     try:
-#         while True:
-#             data.extend(pickle.load(x))
-#     except EOFError:
-#         pass
+data = []
+with open('./dist/v1/emmaa_4_indraOntology_onto.pkl', 'rb') as x:
+    try:
+        while True:
+            data.append(pickle.load(x))
+    except EOFError:
+        pass
 
-# ontoG, ontoClusters, ontoClusters_id, ontoClusters_name, ontoClusters_ontoLevels, ontoClusters_size, ontoClusters_name, ontoClusters_nodesKB, ontoClusters_pos = data
-# data = None
-# del data
+ontoG, ontoClusters, ontoClusters_id, ontoClusters_name, ontoClusters_ontoLevels, ontoClusters_size, ontoClusters_name, ontoClusters_nodesKB, ontoClusters_pos = data
+data = None
+del data
 
 # %%
 # Output KB node layout/clustering meta-data
@@ -786,6 +785,13 @@ i = x = y = z = None
 del i, x, y, z
 
 # %%
+
+
+
+
+
+
+
 
 
 
