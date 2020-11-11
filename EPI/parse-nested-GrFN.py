@@ -9,8 +9,6 @@ def formatGraph(data):
     edges = []
 
     for key,value in data.items():
-        if key == 'metadata':
-            modelMetadata = { 'name': value[1]['attributes'][0]['model_name'], 'description': value[1]['attributes'][0]['model_description'], 'authors': value[2]['attributes'][0]['authors'], 'sources': value[1]['provenance']['sources'][0] }
         if key == 'variables':
             for item in value: 
                 if 'metadata' in item:
@@ -39,7 +37,6 @@ def formatGraph(data):
                 for o in item['outputs']:
                     second_edge = { 'source': item['function'], 'target': o }
                     edges.append(second_edge)
-
         if key == 'subgraphs':
             for item in value: 
                 # Get parent name
@@ -64,8 +61,32 @@ def formatGraph(data):
                     
                     nodes.append(node)
        
-            # Append root for visualization purposes
+            # Append root for visualization purposes so we don't have multiple roots
             nodes.append({'concept': 'root', 'parent': '', 'id': 'root'}) 
+        
+        if key == 'metadata':
+            modelMetadata = { 'name': value[1]['attributes'][0]['model_name'], 'description': value[1]['attributes'][0]['model_description'], 'authors': value[2]['attributes'][0]['authors'], 'sources': value[1]['provenance']['sources'][0] }
+            variableTypes = value[0]['attributes']
+            variableTypesDict = {}
+            # Distinguish variable type
+            for item in variableTypes:
+                for i in item['inputs']:
+                    variableTypesDict[i] = 'input'
+                for i in item['outputs']:
+                    variableTypesDict[i] = 'output'
+                for i in item['parameters']:
+                    variableTypesDict[i] = 'parameter'
+                for i in item['model_variables']:
+                    variableTypesDict[i] = 'model_variable'
+                for i in item['initial_conditions']:
+                    variableTypesDict[i] = 'initial_condition'
+                for i in item['internal_variables']:
+                    variableTypesDict[i] = 'internal_variable'
+            for node in nodes:
+                if 'nodeType' in node:
+                    if (node['nodeType'] == 'variable'):
+                        if (node['id'] in variableTypesDict):
+                            node['varType'] = variableTypesDict[node['id']]
 
         
     for i in range(len(edges)):
