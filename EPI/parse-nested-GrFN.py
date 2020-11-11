@@ -47,7 +47,12 @@ def formatGraph(data):
 
                 # Get container name
                 splitted_id = item['basename'].split('.')
-                node = { 'id': item['basename'], 'concept': splitted_id[(len(splitted_id) - 1)], 'label': splitted_id[(len(splitted_id) - 1)], 'parent': parent_name}
+
+                #Get container metadata
+                if 'metadata' in item:
+                    metadata = { 'role': item['metadata'][0]['attributes'][0]['code_role'], 'type': item['metadata'][0]['type']}
+
+                node = { 'id': item['basename'], 'concept': splitted_id[(len(splitted_id) - 1)], 'nodeType': item['type'], 'label': splitted_id[(len(splitted_id) - 1)], 'parent': parent_name, 'metadata': metadata }
                 nodes.append(node)
                 for n in item['nodes']:
                     found = nodesDict[n]
