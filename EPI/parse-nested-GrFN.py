@@ -12,7 +12,7 @@ def formatGraph(data):
         if key == 'variables':
             for item in value: 
                 if 'metadata' in item:
-                    metadata = { 'type': item['type'], 'text_identifier':item['metadata'][0]['attributes'][0]['text_identifier'], 'text_definition': item['metadata'][0]['attributes'][0]['text_definition'], 'knowledge': item['metadata'][0]['provenance']['sources'][0]['document_source'] }
+                    metadata = item['metadata'][0]
                 else:
                     metadata = {}
                 item['nodeType'] = 'variable'
@@ -21,7 +21,7 @@ def formatGraph(data):
         if key == 'functions':
             for item in value: 
                 if 'metadata' in item:
-                    metadata = { 'type': item['type'], 'eqn_source':item['metadata'][0]['attributes'][0]['eqn_source'], 'knowledge': item['metadata'][0]['provenance']['sources'][0]['document_source'] }
+                    metadata = item['metadata'][0]
                 else:
                     metadata = {} 
                 item['nodeType'] = 'function'
@@ -40,8 +40,7 @@ def formatGraph(data):
         if key == 'subgraphs':
             for item in value: 
                 # Get parent name
-                splitted_parent_name = item['scope'].split('.')
-                parent_name = splitted_parent_name[(len(splitted_parent_name) - 1)]
+                parent_name = item['scope']
                 if (parent_name == '@global'):
                     parent_name = 'root'
 
@@ -50,7 +49,7 @@ def formatGraph(data):
 
                 #Get container metadata
                 if 'metadata' in item:
-                    metadata = { 'role': item['metadata'][0]['attributes'][0]['code_role'], 'type': item['metadata'][0]['type']}
+                    metadata = item['metadata'][0]
 
                 node = { 'id': item['basename'], 'concept': splitted_id[(len(splitted_id) - 1)], 'nodeType': item['type'], 'label': splitted_id[(len(splitted_id) - 1)], 'parent': parent_name, 'metadata': metadata }
                 nodes.append(node)
@@ -59,10 +58,10 @@ def formatGraph(data):
                     # Variables
                     if (found['nodeType'] == 'variable'):
                         splitted_identifier = found['identifier'].split('::')
-                        node = { 'id': n, 'concept': n, 'label': splitted_identifier[len(splitted_identifier)-2], 'nodeType': 'variable', 'type': found['type'], 'parent': splitted_id[(len(splitted_id) - 1)], 'metadata': found['metadata']}
+                        node = { 'id': n, 'concept': splitted_identifier[len(splitted_identifier)-2], 'label': splitted_identifier[len(splitted_identifier)-2], 'nodeType': 'variable', 'type': found['type'], 'parent': item['basename'], 'metadata': found['metadata']}
                     # Functions
                     else:
-                        node = { 'id': n, 'concept': n, 'label': found['type'], 'type': found['type'], 'nodeType': 'function', 'parent': splitted_id[(len(splitted_id) - 1)], 'metadata': found['metadata']}
+                        node = { 'id': n, 'concept': found['type'], 'label': found['type'], 'type': found['type'], 'nodeType': 'function', 'parent': item['basename'], 'metadata': found['metadata']}
                     
                     nodes.append(node)
        
@@ -70,7 +69,7 @@ def formatGraph(data):
             nodes.append({'concept': 'root', 'parent': '', 'id': 'root'}) 
         
         if key == 'metadata':
-            modelMetadata = { 'name': value[1]['attributes'][0]['model_name'], 'description': value[1]['attributes'][0]['model_description'], 'authors': value[2]['attributes'][0]['authors'], 'sources': value[1]['provenance']['sources'][0] }
+            modelMetadata = value[0]
             variableTypes = value[0]['attributes']
             variableTypesDict = {}
             # Distinguish variable type
