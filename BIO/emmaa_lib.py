@@ -13,16 +13,12 @@ import scipy as sp
 import csv
 import re
 
-import spacy
-import nltk
-import squarify as sqf
-import sklearn as skl
-import hdbscan
+# import sklearn as skl
+# import hdbscan
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import cmocean
 
 
 # %%
@@ -78,7 +74,7 @@ def plot_emb(coor = np.array([]), labels = [], ax = [], figsize = (12, 12), mark
             vlim = (np.min(labels), np.max(labels))
 
     # # Recentre
-    # r0 = np.median(coor, axis = 0)
+    r0 = np.median(coor, axis = 0)
     # coor = coor - r0
 
     # Plot figure
