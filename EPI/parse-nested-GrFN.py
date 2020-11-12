@@ -8,60 +8,54 @@ def formatGraph(data):
     nodes = []
     edges = []
 
+    # FIXME: We might want to only check for fields we are interested in instead of just going over all items. 
     for key,value in data.items():
         if key == 'variables':
-            for item in value: 
-                if 'metadata' in item:
-                    metadata = item['metadata'][0]
-                else:
-                    metadata = {}
-                item['nodeType'] = 'variable'
-                item['metadata'] = metadata
-                nodesDict[item['uid']] = item
+            for variable in value: 
+                metadata = variable['metadata'][0] if 'metadata' in variable else {}
+
+                variable['nodeType'] = 'variable'
+                variable['metadata'] = metadata
+                nodesDict[variable['uid']] = variable
         if key == 'functions':
-            for item in value: 
-                if 'metadata' in item:
-                    metadata = item['metadata'][0]
-                else:
-                    metadata = {} 
-                item['nodeType'] = 'function'
-                item['metadata'] = metadata
-                nodesDict[item['uid']] = item
+            for function in value: 
+                metadata = function['metadata'][0] if 'metadata' in function else {}
+ 
+                function['nodeType'] = 'function'
+                function['metadata'] = metadata
+                nodesDict[function['uid']] = function
         if key == 'hyper_edges':
-            for item in value: 
-                if len(item['inputs']) > 0:
-                    for i in item['inputs']: # Inputs array is sometimes empty
-                        first_edge = { 'source': i, 'target': item['function']}
-                        edges.append(first_edge)
+            for edge in value: 
+                if len(edge['inputs']) > 0: # Inputs array is sometimes empty
+                    [edges.append({ 'source': i, 'target': edge['function']}) for i in edge['inputs']]
                 
-                for o in item['outputs']:
-                    second_edge = { 'source': item['function'], 'target': o }
-                    edges.append(second_edge)
+                [edges.append({ 'source': edge['function'], 'target': o }) for o in edge['outputs']]
+
         if key == 'subgraphs':
-            for item in value: 
+            for subgraph in value: 
                 # Get parent name
-                parent_name = item['scope']
+                parent_name = subgraph['scope']
                 if (parent_name == '@global'):
                     parent_name = 'root'
 
                 # Get container name
-                splitted_id = item['basename'].split('.')
+                splitted_id = subgraph['basename'].split('.')
 
                 #Get container metadata
-                if 'metadata' in item:
-                    metadata = item['metadata'][0]
+                if 'metadata' in subgraph:
+                    metadata = subgraph['metadata'][0]
 
-                node = { 'id': item['basename'], 'concept': splitted_id[(len(splitted_id) - 1)], 'nodeType': item['type'], 'label': splitted_id[(len(splitted_id) - 1)], 'parent': parent_name, 'metadata': metadata }
+                node = { 'id': subgraph['basename'], 'concept': splitted_id[(len(splitted_id) - 1)], 'nodeType': subgraph['type'], 'label': splitted_id[(len(splitted_id) - 1)], 'parent': parent_name, 'metadata': metadata }
                 nodes.append(node)
-                for n in item['nodes']:
+                for n in subgraph['nodes']:
                     found = nodesDict[n]
                     # Variables
                     if (found['nodeType'] == 'variable'):
                         splitted_identifier = found['identifier'].split('::')
-                        node = { 'id': n, 'concept': splitted_identifier[len(splitted_identifier)-2], 'label': splitted_identifier[len(splitted_identifier)-2], 'nodeType': 'variable', 'type': found['type'], 'parent': item['basename'], 'metadata': found['metadata']}
+                        node = { 'id': n, 'concept': splitted_identifier[len(splitted_identifier)-2], 'label': splitted_identifier[len(splitted_identifier)-2], 'nodeType': 'variable', 'type': found['type'], 'parent': subgraph['basename'], 'metadata': found['metadata']}
                     # Functions
                     else:
-                        node = { 'id': n, 'concept': found['type'], 'label': found['type'], 'type': found['type'], 'nodeType': 'function', 'parent': item['basename'], 'metadata': found['metadata']}
+                        node = { 'id': n, 'concept': found['type'], 'label': found['type'], 'type': found['type'], 'nodeType': 'function', 'parent': subgraph['basename'], 'metadata': found['metadata']}
                     
                     nodes.append(node)
        
