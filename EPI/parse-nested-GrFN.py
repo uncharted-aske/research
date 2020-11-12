@@ -42,8 +42,7 @@ def formatGraph(data):
                 splitted_id = subgraph['basename'].split('.')
 
                 #Get container metadata
-                if 'metadata' in subgraph:
-                    metadata = subgraph['metadata'][0]
+                metadata = subgraph['metadata'][0] if 'metadata' in function else {}
 
                 node = { 'id': subgraph['basename'], 'concept': splitted_id[(len(splitted_id) - 1)], 'nodeType': subgraph['type'], 'label': splitted_id[(len(splitted_id) - 1)], 'parent': parent_name, 'metadata': metadata }
                 nodes.append(node)
