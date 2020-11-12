@@ -26,10 +26,10 @@ def formatGraph(data):
                 nodesDict[function['uid']] = function
         if key == 'hyper_edges':
             for edge in value: 
-                if len(edge['inputs']) > 0: # Inputs array is sometimes empty
-                    [edges.append({ 'source': i, 'target': edge['function']}) for i in edge['inputs']]
-                
+                [edges.append({ 'source': i, 'target': edge['function']}) for i in edge['inputs']]
                 [edges.append({ 'source': edge['function'], 'target': o }) for o in edge['outputs']]
+            for i in range(len(edges)):
+                edges[i]['id'] = i
 
         if key == 'subgraphs':
             for subgraph in value: 
@@ -49,16 +49,21 @@ def formatGraph(data):
                 nodes.append(node)
                 for n in subgraph['nodes']:
                     found = nodesDict[n]
-                    # Variables
-                    if (found['nodeType'] == 'variable'):
-                        splitted_identifier = found['identifier'].split('::')
-                        node = { 'id': n, 'concept': splitted_identifier[len(splitted_identifier)-2], 'label': splitted_identifier[len(splitted_identifier)-2], 'nodeType': 'variable', 'type': found['type'], 'parent': subgraph['basename'], 'metadata': found['metadata']}
-                    # Functions
+                    if (found): 
+                        # Variables
+                        if (found['nodeType'] == 'variable'):
+                            splitted_identifier = found['identifier'].split('::')
+                            node = { 'id': n, 'concept': splitted_identifier[len(splitted_identifier)-2], 'label': splitted_identifier[len(splitted_identifier)-2], 'nodeType': 'variable', 'type': found['type'], 'parent': subgraph['basename'], 'metadata': found['metadata']}
+                        # Functions
+                        elif found['nodeType'] == 'function':
+                            node = { 'id': n, 'concept': found['type'], 'label': found['type'], 'type': found['type'], 'nodeType': 'function', 'parent': subgraph['basename'], 'metadata': found['metadata']}
+                        else: 
+                            raise Exception('Unrecognized node type')
+
+                        nodes.append(node)
                     else:
-                        node = { 'id': n, 'concept': found['type'], 'label': found['type'], 'type': found['type'], 'nodeType': 'function', 'parent': subgraph['basename'], 'metadata': found['metadata']}
-                    
-                    nodes.append(node)
-       
+                        raise Exception(n + ' Node missing')
+
             # Append root for visualization purposes so we don't have multiple roots
             nodes.append({'concept': 'root', 'parent': '', 'id': 'root'}) 
         
@@ -81,20 +86,10 @@ def formatGraph(data):
                 for i in item['internal_variables']:
                     variableTypesDict[i] = 'internal_variable'
             for node in nodes:
-                if 'nodeType' in node:
-                    if (node['nodeType'] == 'variable'):
-                        if (node['id'] in variableTypesDict):
-                            node['varType'] = variableTypesDict[node['id']]
-
-        
-    for i in range(len(edges)):
-        edges[i]['id'] = i 
-
-    return {
-        'metadata': modelMetadata,
-        'nodes': nodes,
-        'edges': edges
-    }
+                if 'nodeType' in node and node['nodeType'] == 'variable' and node['id'] in variableTypesDict:
+                    node['varType'] = variableTypesDict[node['id']]
+    
+    return  { 'metadata': modelMetadata, 'nodes': nodes,'edges': edges }
 
 if __name__ == '__main__':
     parser = ArgumentParser()
