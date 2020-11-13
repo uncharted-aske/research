@@ -42,20 +42,21 @@ def formatGraph(data):
                 splitted_id = subgraph['basename'].split('.')
 
                 #Get container metadata
-                metadata = subgraph['metadata'][0] if 'metadata' in function else {}
+                metadata = subgraph['metadata'][0] if 'metadata' in subgraph else {}
 
                 node = { 'id': subgraph['basename'], 'concept': splitted_id[(len(splitted_id) - 1)], 'nodeType': subgraph['type'], 'label': splitted_id[(len(splitted_id) - 1)], 'parent': parent_name, 'metadata': metadata }
                 nodes.append(node)
                 for n in subgraph['nodes']:
-                    found = nodesDict[n]
+                    found = n in nodesDict
                     if (found): 
+                        found_node = nodesDict[n]
                         # Variables
-                        if (found['nodeType'] == 'variable'):
-                            splitted_identifier = found['identifier'].split('::')
-                            node = { 'id': n, 'concept': splitted_identifier[len(splitted_identifier)-2], 'label': splitted_identifier[len(splitted_identifier)-2], 'nodeType': 'variable', 'type': found['type'], 'parent': subgraph['basename'], 'metadata': found['metadata']}
+                        if (found_node['nodeType'] == 'variable'):
+                            splitted_identifier = found_node['identifier'].split('::')
+                            node = { 'id': n, 'concept': splitted_identifier[len(splitted_identifier)-2], 'label': splitted_identifier[len(splitted_identifier)-2], 'nodeType': 'variable', 'type': found_node['type'], 'parent': subgraph['basename'], 'metadata': found_node['metadata']}
                         # Functions
-                        elif found['nodeType'] == 'function':
-                            node = { 'id': n, 'concept': found['type'], 'label': found['type'], 'type': found['type'], 'nodeType': 'function', 'parent': subgraph['basename'], 'metadata': found['metadata']}
+                        elif found_node['nodeType'] == 'function':
+                            node = { 'id': n, 'concept': found_node['type'], 'label': found_node['type'], 'type': found_node['type'], 'nodeType': 'function', 'parent': subgraph['basename'], 'metadata': found_node['metadata']}
                         else: 
                             raise Exception('Unrecognized node type')
 
