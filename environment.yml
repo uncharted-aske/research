@@ -21,3 +21,5 @@ dependencies:
   - nltk=3.5
   - networkx=2.5
   - squarify=0.4.3
+  - minio=6.0.0
+  - tqdm=4.51.0
