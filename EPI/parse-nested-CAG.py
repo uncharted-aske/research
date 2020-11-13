@@ -48,8 +48,8 @@ def formatGraph(data):
             else:
                 raise Exception(n + ' Node missing')
 
-        # Append root for visualization purposes so we don't have multiple roots
-        formattedNodes.append({'concept': 'root', 'parent': '', 'id': 'root'}) 
+    # Append root for visualization purposes so we don't have multiple roots
+    formattedNodes.append({'concept': 'root', 'parent': '', 'id': 'root'}) 
     
     metadata = data['metadata'] if 'metadata' in data else {}
     modelMetadata = metadata
