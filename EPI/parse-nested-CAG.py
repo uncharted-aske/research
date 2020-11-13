@@ -53,6 +53,29 @@ def formatGraph(data):
     
     metadata = data['metadata'] if 'metadata' in data else {}
     modelMetadata = metadata
+
+    if (modelMetadata):
+        variableTypes = modelMetadata[0]['attributes']
+        variableTypesDict = {}
+        # Distinguish variable type
+        for varType in variableTypes:
+            for i in varType['inputs']:
+                variableTypesDict[i] = 'input'
+            for i in varType['outputs']:
+                variableTypesDict[i] = 'output'
+            for i in varType['parameters']:
+                variableTypesDict[i] = 'parameter'
+            for i in varType['model_variables']:
+                variableTypesDict[i] = 'model_variable'
+            for i in varType['initial_conditions']:
+                variableTypesDict[i] = 'initial_condition'
+            for i in varType['internal_variables']:
+                variableTypesDict[i] = 'internal_variable'
+        
+        for node in formattedNodes:
+            if 'nodeType' in node and node['nodeType'] == 'variable' and node['id'] in variableTypesDict:
+                node['varType'] = variableTypesDict[node['id']]
+    
     
     return  { 'metadata': modelMetadata, 'nodes': formattedNodes,'edges': formattedEdges }
 
