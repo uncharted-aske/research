@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     with open(".local", "rt") as f:
 
-        hostname, access_key, secret_key = [line.strip().split("=")[1] for line in f.readlines()]
+        hostname, access_key, secret_key = [line.strip().split("=", 1)[1] for line in f.readlines()]
 
         minio_client = Minio(hostname, access_key=access_key, secret_key=secret_key, secure=args.secure)
 

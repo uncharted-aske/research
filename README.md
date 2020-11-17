@@ -13,7 +13,7 @@ access_key=<your_access_key>
 secret_key=<your_secret_key>
 ```
 
-Fetch the files from the Minio server. From the root of the project:
+Fetch the ASKE files from the Minio server. From the root of the project:
 ```
 $ python get_files.py
 ```
