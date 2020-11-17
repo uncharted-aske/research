@@ -1,4 +1,4 @@
-python==3.8.6
+python>=3.7.0
 pylint==2.6.0
 pymongo==3.11.0
 numpy==1.19.4
