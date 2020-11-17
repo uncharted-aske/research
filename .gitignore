@@ -8,3 +8,5 @@ __pycache__/
 *.jsonl
 *.json
 *.csv
+/aske_files/
+.local
