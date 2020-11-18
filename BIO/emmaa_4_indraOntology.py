@@ -648,23 +648,6 @@ for i in range(1, m):
         else:
             nodesKB_ontoPaths_reduce[j][:i] = nodesKB_ontoPaths[j][:i]
          
-# %%
-# Test
-# 'protic solvent' -> ['polar solvent', 'Bronsted acid']
-k = ontoClusters_name.index('protic solvent')
-
-ontoClusters[k]
-
-for i in np.flatnonzero([True if ontoClusters[k] in path else False for path in nodesKB_ontoPaths]):
-    print([ontoClusters_name[list(ontoClusters).index(node)] for node in nodesKB_ontoPaths[i]])
-
-print('\n')
-
-for i in np.flatnonzero([True if ontoClusters[k] in path else False for path in nodesKB_ontoPaths]):
-    print([ontoClusters_name[list(ontoClusters).index(node)] for node in nodesKB_ontoPaths_reduce[i]])
-
-i = j = k = m = n = x = y = z = None
-del i, j, k, m, n, x, y, z
 
 # %%
 # Distribution of the size of onto cluster at each onto level
@@ -701,7 +684,7 @@ del a, b, c, i, j, k, n, x, y, z, fig, ax
 %%time
 
 # Generate onto cluster meta-data
-ontoClusters, ontoClusters_size = np.unique([node for path in nodesKB_ontoPaths for node in path], return_counts = True)
+ontoClusters, ontoClusters_size = np.unique([node for path in nodesKB_ontoPaths_reduce for node in path], return_counts = True)
 i = np.argsort(ontoClusters_size)[::-1]
 ontoClusters = ontoClusters[i]
 ontoClusters_size = ontoClusters_size[i]
@@ -719,12 +702,12 @@ for i, cluster in enumerate(ontoClusters):
 
 
 # Get onto level of each cluster
-i = max([len(path) for path in nodesKB_ontoPaths])
-x = [np.unique([path[j] if len(path) > j else '' for path in nodesKB_ontoPaths]) for j in range(i)]
+i = max([len(path) for path in nodesKB_ontoPaths_reduce])
+x = [np.unique([path[j] if len(path) > j else '' for path in nodesKB_ontoPaths_reduce]) for j in range(i)]
 ontoClusters_ontoLevels = [np.flatnonzero([cluster in y for y in x])[0] for cluster in ontoClusters]
 
 
-# Convert nodesKB_ontoPaths to list of list of cluster ids
+# Convert nodesKB_ontoPaths_reduce to list of list of cluster ids
 x = {k: v for k, v in zip(ontoClusters, ontoClusters_id)}
 nodesKB_ontoPaths_id = [[x[node] for node in path] for path in nodesKB_ontoPaths_reduce]
 
@@ -736,13 +719,12 @@ ontoClusters_parentID = [x[parent] if parent is not None else None for parent in
 
 
 # Calculate onto cluster position
-ontoClusters_nodesKB = [np.flatnonzero([True if ontoCluster in path else False for path in nodesKB_ontoPaths]) for ontoCluster in ontoClusters]
+ontoClusters_nodesKB = [np.flatnonzero([True if ontoCluster in path else False for path in nodesKB_ontoPaths_reduce]) for ontoCluster in ontoClusters]
 ontoClusters_pos = np.array([np.median(nodesKB_pos[nodes, :], axis = 0) for nodes in ontoClusters_nodesKB])
 
 
 i = x = y = cluster = None
 del i, x, y, cluster
-
 
 # %%
 # Save intermediate ontoClusters results
@@ -764,6 +746,26 @@ with open('./dist/v1/emmaa_4_indraOntology_onto.pkl', 'wb') as x:
 # data = None
 # del data
 
+
+# %%
+# Test
+# 'protic solvent' -> ['polar solvent', 'Bronsted acid']
+k = ontoClusters_name.index('protic solvent')
+
+ontoClusters[k]
+
+for i in np.flatnonzero([True if ontoClusters[k] in path else False for path in nodesKB_ontoPaths]):
+    print([ontoClusters_name[list(ontoClusters).index(node)] for node in nodesKB_ontoPaths[i]])
+
+print('\n')
+
+for i in np.flatnonzero([True if ontoClusters[k] in path else False for path in nodesKB_ontoPaths_reduce]):
+    print([ontoClusters_name[list(ontoClusters).index(node)] for node in nodesKB_ontoPaths_reduce[i]])
+
+
+i = j = k = m = n = x = y = z = None
+del i, j, k, m, n, x, y, z
+
 # %%
 # Output KB node layout/clustering meta-data
 with open(f'./dist/v1/nodeData.jsonl', 'w') as x:
@@ -777,7 +779,7 @@ with open(f'./dist/v1/nodeData.jsonl', 'w') as x:
         'degreeIn': '<int> in-degree in the KB graph',
         'degreeOut': '<int> out-degree in the KB graph',
         'belief': '<float> max of the belief scores of all adjacent edges in the KB graph',
-        'ontoID': '<str> unique ID of the INDRA ontology (v1.3) node to which this KB node is mapped', 
+        'ontoID': '<str> unique ref ID of the INDRA ontology (v1.3) node to which this KB node is mapped', 
         'ontoLevel': '<int> hierarchy level of the ontology node (`-1` if not mappable)',
         'clusterIDs': '<array of int> ordered list of cluster IDs (see `clusters.jsonl`) to which this node is mapped (cluster hierarchy = INDRA ontology v1.3, order = root-to-leaf)'
     }
@@ -815,9 +817,10 @@ with open(f'./dist/v1/clusters.jsonl', 'w') as x:
         'id': '<int> unique ID for the clusters to which `clusterIDs` in nodeData.jsonl` refers',
         'parentID': '<int> `id` of the parent of this cluster in the hierarchy (`None` if no parent)', 
         'name': '<str> standard name (node `name` in `indra_ontology_v1.3.json`)', 
-        'ref': '<str> database ref id (node `id` in `indra_ontology_v1.3.json`; can be used to construct an entity url)', 
+        'ref': '<str> database ref ID (node `id` in `indra_ontology_v1.3.json`; can be used to construct an entity url)', 
         'level': '<int> hierarchical level of this cluster (number of hops to the local root node of the ontology)',
         'size': '<int> size of the cluster membership, i.e. number of KB nodes that is mapped to this ontology node',
+        'nodeIDs': '<array of int> unordered list of KB node IDs that have been mapped (i.e. members of) to this cluster and its descendants (this is generated from `clusterIDs` in `nodeData.jsonl`)', 
         'x': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)',
         'y': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)',
         'z': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)'
@@ -825,15 +828,17 @@ with open(f'./dist/v1/clusters.jsonl', 'w') as x:
     json.dump(y, x)
     x.write('\n')
 
+
     # Data
     for i in range(len(ontoClusters)):
         z = {
             'id': int(ontoClusters_id[i]),
             'parentID': ontoClusters_parentID[i],
-            'name': ontoClusters_name[i],
-            'ref': ontoClusters[i],
+            'name': str(ontoClusters_name[i]),
+            'ref': str(ontoClusters[i]),
             'level': int(ontoClusters_ontoLevels[i]),
             'size': int(ontoClusters_size[i]),
+            'nodeIDs': [int(k) for k in ontoClusters_nodesKB[i]],
             'x': float(ontoClusters_pos[i, 0]), 
             'y': float(ontoClusters_pos[i, 1]), 
             'z': float(ontoClusters_pos[i, 2])
@@ -856,6 +861,7 @@ output = [{
             'ref': ontoClusters[i],
             'level': int(ontoClusters_ontoLevels[i]),
             'size': int(ontoClusters_size[i]),
+            'nodeIDs': [int(k) for k in ontoClusters_nodesKB[i]],
             'x': float(ontoClusters_pos[i, 0]), 
             'y': float(ontoClusters_pos[i, 1]), 
             'z': float(ontoClusters_pos[i, 2]),
@@ -887,10 +893,11 @@ with open(f'./dist/v1/clusters_nested.jsonl', 'w') as x:
         'ref': '<str> database ref id (node `id` in `indra_ontology_v1.3.json`; can be used to construct an entity url)', 
         'level': '<int> hierarchical level of this cluster (number of hops to the local root node of the ontology)',
         'size': '<int> size of the cluster membership, i.e. number of KB nodes that is mapped to this ontology node',
+        'nodeIDs': '<array of int> unordered list of KB node IDs that have been mapped (i.e. members of) to this cluster and its descendants (this is generated from `clusterIDs` in `nodeData.jsonl`)', 
         'x': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)',
         'y': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)',
         'z': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)', 
-        'children': '<array of dicts> nested array of the immediate children of this node; [] means no child'
+        'childrenIDs': '<array of dicts> nested array of the `id` of immediate onto children of this cluster ([] means no child)'
     }
     json.dump(y, x)
     x.write('\n')
