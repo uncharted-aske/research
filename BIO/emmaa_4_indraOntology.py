@@ -852,11 +852,16 @@ i = x = y = z = None
 del i, x, y, z
 
 # %%
+
+# Add a dummy universal root node as parent to all clusters with parentID = None (requested by Rosa)
+ontoClusters_parentID_ = [i if i != None else int(-1) for i in ontoClusters_parentID]
+
+
 # Flat data structure, sorted by onto level in descending order
 j = np.argsort(ontoClusters_ontoLevels)[::-1]
 output = [{
             'id': int(ontoClusters_id[i]),
-            'parentID': ontoClusters_parentID[i],
+            'parentID': ontoClusters_parentID_[i],
             'name': ontoClusters_name[i],
             'ref': ontoClusters[i],
             'level': int(ontoClusters_ontoLevels[i]),
@@ -874,12 +879,30 @@ l = {k: v for k, v in zip(j, range(len(output)))}
 
 # Generate a nested version of the cluster data
 for node in output:
-    if node['parentID'] is not None:
+    # if node['parentID'] is not None:
+    if node['parentID'] != -1:
         output[l[node['parentID']]]['children'].append(node)
 
 # Extract root nodes
 x = np.flatnonzero([node['level'] < 1 for node in output])
 output_nested = [output[i] for i in x]
+
+
+# Add all to as children of the dummy root node 
+output_nested_root = {
+    'id': int(-1),
+    'parentID': None, 
+    'name': 'root',
+    'ref': 'root',
+    'level': int(-1), 
+    'size': int(sum(np.asarray(ontoClusters_ontoLevels) == 0)), 
+    'nodeIDs': list(range(len(nodesKB))),
+    'x': float(0.0), 
+    'y': float(0.0),
+    'z': float(0.0), 
+    'children': output_nested,
+}
+
 
 # %%
 # Output cluster data (nested)
@@ -902,10 +925,13 @@ with open(f'./dist/v1/clusters_nested.jsonl', 'w') as x:
     json.dump(y, x)
     x.write('\n')
 
-    # Data
-    for y in output_nested:
-        json.dump(y, x)
-        x.write('\n')
+    # # Data
+    # for y in output_nested:
+    #     json.dump(y, x)
+    #     x.write('\n')
+
+    # Data (with dummy universal root)
+    json.dump(output_nested_root, x)
 
 i = x = y = z = None
 del i, x, y, z
