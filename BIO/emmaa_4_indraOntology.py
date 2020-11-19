@@ -814,7 +814,7 @@ with open(f'./dist/v1/clusters.jsonl', 'w') as x:
 
     # Description
     y = {
-        'id': '<int> unique ID for the clusters to which `clusterIDs` in nodeData.jsonl` refers',
+        'id': '<int> unique ID for the clusters to which `clusterIDs` in `nodeData.jsonl` refers',
         'parentID': '<int> `id` of the parent of this cluster in the hierarchy (`None` if no parent)', 
         'name': '<str> standard name (node `name` in `indra_ontology_v1.3.json`)', 
         'ref': '<str> database ref ID (node `id` in `indra_ontology_v1.3.json`; can be used to construct an entity url)', 

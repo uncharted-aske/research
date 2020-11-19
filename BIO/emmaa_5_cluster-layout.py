@@ -86,19 +86,15 @@ del i, x, edge, edgesKB_
 ontoClusters_ref = {cluster['ref']: cluster for cluster in ontoClusters}
 ontoG_sub = ontoG.subgraph(ontoClusters_ref.keys())
 
-# %%
-
-# Recall that onto edges point from specific concepts to more general ones (i.e. towards the root).
-
-
+# KB edge vertices
 edgesKB_nodes = np.array([[edge['source'], edge['target']] for edge in edgesKB])
 
-
-cluster = ontoClusters[15000]
+# %%
+%%time
 
 k = 0
-hyperedges = []
-for cluster in ontoClusters[15000:15010]:
+clusterEdges = []
+for cluster in ontoClusters:
 
     # KB nodes of the sibling clusters
     # * Get the `ref` of all onto clusters with same `parentID` (i.e. siblings)
@@ -108,88 +104,93 @@ for cluster in ontoClusters[15000:15010]:
     siblings_id = [ontoClusters_ref[c]['id'] for c in siblings_ref]
     siblings_nodeIDs = [ontoClusters_ref[c]['nodeIDs'] for c in siblings_ref]
 
-    # Aggregate KB edges (to sibling cluster members) into hyperedges
-    # One hyperedge per sibling
-    for sourceNode in cluster['nodeIDs']:
-        for i, targetNodes in zip(siblings_id, siblings_nodeIDs):
-            
-            x = set(np.flatnonzero(edgesKB_nodes[:, 0] == sourceNode))
-            y = set(np.flatnonzero(np.asarray([edgesKB_nodes[:, 1] == node for node in targetNodes]).sum(axis = 0)))
-            z = list(x & y)
 
-            if len(z) > 0:
-                hyperedge = {
-                    'id': k, 
-                    'level': cluster['level'],
-                    # 'source': {'clusterID': cluster['id'], 'nodeIDs': sourceNode},
-                    # 'target': {'clusterID': i, 'nodeIDs': targetNodes}, 
-                    'source': {'clusterID': cluster['id'], 'nodeID': None},
-                    'target': {'clusterID': i, 'nodeID': None},                     
-                    'size': len(z),
-                    'edgeIDs': z
-                }
-                hyperedges.append(hyperedge)
-                k = k + 1
-
-
-
-
-x = y = z = siblings_ref = siblings_ids = siblings_nodeIDs = hyperedge = None
-del x, y, z, siblings_ref, siblings_ids, siblings_nodeIDs, hyperedge
-
-# %%
-
-
-
-
-
-    # KB nodes of the parent cluster
+    # KB nodes of the parent cluster (without given cluster's member nodes)
     # * Get the node ids of KB nodes mapped to the parent cluster
     # x = nx.algorithms.dag.ancestors(ontoG_sub.reverse(copy = False), cluster['ref'])
     # y = set([c['ref'] if c['level'] == (cluster['level'] - 1) else '' for c in ontoClusters]) - {''}
     # parent_ref = x & y
     if cluster['parentID'] != None:
-        parent_nodeIDs = [[node] for node in ontoClusters[cluster['parentID']]['nodeIDs']]
+        parent_nodeIDs = set([node for node in ontoClusters[cluster['parentID']]['nodeIDs']]) - set(cluster['nodeIDs']) - set([node for c in siblings_nodeIDs for node in c])
     else:
         parent_nodeIDs = []
 
 
-    # Aggregate KB edges (that is targeted at a KB member of the parent cluster) into hyperedges
-    # One hyperedge per 
-    sources = cluster['nodeIDs']
-    targets = parent_nodeIDs
+    # Aggregate KB edges into hyperedges
+    for sourceNode in cluster['nodeIDs']:
+
+        # KB edges with the given cluster member as their source
+        x = set(np.flatnonzero(edgesKB_nodes[:, 0] == sourceNode))
+
+        for i, targetNodes in zip(siblings_id, siblings_nodeIDs):
+            
+            # KB edges with a sibling cluster member as their target 
+            y = set(np.flatnonzero(np.asarray([edgesKB_nodes[:, 1] == node for node in targetNodes]).sum(axis = 0)))
+
+            z = list(x & y)
+            if len(z) > 0:
+                hyperedge = {
+                    'id': k, 
+                    'level': cluster['level'],
+                    'source': {'clusterID': cluster['id'], 'nodeID': sourceNode},
+                    # 'target': {'clusterID': i, 'nodeIDs': targetNodes}, 
+                    'target': {'clusterID': i, 'nodeID': None},                     
+                    'size': len(z),
+                    'edgeIDs': z
+                }
+                clusterEdges.append(hyperedge)
+                k = k + 1
+
+        
+        for targetNode in parent_nodeIDs:
+
+            # KB edges with a parent cluster member as their target 
+            y = set(np.flatnonzero(edgesKB_nodes[:, 1] == targetNode))
+
+            z = list(x & y)
+            if len(z) > 0:
+                hyperedge = {
+                    'id': k, 
+                    'level': cluster['level'],
+                    'source': {'clusterID': cluster['id'], 'nodeID': sourceNode},
+                    # 'target': {'clusterID': cluster['parentID'], 'nodeIDs': targetNodes}, 
+                    'target': {'clusterID': None, 'nodeID': targetNode},                     
+                    'size': len(z),
+                    'edgeIDs': z
+                }
+                clusterEdges.append(hyperedge)
+                k = k + 1
 
 
-
-    # # Switch to <int> cluster id
-    # lineage = {k: [ontoClusters_ref[c]['id'] for c in v] for k, v in lineage.items()}
-
-    # # Lineage in terms of KB nodes (by <int> id)
-
-    
-
-
-
-
-
-
-
-
-
+i = k = x = y = z = cluster = parent_nodeIDs = siblings_ref = siblings_id = siblings_nodeIDs = targetNodes = targetNode = hyperedge = None
+del i, k, x, y, z, cluster, parent_nodeIDs, siblings_ref, siblings_id, siblings_nodeIDs, targetNodes, targetNode, hyperedge
 
 # %%
 
-# x = {node: True if node in ontoClusters_ref else False for node in ontoG.nodes()}
-# ontoG_sub = nx.subgraph_view(ontoG, filter_node = (lambda n: n in ontoClusters_ref))
+# Output cluster edges data
+with open(f'./dist/v1/clusterEdges.jsonl', 'w') as x:
 
-# y = ontoClusters[2]['ref']
-# print(nx.get_node_attributes(ontoG, 'name')[x])
-# z = nx.algorithms.dag.ancestors(ontoG.reverse(copy = False), x)
+    # Description
+    y = {
+        'id': '<int> unique ID for the cluster hyperedge to which `edgeIDs` in `clusters.jsonl` refers',
+        'level': '<int> ontological level of this hyperedge (number of hops to the local root node of the ontology)',
+        'source': '<dict with 2 keys> source of this hyperedge',
+        'target': '<dict with 2 keys> target of this hyperedge (if `clusterID` = None, then this is a onto-cluster-to-KB-node edge)',
+        'size': '<int> size of the hyperedge (number of KB edges that is aggregated)',
+        'edgeIDs': '<array of int> unordered list of KB edge IDs (`id` in `edges.jsonl`) that are aggregated to this hyperedge'
+    }
+    json.dump(y, x)
+    x.write('\n')
 
 
+    # Data
+    for y in clusterEdges:
+        json.dump(y, x)
+        x.write('\n')
 
 
+x = y = None
+del x, y
 
-
-
+# %%
 
