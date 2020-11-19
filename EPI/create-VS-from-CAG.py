@@ -9,6 +9,19 @@ class Node:
         self.children = []
 
 
+def analyze_parents_breadth_first(node, iden, iden_by_ids, edges_from):
+    queue = [(node, 0)]
+    while queue:
+        n, level = queue.pop(0)
+        for p in n.parents:
+            if p.id in iden_by_ids:
+                from_iden, from_level = iden_by_ids[p.id], level
+                if (from_iden not in edges_from[iden]) or \
+                        (from_iden in edges_from[iden] and from_level < edges_from[iden][from_iden]):
+                    edges_from[iden][from_iden] = from_level
+            queue.append((p, level + 1))
+
+
 def analyze_cag_edges(iden_by_ids, nodes_by_id):
     edges_from = {}
     for id in iden_by_ids:
@@ -17,17 +30,8 @@ def analyze_cag_edges(iden_by_ids, nodes_by_id):
         if iden not in edges_from:
             edges_from[iden] = {}
 
-        qu = []
-        qu.append((node, 0))
-        while qu:
-            n, level = qu.pop(0)
-            for p in n.parents:
-                if p.id in iden_by_ids:
-                    from_iden, from_level = iden_by_ids[p.id], level
-                    if (from_iden not in edges_from[iden]) or \
-                            (from_iden in edges_from[iden] and from_level < edges_from[iden][from_iden]):
-                        edges_from[iden][from_iden] = from_level
-                qu.append((p, level + 1))
+        analyze_parents_breadth_first(node, iden, iden_by_ids, edges_from)
+
     return edges_from
 
 
@@ -41,9 +45,13 @@ def analyze_cag(input):
     with open(input, "rt") as f:
         model = json.load(f)
 
+        if "metadata" not in model:
+            raise Exception("the CAG does not contain a top-level 'metadata' field, and cannot be processed")
+
         parameters = []
         inputs = []
         model_variables = []
+
         for metadata in model["metadata"]:
             if metadata["type"] == "model-identifiers":
                 parameters.extend(metadata["attributes"][0]["parameters"])
