@@ -13,10 +13,15 @@ access_key=<your_access_key>
 secret_key=<your_secret_key>
 ```
 
+For example, a file might look like:
+```
+hostname=8.8.8.8:9000
+access_key=foo
+secret_key=bar
+```
+
 Fetch the ASKE files from the Minio server. From the root of the project:
 ```
 $ python get_files.py
 ```
 This will create a folder, `aske_files`, in the root of the project. The folder is not under version control.
-
-
