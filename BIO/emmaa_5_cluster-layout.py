@@ -136,7 +136,7 @@ for cluster in ontoClusters:
                     # 'target': {'clusterID': i, 'nodeIDs': targetNodes}, 
                     'target': {'clusterID': i, 'nodeID': None},                     
                     'size': len(z),
-                    'edgeIDs': z
+                    'edgeIDs': [int(j) for j in z]
                 }
                 clusterEdges.append(hyperedge)
                 k = k + 1
@@ -156,7 +156,7 @@ for cluster in ontoClusters:
                     # 'target': {'clusterID': cluster['parentID'], 'nodeIDs': targetNodes}, 
                     'target': {'clusterID': None, 'nodeID': targetNode},                     
                     'size': len(z),
-                    'edgeIDs': z
+                    'edgeIDs': [int(j) for j in z]
                 }
                 clusterEdges.append(hyperedge)
                 k = k + 1
@@ -193,4 +193,3 @@ x = y = None
 del x, y
 
 # %%
-
