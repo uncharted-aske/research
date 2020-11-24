@@ -229,7 +229,7 @@ def plot_emb(coor = np.array([]), labels = [], ax = [], figsize = (12, 12), mark
 
     return fig, ax
 
-
+#%%
 # Get the index of all connecting nodes and edges within N directed hops of the nodes with the given text names
 def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
 
@@ -258,3 +258,19 @@ def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
     nodeFlags = [True if j in textsNodeIndex else False for j, node in enumerate(nodes)]
 
     return textsIndex, textsNodeIndex, textsEdgeIndex, nodeFlags, edgeFlags
+
+# %%
+# Match arrays using a hash table
+def match_arrays(A, B):
+
+    hashTable = {b: True for b in B}
+    index = np.zeros((len(A), ), dtype = bool)
+    for i, a in enumerate(A):
+        try:
+            index[i] = hashTable[a]
+        except:
+            pass
+
+    return index
+
+# %%

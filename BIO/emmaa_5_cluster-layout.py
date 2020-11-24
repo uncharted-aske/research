@@ -23,9 +23,10 @@ import time
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt
-import networkx as nx
 import pickle
-import umap
+
+from numba import njit
+
 
 import emmaa_lib as emlib
 import importlib
@@ -88,6 +89,110 @@ ontoG_sub = ontoG.subgraph(ontoClusters_ref.keys())
 
 # KB edge vertices
 edgesKB_nodes = np.array([[edge['source'], edge['target']] for edge in edgesKB])
+
+# %%
+%%time
+
+# KB nodes mapped to the sibling clusters
+# * Get the `ref` of all onto clusters with same `parentID` (i.e. siblings)
+# * Get the node ids of their KB membership
+# * Do not flatten the list
+siblings_ref = [set([c['ref'] if c['parentID'] == cluster['parentID'] else '' for c in ontoClusters]) - {'', cluster['ref']} for cluster in ontoClusters]
+siblings_id = [[ontoClusters_ref[c]['id'] for c in siblings_ref[i]] for i, __ in enumerate(ontoClusters)]
+siblings_nodeIDs = [[ontoClusters_ref[c]['nodeIDs'] for c in siblings_ref[i]] for i, __ in enumerate(ontoClusters)]
+
+
+# time: 4 m 31 s
+
+# %%
+%%time
+
+# KB nodes mapped to the parent cluster (without given cluster's member nodes)
+parent_nodeIDs = [set([node for node in ontoClusters[cluster['parentID']]['nodeIDs']]) - set(cluster['nodeIDs']) - set([node for c in siblings_nodeIDs[i] for node in c]) if cluster['parentID'] is not None else [] for i, cluster in enumerate(ontoClusters)]
+
+
+# time: 1.16 s
+
+# %%
+
+
+
+
+# %%
+n = 200
+
+# KB edges with the given cluster member as their source
+X = [match_arrays(edgesKB_nodes[:, 0], cluster['nodeIDs']) for cluster in ontoClusters[:1]]
+
+# ... and a sibling cluster member as their target
+Y = [[np.flatnonzero(X[i] & match_arrays(edgesKB_nodes[:, 1], nodes)) for nodes in siblings_nodeIDs[i][:n]] for i, __ in enumerate(ontoClusters[:1])]
+Y_ = [[list(k) for k in y if len(k) > 0] for y in Y]
+
+# KB edge attributes
+Z = [[{'level': cluster['level'], 'source': {'clusterID': cluster['id']}, 'target': {'clusterID': nodes}} for nodes in siblings_id[i][:n]] for i, cluster in enumerate(ontoClusters[:1])]
+Z_ = [[l for k, l in zip(y, z) if len(k) > 0] for y, z in zip(Y, Z)]
+
+
+# %%
+
+
+# KB edges with the given cluster member as their source
+# ... and a parent cluster member as their target 
+Y = [[np.flatnonzero(X[i] & match_arrays(edgesKB_nodes[:, 1], node)) for node in parent_nodeIDs[i][:n]] for i, __ in enumerate(ontoClusters[:1])]
+Y_ = [[list(k) for k in y if len(k) > 0] for y in Y]
+
+
+# # KB edge attributes
+# Z = [[{'level': cluster['level'], 'source': {'clusterID': cluster['id'], 'nodeID': X[i]}, 'target': {'clusterID': None, 'nodeID': node}} for node in parent_nodeIDs[i][:n]] for i, cluster in enumerate(ontoClusters[:1])]
+# Z_ = [[l for k, l in zip(y, z) if len(k) > 0] for y, z in zip(Y, Z)]
+
+
+
+# %%
+
+
+        for targetNode in parent_nodeIDs:
+
+            # KB edges with a parent cluster member as their target 
+            y = set(np.flatnonzero(edgesKB_nodes[:, 1] == targetNode))
+
+            z = list(x & y)
+            if len(z) > 0:
+                hyperedge = {
+                    'id': k, 
+                    'level': cluster['level'],
+                    'source': {'clusterID': cluster['id'], 'nodeID': sourceNode},
+                    # 'target': {'clusterID': cluster['parentID'], 'nodeIDs': targetNodes}, 
+                    'target': {'clusterID': None, 'nodeID': targetNode},                     
+                    'size': len(z),
+                    'edgeIDs': [int(j) for j in z]
+                }
+                clusterEdges.append(hyperedge)
+                k = k + 1
+
+
+
+
+#         hyperedge = {
+#             'id': k, 
+#             'level': cluster['level'],
+#             'source': {'clusterID': cluster['id'], 'nodeID': None},
+#             'target': {'clusterID': siblings_id[i][j], 'nodeID': None},                     
+#             'size': int(sum(z)),
+#             'edgeIDs': list(map(lambda l: int(l), np.flatnonzero(z)))
+#         }
+
+
+
+# %%
+    # x = np.zeros((len(edgesKB), ), dtype = bool)
+    # for node in cluster['nodeIDs']:
+    #     x = x | (edgesKB_nodes[:, 0] == node)
+
+        # y = np.zeros((len(edgesKB), ), dtype = bool)
+        # for node in siblings_nodeIDs[i][j]:
+        #     y = y | (edgesKB_nodes[:, 1] == node)
+
 
 # %%
 %%time
@@ -192,4 +297,3 @@ with open(f'./dist/v1/clusterEdges.jsonl', 'w') as x:
 x = y = None
 del x, y
 
-# %%
