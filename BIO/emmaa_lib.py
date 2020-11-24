@@ -6,19 +6,20 @@
 # %% [markdown]
 # ## Import required modules.
 
-import sys
-from time import time
+# import sys
+# from time import time
 import numpy as np
-import scipy as sp
-import csv
-import re
+# import scipy as sp
+# import csv
+# import re
+import numba
 
 # import sklearn as skl
 # import hdbscan
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+# from mpl_toolkits.mplot3d import Axes3D
 
 
 # %%
@@ -261,10 +262,16 @@ def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
 
 # %%
 # Match arrays using a hash table
+
+@numba.njit
 def match_arrays(A, B):
 
-    hashTable = {b: True for b in B}
-    index = np.zeros((len(A), ), dtype = bool)
+    # hashTable = {b: True for b in B}
+    hashTable = numba.typed.Dict.empty(key_type = numba.int32, value_type = numba.boolean)
+    for b in B:
+        hashTable[b] = True
+
+    index = np.zeros((len(A), ), dtype = numba.boolean)
     for i, a in enumerate(A):
         try:
             index[i] = hashTable[a]
@@ -273,4 +280,3 @@ def match_arrays(A, B):
 
     return index
 
-# %%
