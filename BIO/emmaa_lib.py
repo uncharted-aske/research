@@ -11,7 +11,7 @@
 import numpy as np
 # import scipy as sp
 # import csv
-# import re
+import re
 import numba
 
 # import sklearn as skl
@@ -260,9 +260,85 @@ def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
 
     return textsIndex, textsNodeIndex, textsEdgeIndex, nodeFlags, edgeFlags
 
+
+# %%
+# Intersect a set of graph nodes/edges with a set of graph paths
+def intersect_graph_paths(nodes, edges, paths):
+
+    # Get ids
+    nodeIDs_nodes = set([node['id'] for node in nodes])
+    edgeIDs_edges = set([edge['id'] for edge in edges])
+    nodeIDs_paths = set([node for path in paths for node in path['nodes']])
+    edgeIDs_paths = set([edge for path in paths for edges in path['edges'] for edge in edges])
+
+    # Set intersection
+    nodeIDs_inter = nodeIDs_nodes & nodeIDs_paths
+    edgeIDs_inter = edgeIDs_edges & edgeIDs_paths
+
+    # Filter by intersection
+    nodes_inter = [node for node in nodes if node['id'] in nodeIDs_inter]
+    edges_inter = [edge for edge in edges if edge['id'] in edgeIDs_inter]
+    paths_inter = [path for path in paths if len(set(path['nodes']) & nodeIDs_inter) > 0]
+
+
+    return nodes_inter, edges_inter, paths_inter 
+
+# %%
+# Generate an ordered list of namespaces present in the priority list, the graph nodes, and the given ontology (JSON format)
+def generate_ordered_namespace_list(nodes, ontoJSON, namespaces_priority):
+
+    # Generate namespace list of the given ontology
+    x = [re.findall('\w{1,}(?=:)', node['id'])[0] for node in ontoJSON['nodes']]
+    y, z = np.unique(x, return_counts = True)
+    i = np.argsort(z)[::-1]
+    namespaces_onto = [[name, count / np.sum(z) * 100] for name, count in zip(y[i], z[i])]
+
+
+    # Generate namespace list of the node list
+    x = []
+    for node in nodes:
+
+        if len(node['info']['links']) > 0:
+            names = [link[0] for link in node['info']['links']]
+        else:
+            names = ['not-grounded']
+        
+        # Check against priority list
+        y = np.flatnonzero([True if name in names else False for name in namespaces_priority])
+        if len(y) > 0:
+            i = y[0]
+            x.append(namespaces_priority[i])
+        else:
+
+            # Check against ontology list
+            z = np.flatnonzero([True if name[0] in names else False for name in namespaces_onto])
+            if len(z) > 0:
+                i = z[0]
+                x.append(namespaces_onto[i][0])
+            else:
+                x.append(names[0])
+
+
+    # Count node namespace list
+    y, z = np.unique(x, return_counts = True)
+    i = np.argsort(z)[::-1]
+    namespaces_nodes = [[name, count / np.sum(z) * 100] for name, count in zip(y, z)]
+
+
+    # Combine namespace lists in order
+    # 1. Given priority
+    # 2. extra from node list
+    # 3. extra from onto list
+    x = list(set([name for name, __ in namespaces_nodes]) - set(namespaces_priority))
+    y = list(set([name for name, __ in namespaces_onto]) - set(namespaces_priority) - set([name for name, __ in namespaces_nodes]))
+    namespaces_combined = namespaces_priority + x + y
+
+
+    return namespaces_combined
+
+
 # %%
 # Match arrays using a hash table
-
 @numba.njit
 def match_arrays(A, B):
 

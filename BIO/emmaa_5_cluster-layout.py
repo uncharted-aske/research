@@ -123,7 +123,7 @@ elif i == 'calculate':
 
 
     # KB nodes mapped to the parent cluster (without given cluster's member nodes)
-    parent_nodeIDs = [set([node for node in ontoClusters[cluster['parentID']]['nodeIDs']]) - set(cluster['nodeIDs']) - set([node for c in siblings_nodeIDs[i] for node in c]) if cluster['parentID'] is not None else [] for i, cluster in enumerate(ontoClusters)]
+    parent_nodeIDs = [set([node for node in ontoClusters[cluster['parentID']]['nodeIDs']]) - set(cluster['nodeIDs']) - set([node for c in siblings_nodeIDs[i] for node in c]) if cluster['parentID'] is not None else set() for i, cluster in enumerate(ontoClusters)]
     # time: 1.16 s
 
 
@@ -140,9 +140,24 @@ elif i == 'calculate':
 %%time
 
 # KB edges with the given cluster member as their source
-X = [match_arrays(edgesKB_nodes[:, 0], cluster['nodeIDs']) for cluster in ontoClusters]
+X = [emlib.match_arrays(edgesKB_nodes[:, 0], cluster['nodeIDs']) for cluster in ontoClusters]
 
-# time: 5 min 17 s
+# time: 5 min 25 s
+
+
+# %%
+# KB edges with the given cluster member as their source
+# ... and a parent cluster member as their target
+Y = [[np.flatnonzero(X[i] & emlib.match_arrays(edgesKB_nodes[:, 1], node)) if len(node) > 0 else []for node in parent_nodeIDs[i]] for i, __ in enumerate(ontoClusters)]
+Y_ = [[list(edges) for edges in y if len(edges) > 0] for y in Y]
+
+
+# # KB edge attributes
+# Z = [[{'level': cluster['level'], 'source': {'clusterID': cluster['id'], 'nodeID': X[i]}, 'target': {'clusterID': None, 'nodeID': node}} for node in parent_nodeIDs[i][:n]] for i, cluster in enumerate(ontoClusters[:1])]
+# Z_ = [[l for k, l in zip(y, z) if len(k) > 0] for y, z in zip(Y, Z)]
+
+
+
 
 
 # %%
@@ -161,15 +176,6 @@ Z_ = [[l for k, l in zip(y, z) if len(k) > 0] for y, z in zip(Y, Z)]
 # %%
 
 
-# KB edges with the given cluster member as their source
-# ... and a parent cluster member as their target 
-Y = [[np.flatnonzero(X[i] & emlib.match_arrays(edgesKB_nodes[:, 1], node)) for node in parent_nodeIDs[i][:n]] for i, __ in enumerate(ontoClusters[:1])]
-Y_ = [[list(k) for k in y if len(k) > 0] for y in Y]
-
-
-# # KB edge attributes
-# Z = [[{'level': cluster['level'], 'source': {'clusterID': cluster['id'], 'nodeID': X[i]}, 'target': {'clusterID': None, 'nodeID': node}} for node in parent_nodeIDs[i][:n]] for i, cluster in enumerate(ontoClusters[:1])]
-# Z_ = [[l for k, l in zip(y, z) if len(k) > 0] for y, z in zip(Y, Z)]
 
 
 
