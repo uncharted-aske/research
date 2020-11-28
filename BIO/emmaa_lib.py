@@ -8,6 +8,7 @@
 
 # import sys
 # from time import time
+from networkx.algorithms.centrality.degree_alg import out_degree_centrality
 import numpy as np
 # import scipy as sp
 # import csv
@@ -261,27 +262,121 @@ def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
     return textsIndex, textsNodeIndex, textsEdgeIndex, nodeFlags, edgeFlags
 
 
+
+
+
+
 # %%
 # Intersect a set of graph nodes/edges with a set of graph paths
 def intersect_graph_paths(nodes, edges, paths):
 
-    # Get ids
-    nodeIDs_nodes = set([node['id'] for node in nodes])
-    edgeIDs_edges = set([edge['id'] for edge in edges])
-    nodeIDs_paths = set([node for path in paths for node in path['nodes']])
-    edgeIDs_paths = set([edge for path in paths for edges in path['edges'] for edge in edges])
+    # Get the edge IDs
+    edgeIDs_edges = set([edge['id'] for edge in edges]) - {None}
+    edgeIDs_paths = set([edge for path in paths for edge in path['edge_ids']]) - {None}
 
-    # Set intersection
-    nodeIDs_inter = nodeIDs_nodes & nodeIDs_paths
-    edgeIDs_inter = edgeIDs_edges & edgeIDs_paths
+    # Find intersection between the graph edges and the path edges
+    edgeIDs_inter = edgeIDs_paths & edgeIDs_edges
+    # print(f"{len(edgeIDs_inter)} {len(edgeIDs_paths)} {len(edgeIDs_edges)}")
 
-    # Filter by intersection
-    nodes_inter = [node for node in nodes if node['id'] in nodeIDs_inter]
+    # Select the edges within the intersection
+    nodes_inter = [node for node in nodes if len(set(node['edge_ids']) & edgeIDs_inter) > 0]
     edges_inter = [edge for edge in edges if edge['id'] in edgeIDs_inter]
-    paths_inter = [path for path in paths if len(set(path['nodes']) & nodeIDs_inter) > 0]
+    
+    # Get the node IDs in the intersection
+    nodeIDs_inter = set([node['id'] for node in nodes_inter]) - {None}
+
+    # Remove `None` from `node_ids` and `edge_ids` of `paths`
+    paths_inter = [path for path in paths if len(set(path['edge_ids']) & edgeIDs_inter) > 0]
+    num_paths = len(paths_inter)
+    for i in range(num_paths):
+        paths_inter[i]['node_ids'] = list(set(paths_inter[i]['node_ids']) & nodeIDs_inter)
+        paths_inter[i]['edge_ids'] = list(set(paths_inter[i]['edge_ids']) & edgeIDs_inter)
+
+    # Restrict `edge_ids` in `nodes` to the subgraph
+    num_nodes = len(nodes_inter)
+    for i in range(num_nodes):
+        nodes_inter[i]['edge_ids'] = list(set(nodes_inter[i]['edge_ids']) & edgeIDs_inter)
+
+    return nodes_inter, edges_inter, paths_inter
+
+# %%
+# Reset node ids in `nodes` and `edges`
+def reset_node_ids(nodes, edges):
+
+    # Make new node-id map
+    map_nodes_ids = {node['id']: i for i, node in enumerate(nodes)}
+
+    num_nodes = len(nodes)
+    for i in range(num_nodes):
+        nodes[i]['id'] = i
+
+    num_edges = len(edges)
+    for i in range(num_edges):
+        j = edges[i]['source']
+        edges[i]['source'] = map_nodes_ids[j]
+
+        k = edges[i]['target']
+        edges[i]['target'] = map_nodes_ids[k]
+
+    return nodes, edges, map_nodes_ids
+
+# %%
+# Calculate in- and out-degree of nodes in `nodes` using `edges` data
+def calculate_node_degrees(nodes, edges):
+
+    # Make node-id map
+    map_nodes_ids = {node['id']: i for i, node in enumerate(nodes)}
+
+    # Count edge sources and targets
+    num_nodes = len(nodes)
+    in_degree = [0 for i in range(num_nodes)]
+    out_degree = [0 for i in range(num_nodes)]
+    for edge in edges:
+        i = map_nodes_ids[edge['source']]
+        j = map_nodes_ids[edge['target']]
+        in_degree[i] += 1
+        out_degree[j] += 1
+
+    # Insert into `nodes`
+    for i in range(num_nodes):
+        nodes[i]['in_degree'] = in_degree[i]
+        nodes[i]['out_degree'] = out_degree[i]
 
 
-    return nodes_inter, edges_inter, paths_inter 
+    return nodes, in_degree, out_degree
+
+# %%
+# Get node-wise belief score from `edges`
+def calculate_node_belief(nodes, edges, mode = 'max'):
+
+    # Make node-id map
+    map_nodes_ids = {node['id']: i for i, node in enumerate(nodes)}
+
+
+    # Count edge sources and targets
+    num_nodes = len(nodes)
+    belief_edges = [[] for i in range(num_nodes)]
+    for edge in edges:
+        i = map_nodes_ids[edge['source']]
+        j = map_nodes_ids[edge['target']]
+        belief_edges[i].append(edge['belief'])
+        belief_edges[j].append(edge['belief'])
+
+
+    # Max
+    if mode == 'max':
+        belief = [float(max(b)) if len(b) > 0 else 0.0 for b in belief_edges]
+    elif mode == 'median':
+        belief = [float(np.median(b)) if len(b) > 0 else 0.0 for b in belief_edges]
+    elif mode == 'mean':
+        belief = [float(np.mean(b)) if len(b) > 0 else 0.0 for b in belief_edges]
+
+
+    # Insert into `nodes`
+    for i in range(num_nodes):
+        nodes[i]['belief'] = belief[i]
+
+    return nodes, belief
 
 # %%
 # Generate an ordered list of namespaces present in the priority list, the graph nodes, and the given ontology (JSON format)
@@ -335,7 +430,6 @@ def generate_ordered_namespace_list(nodes, ontoJSON, namespaces_priority):
 
 
     return namespaces_combined
-
 
 # %%
 # Match arrays using a hash table
