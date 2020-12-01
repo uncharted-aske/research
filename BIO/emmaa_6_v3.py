@@ -86,6 +86,7 @@ num_nodes = len(nodes)
 
 
 # Fetch one 'db_refs' for each unique node and check whether grounded
+# Grounded <- if there is a namespace that is neither 'TEXT' or 'TEXT_NORM'
 x = ['subj', 'obj', 'enz', 'sub']
 for i, t in enumerate(x):
     x[i] = {s[t]['name']: s[t]['db_refs'] for s in statements if t in s.keys()}
@@ -96,7 +97,7 @@ for i in range(num_nodes):
     try:
         nodes[i]['db_refs'] = y[nodes[i]['name']]
 
-        if len(set(nodes[i]['db_refs'].keys()) - {'TEXT'}) > 0:
+        if len(set(nodes[i]['db_refs'].keys()) - {'TEXT'} - {'TEXT_NORM'}) > 0:
             nodes[i]['grounded'] = True
 
     except:
@@ -225,6 +226,7 @@ for i in range(num_paths):
     paths_mitre_ids[i]['graph_type'] = paths_mitre[i]['graph_type']
 
 
+
 # Output numeric-id paths
 with open(f'./dist/v2/paths_mitre.jsonl', 'w') as x:
 
@@ -269,19 +271,80 @@ num_edges = len(edges_mitre)
 # Reset node id in `nodes` and `edges` to maintain Grafer optimization
 nodes_mitre, edges_mitre, __ = emlib.reset_node_ids(nodes_mitre, edges_mitre)
 
-# Calculate node degrees
-nodes_mitre, __, __ = emlib.calculate_node_degrees(nodes_mitre, edges_mitre)
 
-# Get node-wise belief score from `edges`
-nodes_mitre, __ = emlib.calculate_node_belief(nodes_mitre, edges_mitre, mode = 'max')
+# %%
+# Output MITRE `nodes` and `edges`
+
+# `nodes`
+with open(f'./dist/v2/nodes_mitre.jsonl', 'w') as x:
+
+    # Description
+    y = {
+        'id': '<int> unique node ID',
+        'name': '<str> node name from the `name` attribute in `latest_statements_covid19.jsonl`',
+        'db_refs': '<dict> database references from the `db_refs` attribute in `latest_statements_covid19.jsonl`',
+        'grounded': '<bool> whether the node is grounded to a database',
+        'edge_ids': '<list of int> ID of edges that have the node as a source and/or a target' 
+    }
+    json.dump(y, x)
+    x.write('\n')
+
+    # Data
+    for node in nodes_mitre:
+        json.dump({k: node[k] for k in nodes[0].keys()}, x)
+        x.write('\n')
+
+
+# `edges`
+with open(f'./dist/v2/edges_mitre.jsonl', 'w') as x:
+
+    # Description
+    y = {
+        'id': '<int> unique edge ID',
+        'type': '<str> edge type, taken from `type` attribute in `latest_statements_covid19.jsonl`',
+        'belief': '<float> edge belief score, taken from `belief` attribute in `latest_statements_covid19.jsonl`',
+        'statement_id': '<str> unique statement id, taken from `matches_hash` from `latest_statements_covid19.jsonl`',
+        'source': '<int> ID of the source node (see `nodes.jsonl`)' ,
+        'target': '<int> ID of the target node (see `nodes.jsonl`)'
+    }
+    json.dump(y, x)
+    x.write('\n')
+
+    # Data
+    for edge in edges_mitre:
+        json.dump({k: edge[k] for k in edges[0].keys()}, x)
+        x.write('\n')
+
+
+x = y = node = edge = None
+del x, y, node, edge
+
+
+# %%
+# Reload if necessary
+nodes_mitre = []
+with open(f'./dist/v2/nodes_mitre.jsonl', 'r') as x:
+    for i in x:
+        nodes_mitre.append(json.loads(i))
+
+nodes_mitre = nodes_mitre[1:]
+
+edges_mitre = []
+with open(f'./dist/v2/edges_mitre.jsonl', 'r') as x:
+    for i in x:
+        edges_mitre.append(json.loads(i))
+
+edges_mitre = edges_mitre[1:]
 
 
 # %%[markdown]
 # # Categorize model nodes by ontology categories
 
+
 # %%[markdown]
 # ## Load the INDRA ontology
 
+# %%
 with open('./data/indra_ontology_v1.3.json', 'r') as x:
     ontoJSON = json.load(x)
 
@@ -292,50 +355,39 @@ ontoJSON['links'] = [link for link in ontoJSON['links'] if link['type'] != 'xref
 # %%[markdown]
 # ## Generate a namespace list common to the model graph and the ontology
 namespaces_priority = ['FPLX', 'UPPRO', 'HGNC', 'UP', 'CHEBI', 'GO', 'MESH', 'MIRBASE', 'DOID', 'HP', 'EFO']
-namespaces = emlib.generate_ordered_namespace_list(nodes_mitre, ontoJSON, namespaces_priority)
+namespaces, namespaces_count = emlib.generate_ordered_namespace_list(namespaces_priority, ontoJSON, nodes_mitre)
 
 
 # %%
-# Compute model-ontology mapping
-nodeData_ontoRefs = []
-for node in nodes_mitre:
+# Reduce 'db_refs' of each model node to a single entry by namespace priority
+# * Find the first model node namespace that is the sorted namespace list
+# * 'db_ref_priority' = namespace`:`ref`
+# * `grounded = False` -> 'not-grounded' 
+nodes_mitre, __ = emlib.reduce_nodes_db_refs(nodes_mitre, namespaces)
 
-    if len(node['info']['links']) < 1:
-        names = ['not-grounded']
-        k = names[0]
-    else:
-        names = [link[0] for link in node['info']['links']]
-
-        # Use first matching namespace in the ordered common list
-        i = np.flatnonzero([True if name in names else False for name in namespaces])[0]
-        j = np.flatnonzero(np.asarray(names) == namespaces[i])[0]
-        k = f"{node['info']['links'][j][0]}:{node['info']['links'][j][1]}"
-
-    nodeData_ontoRefs.append(k)
-
-
-names = node = i = j = k = None
-del names, node, i, j, k
-
-
-# %%
-# Load the ontology graph as a `networkx` object
-ontoG = nx.readwrite.json_graph.node_link_graph(ontoJSON)
 
 # %%[markdown]
 # ## Extract components and find their roots
 
 # %%
+# Load the ontology graph as a `networkx` object
+ontoG = nx.readwrite.json_graph.node_link_graph(ontoJSON)
+
+
 # Extract components, sorted by size
 ontoSubs = sorted(nx.weakly_connected_components(ontoG), key = len, reverse = True)
 
+
 # Find the root nodes of each component (degree = 0 or out-degree = 0)
-z = [np.flatnonzero([True if ontoG.out_degree(node) < 1 else False for node in sub]) for sub in ontoSubs]
-ontoSubRoots = [[list(ontoSubs[i])[j] for j in indices] for i, indices in enumerate(z)]
-ontoSubRoots_num = np.sum([True if len(indices) > 1 else False for indices in z])
+# z = [np.flatnonzero([True if ontoG.out_degree(node) < 1 else False for node in sub]) for sub in ontoSubs]
+# ontoSubRoots = [[list(ontoSubs[i])[j] for j in indices] for i, indices in enumerate(z)]
+# ontoSubRoots_num = np.sum([True if len(indices) > 1 else False for indices in z])
+ontoSubRoots = [[node for node in sub if ontoG.out_degree(node) < 1] for sub in ontoSubs]
+
 
 # List onto node names/refs
 # ontoRefs = nx.nodes(ontoG)
+
 
 # %%[markdown]
 # ## Index all model nodes that can be mapped to the ontology graph
@@ -343,39 +395,38 @@ ontoSubRoots_num = np.sum([True if len(indices) > 1 else False for indices in z]
 # %%
 %%time
 
-# Initialize and set the ontological level of the unmappable nodes to -1
-x = np.flatnonzero([True if i in nx.nodes(ontoG) else False for i in nodeData_ontoRefs])
-nodeData_ontoLevels = np.zeros((len(nodes_mitre), ), dtype = np.int64)
-nodeData_ontoPaths = list(np.zeros((len(nodes_mitre), ), dtype = np.int64))
-for i in range(len(nodes_mitre)):
-    if i not in x:
-        nodeData_ontoLevels[i] = -1
-        nodeData_ontoPaths[i] = [nodeData_ontoRefs[i]]
-
-
-# Find subgraph index of each mapped model node
-# * Limited to non-trivial subgraphs
-# * Set to -1 if a node is mapped to a trivial subgraph
-y = np.empty(x.shape, dtype = np.int64)
-for i, k in enumerate(x):
-    j = np.flatnonzero([True if nodeData_ontoRefs[k] in sub else False for sub in ontoSubs[:ontoSubRoots_num]])
-    if len(j) == 1:
-        y[i] = j[0]
+# Initialize the ontological attributes
+# Unmappable nodes: level = `-1` and to-root list = [`not-grounded-onto`]
+for node in nodes_mitre:
+    if node['db_ref_priority'] in nx.nodes(ontoG):
+        node['grounded_onto'] = True
+        node['ontocat_level'] = -1
+        node['ontocat_refs'] = []
     else:
-        y[i] = -1
+        node['grounded_onto'] = False
+        node['ontocat_level'] = -1
+        node['ontocat_refs'] = ['not-grounded-onto']
 
 
-# Find shortest path between each onto-mapped model node and any target root node amongst the ontology subgraphs
-for i, j in zip(x, y):
+# Index of mappable model nodes
+node_indices = [i for i, node in enumerate(nodes_mitre) if node['grounded_onto']]
 
-    source = nodeData_ontoRefs[i]
+# Index of the onto subgraph to which the model nodes are mapped
+# (if in nontrivial subgraph -> -1)
+num_ontoSub_nontrivial = sum([1 for sub in ontoSubs if len(sub) > 1])
+x = [{(nodes_mitre[i]['db_ref_priority'] in sub): j for j, sub in enumerate(ontoSubs[:num_ontoSub_nontrivial])} for i in node_indices]
+ontoSub_indices = [d[True] if True in d.keys() else -1 for d in x]
 
-    # Trivial ontology subgraphs
-    if j == -1:
-        nodeData_ontoLevels[i] = 0
-        nodeData_ontoPaths[i] = [source]
 
-    # All other subgraphs
+for i, j in zip(node_indices, ontoSub_indices):
+
+    source = nodes_mitre[i]['db_ref_priority']
+
+    # Case: model node was mapped to either a trivial subgraph or the root of a non-trivial subgraph
+    if (j == -1) or (source in ontoSubRoots[j]):
+        nodes_mitre[i]['ontocat_level'] = 0
+        nodes_mitre[i]['ontocat_refs'] = [source]
+
     else:
 
         z = []
@@ -388,25 +439,25 @@ for i, j in zip(x, y):
         
         # Find shortest path and reverse such that [target, ..., source]
         z = sorted(z, key = len, reverse = False)
-        nodeData_ontoPaths[i] = z[0][::-1]
-        nodeData_ontoLevels[i] = len(z[0]) - 1
+        nodes_mitre[i]['ontocat_level'] = len(z[0]) - 1
+        nodes_mitre[i]['ontocat_refs'] = z[0][::-1]
 
 
-i = j = p = x = y = z = source = target = None
-del i, j, p, x, y, z, source, target
 
-# time: 10 m 21 s
+i = j = p = z = source = target = num_ontoSub_nontrivial = node_indices = ontoSub_indices = None
+del i, j, p, z, source, target, num_ontoSub_nontrivial, node_indices, ontoSub_indices
+
+# time: 7 m 35 s
 
 # %%
+# Ensure that identical onto nodes share the same lineage (path to their ancestor) for hierarchical uniqueness
 
-# Ensure that identical onto nodes share the same lineage (i.e. path to their ancestor) for hierarchical uniqueness
-nodeData_ontoPaths_reduce = nodeData_ontoPaths[:]
-m = max([len(path) for path in nodeData_ontoPaths])
-n = len(nodes_mitre)
+ontocat_refs = [node['ontocat_refs'] for node in nodes_mitre]
+m = max([len(path) for path in ontocat_refs])
 for i in range(1, m):
 
     # All nodes
-    x = [path[i] if len(path) > i else '' for path in nodeData_ontoPaths]
+    x = [path[i] if len(path) > i else '' for path in ontocat_refs]
 
     # All unique nodes
     y = list(set(x) - set(['']))
@@ -415,63 +466,77 @@ for i in range(1, m):
     xy = [y.index(node) if node is not '' else '' for node in x]
 
     # Choose the path segment of the first matching node for each unique node
-    z = [nodeData_ontoPaths[x.index(node)][:i] for node in y]
+    z = [ontocat_refs[x.index(node)][:i] for node in y]
     
     # Substitute path segments
-    for j in range(n):
+    for j in range(num_nodes):
         if xy[j] is not '':
-            nodeData_ontoPaths_reduce[j][:i] = z[xy[j]]
+            nodes_mitre[j]['ontocat_refs'][:i] = z[xy[j]]
         else:
-            nodeData_ontoPaths_reduce[j][:i] = nodeData_ontoPaths[j][:i]
+            nodes_mitre[j]['ontocat_refs'][:i] = ontocat_refs[j][:i]
 
 
-x = y = z = xy = i = j = m = n = None
-del x, y, z, xy, i, j, m, n
+# Copy results
+for j in range(num_nodes):
+    nodes_mitre[j]['ontocat_refs'][:i] = ontocat_refs[j][:i].copy()
+
+
+i = j = m = x = y = z = xy = None
+del i, j, m, x, y, z, xy
 
 
 # %%
 %%time
 
 # Generate list of mapped ontology categories, sorted by size
-ontoCats = {}
-ontoCats['ref'], ontoCats['size'] = np.unique([node for path in nodeData_ontoPaths_reduce for node in path], return_counts = True)
+ontocats = {}
+ontocats['ref'], ontocats['size'] = np.unique([node for path in ontocat_refs for node in path], return_counts = True)
 
-num_ontoCats = len(ontoCats['ref'])
-i = np.argsort(ontoCats['size'])[::-1]
-ontoCats['ref'] = ontoCats['ref'][i]
-ontoCats['size'] = ontoCats['size'][i]
-ontoCats['id'] = list(range(num_ontoCats))
+num_ontocats = len(ontocats['ref'])
+i = np.argsort(ontocats['size'])[::-1]
+ontocats['ref'] = list(ontocats['ref'][i])
+ontocats['size'] = [int(k) for k in ontocats['size']]
+ontocats['id'] = list(range(num_ontocats))
 
 
 # Get the mapped onto category names
 x = dict(ontoG.nodes(data = 'name', default = None))
-ontoCats['name'] = list(np.empty((num_ontoCats, )))
-for i, ontoRef in enumerate(ontoCats['ref']):
+ontocats['name'] = list(np.empty((num_ontocats, )))
+for i, ref in enumerate(ontocats['ref']):
     try:
-        ontoCats['name'][i] = x[ontoRef]
+        ontocats['name'][i] = x[ref]
     except:
-        ontoCats['name'][i] = ''
+        ontocats['name'][i] = ''
 
 
 # Get onto level of each category
-i = max([len(path) for path in nodeData_ontoPaths_reduce])
-x = [np.unique([path[j] if len(path) > j else '' for path in nodeData_ontoPaths_reduce]) for j in range(i)]
-ontoCats['ontoLevel'] = [np.flatnonzero([ontoRef in y for y in x])[0] for ontoRef in ontoCats['ref']]
+i = max([len(path) for path in ontocat_refs])
+x = [np.unique([path[j] if len(path) > j else '' for path in ontocat_refs]) for j in range(i)]
+ontocats['level'] = [int(np.flatnonzero([ref in y for y in x])[0]) for ref in ontocats['ref']]
 
 
-# Get numeric id version of nodeData_ontoPaths_reduce
-x = {k: v for k, v in zip(ontoCats['ref'], ontoCats['id'])}
-nodeData_ontoPaths_id = [[x[node] for node in path] for path in nodeData_ontoPaths_reduce]
+# Get numeric id version of ontocat_refs
+x = {k: v for k, v in zip(ontocats['ref'], ontocats['id'])}
+ontocat_ids = [[x[node] for node in path] for path in ontocat_refs]
+for node in nodes_mitre:
+    node['ontocat_ids'] = [x[ontocat] for ontocat in node['ontocat_refs']]
 
 
 # Get parent category id for each category (for root nodes, parentID = None)
-y = [np.flatnonzero([True if ref in path else False for path in nodeData_ontoPaths_reduce])[0] for ref in ontoCats['ref']]
-ontoCats['parent'] = [nodeData_ontoPaths_reduce[y[i]][nodeData_ontoPaths_reduce[y[i]].index(ontoRef) - 1] if nodeData_ontoPaths_reduce[y[i]].index(ontoRef) > 0 else None for i, ontoRef in enumerate(ontoCats['ref'])]
-ontoCats['parentID'] = [x[parent] if parent is not None else None for parent in ontoCats['parent']]
+y = [np.flatnonzero([True if ref in path else False for path in ontocat_refs])[0] for ref in ontocats['ref']]
+ontocats['parent_ref'] = [ontocat_refs[y[i]][ontocat_refs[y[i]].index(ref) - 1] if ontocat_refs[y[i]].index(ref) > 0 else None for i, ref in enumerate(ontocats['ref'])]
+ontocats['parent_id'] = [x[parent] if parent is not None else None for parent in ontocats['parent_ref']]
 
 
 # Find membership of onto categories
-ontoCats['nodeIDs'] = [[node['id'] for node, path in zip(nodes_mitre, nodeData_ontoPaths_reduce) if ontoRef in path] for ontoRef in ontoCats['ref']]
+ontocats['node_ids'] = [[node['id'] for node, path in zip(nodes_mitre, ontocat_refs) if ref in path] for ref in ontocats['ref']]
+
+
+# Placeholder for hyperedges
+ontocats['hyperedge_ids'] = [[] for i in range(num_ontocats)]
+
+# Switch to row-wise structure
+ontocats_ = [{k: ontocats[k][i] for k in ontocats.keys()} for i in range(num_ontocats)]
 
 
 i = x = y = None
@@ -479,69 +544,86 @@ del i, x, y
 
 # time: 3.89 s
 
+
+# %%
+# ## Additional node attributes
+
+# Calculate node degrees
+nodes_mitre, __, __ = emlib.calculate_node_degrees(nodes_mitre, edges_mitre)
+
+# Get node-wise belief score from `edges`
+nodes_mitre, __ = emlib.calculate_node_belief(nodes_mitre, edges_mitre, mode = 'max')
+
+
+# Placeholder values
+for node in nodes_mitre:
+    node['x'] = float(0.0)
+    node['y'] = float(0.0)
+    node['z'] = float(0.0)
+    node['cluster_level'] = 0
+    node['cluster_ids'] = []
+
+
 # %%
 
-# Output intersected model nodes and edges
-with open(f'./dist/v3/nodes_mitre.jsonl', 'w') as x:
-    for i in range(num_nodes):
-        json.dump(nodes_mitre[i], x)
-
-with open(f'./dist/v3/edges_mitre.jsonl', 'w') as x:
-    for i in range(num_edges):
-        json.dump(edges_mitre[i], x)
-
-
 # Output model node data
-with open(f'./dist/v3/nodeData.jsonl', 'w') as x:
+with open(f'./dist/v2/nodeData.jsonl', 'w') as x:
 
     # Description
     y = {
         'id': '<int> unique ID for the node in the KB graph as specified in `nodes.jsonl`',
-        'x': '<float> position of the node in the graph layout (symmetric Laplacian + UMAP 3D)',
-        'y': '<float> position of the node in the graph layout (symmetric Laplacian + UMAP 3D)',
-        'z': '<float> position of the node in the graph layout (symmetric Laplacian + UMAP 3D)',
-        'degreeIn': '<int> in-degree in the KB graph',
-        'degreeOut': '<int> out-degree in the KB graph',
+        'x': '<float> position of the node in the graph layout',
+        'y': '<float> position of the node in the graph layout',
+        'z': '<float> position of the node in the graph layout',
+        'in_degree': '<int> in-degree in the KB graph',
+        'out_degree': '<int> out-degree in the KB graph',
         'belief': '<float> max of the belief scores of all adjacent edges in the KB graph',
-        'ontoID': '<str> unique ref ID of the INDRA ontology (v1.3) node to which this KB node is mapped', 
-        'ontoLevel': '<int> hierarchy level of the ontology node (`-1` if not mappable)',
-        'clusterIDs': '<array of int> ordered list of cluster IDs (see `clusters.jsonl`) to which this node is mapped (cluster hierarchy = INDRA ontology v1.3, order = root-to-leaf)'
+        'db_ref_priority': '<str> database reference from `db_refs` of `nodes.jsonl`, that is used by the INDRA ontology (v1.3)', 
+        'grounded_onto': '<bool> whether this model node is grounded to something that exists within the ontology', 
+        'ontocat_level': '<int> level of the ontology node/category to which this model node was mapped (`-1` if not mappable, `0` if root)', 
+        'ontocat_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
+        'cluster_level': '<int> (placeholder for clustering)',
+        'cluster_ids': '<array of int> (placeholder for cluster)'
     }
     json.dump(y, x)
     x.write('\n')
 
     # Data
-    for i in range(len(nodesKB)):
-        z = {
-            'id': int(nodesKB[i]['id']),
-            'x': float(nodesKB_pos[i, 0]), 
-            'y': float(nodesKB_pos[i, 1]), 
-            'z': float(nodesKB_pos[i, 2]), 
-            'degreeOut': int(nodesKB_degrees[i, 0]),
-            'degreeIn': int(nodesKB_degrees[i, 1]),
-            'belief': float(nodesKB_belief[i]),
-            'ontoID': nodesKB_ontoIDs[i], 
-            'ontoLevel': int(nodesKB_ontoLevels[i]),
-            'clusterIDs': nodesKB_ontoPaths_id[i]
-        }
+    for node in nodes_mitre:
+        z = {k: node[k] for k in ['id', 'x', 'y', 'z', 'in_degree', 'out_degree', 'belief', 'db_ref_priority', 'grounded_onto', 'ontocat_level', 'ontocat_ids', 'cluster_level', 'cluster_ids']}
 
         json.dump(z, x)
         x.write('\n')
 
 
-# i = x = y = z = None
-# del i, x, y, z
+# %%
+# Output onto category data
+with open(f'./dist/v2/ontocats.jsonl', 'w') as x:
+
+    # Description
+    y = {
+        'id': '<int> unique ID for the node in the KB graph as specified in `nodes.jsonl`',
+        'ref': '<float> position of the node in the graph layout',
+        'name': '<float> position of the node in the graph layout',
+        'size': '<float> position of the node in the graph layout',
+        'level': '<int> in-degree in the KB graph',
+        'parent_id': '<int> out-degree in the KB graph',
+        'node_ids': '<float> max of the belief scores of all adjacent edges in the KB graph',
+        'hyperedge_ids': '<array of int> (placeholder for hyperedges)'
+    }
+    json.dump(y, x)
+    x.write('\n')
+
+    # Data
+    for ontocat in ontocats_:
+        z = {k: ontocat[k] for k in ['id', 'ref', 'name', 'size', 'level', 'parent_id', 'node_ids', 'hyperedge_ids']}
+
+        json.dump(z, x)
+        x.write('\n')
 
 
-
-
-
-
-
-
-
-
-
+node = ontocat = x = y = z = None
+del node, ontocat, x, y, z
 
 
 # %%

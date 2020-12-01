@@ -334,8 +334,8 @@ def calculate_node_degrees(nodes, edges):
     for edge in edges:
         i = map_nodes_ids[edge['source']]
         j = map_nodes_ids[edge['target']]
-        in_degree[i] += 1
-        out_degree[j] += 1
+        in_degree[j] += 1
+        out_degree[i] += 1
 
     # Insert into `nodes`
     for i in range(num_nodes):
@@ -380,56 +380,135 @@ def calculate_node_belief(nodes, edges, mode = 'max'):
 
 # %%
 # Generate an ordered list of namespaces present in the priority list, the graph nodes, and the given ontology (JSON format)
-def generate_ordered_namespace_list(nodes, ontoJSON, namespaces_priority):
+# def generate_ordered_namespace_list(namespaces_priority, ontoJSON, nodes):
 
-    # Generate namespace list of the given ontology
-    x = [re.findall('\w{1,}(?=:)', node['id'])[0] for node in ontoJSON['nodes']]
-    y, z = np.unique(x, return_counts = True)
-    i = np.argsort(z)[::-1]
-    namespaces_onto = [[name, count / np.sum(z) * 100] for name, count in zip(y[i], z[i])]
+#     # Generate namespace list of the given ontology
+#     x = [re.findall('\w{1,}(?=:)', node['id'])[0] for node in ontoJSON['nodes']]
+#     y, z = np.unique(x, return_counts = True)
+#     i = np.argsort(z)[::-1]
+#     namespaces_onto = [[name, count / np.sum(z) * 100] for name, count in zip(y[i], z[i])]
 
 
-    # Generate namespace list of the node list
-    x = []
-    for node in nodes:
+#     # Generate namespace list of the node list
+#     x = []
+#     for node in nodes:
 
-        if len(node['info']['links']) > 0:
-            names = [link[0] for link in node['info']['links']]
-        else:
-            names = ['not-grounded']
+#         if len(set(node['db_refs'].keys()) - {'TEXT'}) > 0:
+#             names = [name for name in node['db_refs'].keys()]
+#         else:
+#             names = ['not-grounded']
         
-        # Check against priority list
-        y = np.flatnonzero([True if name in names else False for name in namespaces_priority])
-        if len(y) > 0:
-            i = y[0]
-            x.append(namespaces_priority[i])
+#         # Check against priority list
+#         y = [name for name in namespaces_priority if name in names]
+#         z = [name[0] for name in namespaces_onto if name[0] in names]
+#         if len(y) > 0:
+#             x.append(y[0])
+
+#         # Check against ontology list
+#         elif len(z) > 0:
+#             x.append(z[0])
+            
+#         else:
+#             x.append(names[0])
+
+
+#     # Count node namespace list
+#     y, z = np.unique(x, return_counts = True)
+#     i = np.argsort(z)[::-1]
+#     namespaces_nodes = [[name, count / np.sum(z) * 100] for name, count in zip(y, z)]
+
+
+#     # Combine namespace lists in order
+#     # 1. Given priority
+#     # 2. extra from node list
+#     # 3. extra from onto list
+#     x = list(set([name for name, __ in namespaces_nodes]) - set(namespaces_priority))
+#     y = list(set([name for name, __ in namespaces_onto]) - set(namespaces_priority) - set([name for name, __ in namespaces_nodes]))
+#     namespaces_combined = namespaces_priority + x + y
+
+
+#     # Count nodes in each namespace
+#     namespaces = {namespace: 0 for namespace in namespaces_combined}
+#     for node in nodes:
+#         for name in node['db_refs'].keys():
+#             try:
+#                 namespaces[name] += 1
+#             except:
+#                 pass
+            
+
+#     return namespaces
+
+
+def generate_ordered_namespace_list(namespaces_priority, ontoJSON, nodes):
+
+    # Namespaces referenced in the ontology node/category names
+    namespaces_onto = set([re.findall('\w{1,}(?=:)', node['id'])[0] for node in ontoJSON['nodes']])
+
+
+    # Namespaces referenced in the model nodes 'db_refs'
+    namespaces_model = set([namespace for node in nodes for namespace in node['db_refs'].keys()])
+
+
+    # Combine the namespace lists in order: 
+    # * given priority
+    # * 'not-grounded'
+    # * from model
+    # * from ontology
+    x = sorted(list(namespaces_model - set(namespaces_priority)))
+    y = sorted(list(namespaces_onto - set(namespaces_priority) - namespaces_model))
+    namespaces = namespaces_priority + x + y
+
+
+    # Count references
+    namespaces_count = {namespace: [0, 0] for namespace in namespaces}
+    for node in nodes:
+        for name in node['db_refs'].keys():
+            namespaces_count[name][0] += 1
+    
+    for node in ontoJSON['nodes']:
+        name = re.findall('\w{1,}(?=:)', node['id'])[0]
+        namespaces_count[name][1] += 1
+
+    
+    return namespaces, namespaces_count
+
+
+# %%
+# Reduce 'db_refs' of each model node to a single entry by namespace priority
+# * `namespace`:`ref` -> 'ontocats_ref'
+# * `grounded = False` -> 'not-grounded' 
+def reduce_nodes_db_refs(nodes, namespaces):
+
+    num_nodes = len(nodes)
+    for i in range(num_nodes):
+
+        if nodes[i]['grounded'] == True:
+            n = [name for name in namespaces if name in nodes[i]['db_refs'].keys()][0]
+            nodes[i]['db_ref_priority'] = f"{n}:{nodes[i]['db_refs'][n]}"
         else:
+            nodes[i]['db_ref_priority'] = 'not-grounded'
 
-            # Check against ontology list
-            z = np.flatnonzero([True if name[0] in names else False for name in namespaces_onto])
-            if len(z) > 0:
-                i = z[0]
-                x.append(namespaces_onto[i][0])
-            else:
-                x.append(names[0])
+    # Column-wise result
+    nodes_db_ref_priority = [node['db_ref_priority'] for node in nodes]
+
+    return nodes, nodes_db_ref_priority
 
 
-    # Count node namespace list
-    y, z = np.unique(x, return_counts = True)
-    i = np.argsort(z)[::-1]
-    namespaces_nodes = [[name, count / np.sum(z) * 100] for name, count in zip(y, z)]
+# %%
+# Check if a model node is in the given ontology
+
+ 
 
 
-    # Combine namespace lists in order
-    # 1. Given priority
-    # 2. extra from node list
-    # 3. extra from onto list
-    x = list(set([name for name, __ in namespaces_nodes]) - set(namespaces_priority))
-    y = list(set([name for name, __ in namespaces_onto]) - set(namespaces_priority) - set([name for name, __ in namespaces_nodes]))
-    namespaces_combined = namespaces_priority + x + y
 
 
-    return namespaces_combined
+
+
+
+
+
+# %%
 
 # %%
 # Match arrays using a hash table
