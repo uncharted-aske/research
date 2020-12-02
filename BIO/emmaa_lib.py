@@ -14,6 +14,7 @@ import numpy as np
 # import csv
 import re
 import numba
+import networkx as nx
 
 # import sklearn as skl
 # import hdbscan
@@ -379,67 +380,6 @@ def calculate_node_belief(nodes, edges, mode = 'max'):
     return nodes, belief
 
 # %%
-# Generate an ordered list of namespaces present in the priority list, the graph nodes, and the given ontology (JSON format)
-# def generate_ordered_namespace_list(namespaces_priority, ontoJSON, nodes):
-
-#     # Generate namespace list of the given ontology
-#     x = [re.findall('\w{1,}(?=:)', node['id'])[0] for node in ontoJSON['nodes']]
-#     y, z = np.unique(x, return_counts = True)
-#     i = np.argsort(z)[::-1]
-#     namespaces_onto = [[name, count / np.sum(z) * 100] for name, count in zip(y[i], z[i])]
-
-
-#     # Generate namespace list of the node list
-#     x = []
-#     for node in nodes:
-
-#         if len(set(node['db_refs'].keys()) - {'TEXT'}) > 0:
-#             names = [name for name in node['db_refs'].keys()]
-#         else:
-#             names = ['not-grounded']
-        
-#         # Check against priority list
-#         y = [name for name in namespaces_priority if name in names]
-#         z = [name[0] for name in namespaces_onto if name[0] in names]
-#         if len(y) > 0:
-#             x.append(y[0])
-
-#         # Check against ontology list
-#         elif len(z) > 0:
-#             x.append(z[0])
-            
-#         else:
-#             x.append(names[0])
-
-
-#     # Count node namespace list
-#     y, z = np.unique(x, return_counts = True)
-#     i = np.argsort(z)[::-1]
-#     namespaces_nodes = [[name, count / np.sum(z) * 100] for name, count in zip(y, z)]
-
-
-#     # Combine namespace lists in order
-#     # 1. Given priority
-#     # 2. extra from node list
-#     # 3. extra from onto list
-#     x = list(set([name for name, __ in namespaces_nodes]) - set(namespaces_priority))
-#     y = list(set([name for name, __ in namespaces_onto]) - set(namespaces_priority) - set([name for name, __ in namespaces_nodes]))
-#     namespaces_combined = namespaces_priority + x + y
-
-
-#     # Count nodes in each namespace
-#     namespaces = {namespace: 0 for namespace in namespaces_combined}
-#     for node in nodes:
-#         for name in node['db_refs'].keys():
-#             try:
-#                 namespaces[name] += 1
-#             except:
-#                 pass
-            
-
-#     return namespaces
-
-
 def generate_ordered_namespace_list(namespaces_priority, ontoJSON, nodes):
 
     # Namespaces referenced in the ontology node/category names
@@ -496,19 +436,39 @@ def reduce_nodes_db_refs(nodes, namespaces):
 
 
 # %%
-# Check if a model node is in the given ontology
+# Generate NetworkX layout from given subgraph (as specified by `edges`)
+def generate_nx_layout(edges, layout = 'spring', plot = False, ax = None):
 
- 
+    # Generate edge list
+    edge_list = {(edge['source'], edge['target']): 0 for edge in edges}
+    for edge in edges:
+        edge_list[(edge['source'], edge['target'])] += 1
 
+    # Generate NetworkX graph object from edge list
+    # weight = number of equivalent edges
+    G = nx.DiGraph()
+    G.add_edges_from([(edge[0], edge[1], {'weight': edge_list[edge]}) for edge in edge_list])
 
+    print(f"{G.number_of_nodes()} nodes and {G.number_of_edges()} edges has been added to the graph object.")
+    # Note: self-loops are ignored
 
+    # Generate layout coordinate
+    if layout == 'kamada_kawai':
+        coors = nx.kamada_kawai_layout(G, center = (0, 0), weight = 'weight')
+    else:
+        coors = nx.spring_layout(G, center = (0, 0), weight = 'weight', seed = 0)
 
+    if plot == True:
 
+        if ax == None:
+            fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
 
+        nx.draw_networkx(G, pos = coors, arrows = False, with_labels = False, ax = ax)
+        __ = plt.setp(ax, aspect = 1)
+    
 
-
-
-# %%
+    return coors, G
+    
 
 # %%
 # Match arrays using a hash table
@@ -529,3 +489,4 @@ def match_arrays(A, B):
 
     return index
 
+# %%
