@@ -437,17 +437,23 @@ def reduce_nodes_db_refs(nodes, namespaces):
 
 # %%
 # Generate NetworkX layout from given subgraph (as specified by `edges`)
-def generate_nx_layout(edges, layout = 'spring', plot = False, ax = None):
-
-    # Generate edge list
-    edge_list = {(edge['source'], edge['target']): 0 for edge in edges}
-    for edge in edges:
-        edge_list[(edge['source'], edge['target'])] += 1
-
+def generate_nx_layout(edges, edge_list = [], layout = 'spring', plot = False, ax = None):
+    
     # Generate NetworkX graph object from edge list
-    # weight = number of equivalent edges
+    # edge_list = <list of (u, v, d = {k: v})>
     G = nx.DiGraph()
-    G.add_edges_from([(edge[0], edge[1], {'weight': edge_list[edge]}) for edge in edge_list])
+    if len(edge_list) == 0:
+
+        # Generate edge list from `edges`
+        edge_dict = {(edge['source'], edge['target']): 0 for edge in edges}
+        for edge in edges:
+            edge_dict[(edge['source'], edge['target'])] += 1
+
+        # weight = number of equivalent edges
+        edge_list = [(edge[0], edge[1], {'weight': edge_dict[edge]}) for edge in edge_dict]
+
+    G.add_edges_from(edge_list)
+
 
     print(f"{G.number_of_nodes()} nodes and {G.number_of_edges()} edges has been added to the graph object.")
     # Note: self-loops are ignored
@@ -455,15 +461,28 @@ def generate_nx_layout(edges, layout = 'spring', plot = False, ax = None):
     # Generate layout coordinate
     if layout == 'kamada_kawai':
         coors = nx.kamada_kawai_layout(G, center = (0, 0), weight = 'weight')
-    else:
+    elif layout == 'spring':
         coors = nx.spring_layout(G, center = (0, 0), weight = 'weight', seed = 0)
+    else:
+        coors = {}
 
     if plot == True:
 
         if ax == None:
             fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
 
-        nx.draw_networkx(G, pos = coors, arrows = False, with_labels = False, ax = ax)
+        options = {
+            'ax': ax,
+            'arrows': True, 
+            'with_labels': True,
+            'node_size': 0.5,
+            'width': 0.5,
+            'alpha': 1.0,
+            'cmap': 'cividis',
+            'edge_color': 'k'
+        }
+
+        nx.draw_networkx(G, pos = coors, **options)
         __ = plt.setp(ax, aspect = 1)
     
 

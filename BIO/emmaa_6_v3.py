@@ -13,6 +13,7 @@
 # %%
 import json
 import pickle
+import time
 import numpy as np
 import scipy as sp
 import networkx as nx
@@ -646,99 +647,6 @@ del i, x, y
 
 # time: 3.89 s
 
-
-# %%
-
-# Output model node data
-with open(f'./dist/v2/nodeData_mitre.jsonl', 'w') as x:
-
-    # Description
-    y = {
-        'id': '<int> unique ID for the node in the KB graph as specified in `nodes.jsonl`',
-        'x': '<float> position of the node in the graph layout',
-        'y': '<float> position of the node in the graph layout',
-        'z': '<float> position of the node in the graph layout',
-        'in_degree': '<int> in-degree in the KB graph',
-        'out_degree': '<int> out-degree in the KB graph',
-        'belief': '<float> max of the belief scores of all adjacent edges in the KB graph',
-        'db_ref_priority': '<str> database reference from `db_refs` of `nodes.jsonl`, that is used by the INDRA ontology (v1.3)', 
-        'grounded_onto': '<bool> whether this model node is grounded to something that exists within the ontology', 
-        'ontocat_level': '<int> level of the ontology node/category to which this model node was mapped (`-1` if not mappable, `0` if root)', 
-        'ontocat_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
-        'cluster_ids': '<array of int> (placeholder for cluster)'
-    }
-    json.dump(y, x)
-    x.write('\n')
-
-    # Data
-    for node in nodes_mitre:
-        z = {k: node[k] for k in y.keys()}
-
-        json.dump(z, x)
-        x.write('\n')
-
-
-# %%
-# Output onto category data
-with open(f'./dist/v2/ontocats_mitre.jsonl', 'w') as x:
-
-    # Description
-    y = {
-        'id': '<int> unique ID for the ontological category (referenced by `ontocat_ids` in `nodeData.jsonl`)',
-        'ref': '<str> unique reference ID of this category (as given by the INDRA Ontology v1.3)',
-        'name': '<str> name of this category (as given by the INDRA Ontology v1.3)',
-        'size': '<int> number of model nodes that were mapped to this category and its children',
-        'level': '<int> number of hops to reach the local root (`0` if root)',
-        'parent_id': '<int> ID of the parent of this category in the ontology',
-        'node_ids': '<array of int> unordered list of IDs from model nodes in the membership of this category',
-        'hyperedge_ids': '<array of int> (placeholder for hyperedge IDs)',
-        'x': '<float> position of the node in the graph layout',
-        'y': '<float> position of the node in the graph layout',
-        'z': '<float> position of the node in the graph layout'
-    }
-    json.dump(y, x)
-    x.write('\n')
-
-    # Data
-    for ontocat in ontocats:
-        z = {k: ontocat[k] for k in y.keys()}
-
-        json.dump(z, x)
-        x.write('\n')
-
-
-node = ontocat = x = y = z = None
-del node, ontocat, x, y, z
-
-
-# %%
-###########################################
-
-# %% 
-# Reload onto category data
-
-nodeData = []
-with open(f'./dist/v2/nodeData.jsonl', 'r') as x:
-    for i in x:
-        nodeData.append(json.loads(i))
-
-nodeData = nodeData[1:]
-for x, y in zip(nodes_mitre, nodeData):
-    for j in y.keys():
-        if isinstance(y[j], list):
-            x[j] = y[j].copy()
-        else:
-            x[j] = y[j]
-
-
-ontocats = []
-with open(f'./dist/v2/ontocats.jsonl', 'r') as x:
-    for i in x:
-        ontocats.append(json.loads(i))
-
-ontocats = ontocats[1:]
-num_ontocats = len(ontocats)
-
 # %%
 # # Hyperedge Generation
 
@@ -823,7 +731,7 @@ hyperedges_parent_nodes_['edge_indices'] = [np.flatnonzero(ontocats_edges_source
 map_edges_ids = {i: edge['id'] for i, edge in enumerate(edges_mitre)}
 hyperedges_parent_nodes_['edge_ids'] = [[map_edges_ids[i] for i in edges] for edges in hyperedges_parent_nodes_['edge_indices']]
 
-hyperedges_parent_nodes_['level'] = [ontocat['id'] for i, ontocat in enumerate(ontocats) for node_id in ontocats_parent_nodes[i]]
+hyperedges_parent_nodes_['level'] = [ontocat['level'] for i, ontocat in enumerate(ontocats) for node_id in ontocats_parent_nodes[i]]
 hyperedges_parent_nodes_['size'] = [len(edges) for edges in hyperedges_parent_nodes_['edge_ids']]
 hyperedges_parent_nodes_['id'] = list(range(len(hyperedges_parent_nodes_['source'])))
 
@@ -838,25 +746,152 @@ hyperedges_parent_nodes = [{k: hyperedges_parent_nodes_[k][i] for k in hyperedge
 num_hyperedges_parent_nodes = len(hyperedges_parent_nodes)
 
 
-x = ontocats_parent_nodes = map_edges_ids = hyperedges_parent_nodes_ = num_hyperedges_parent_nodes_ = None
-del x, ontocats_parent_nodes, map_edges_ids, hyperedges_parent_nodes_, num_hyperedges_parent_nodes_ 
+x = map_edges_ids = hyperedges_parent_nodes_ = num_hyperedges_parent_nodes_ = None
+del x, map_edges_ids, hyperedges_parent_nodes_, num_hyperedges_parent_nodes_ 
 
-ontocats_edges_source = ontocats_edges_target = ontocats_parent = ontocats_siblings = None
-del ontocats_edges_source, ontocats_edges_target, ontocats_parent, ontocats_siblings
+# ontocats_edges_source = ontocats_edges_target = None
+# del ontocats_edges_source, ontocats_edges_target
 
 # time: 1.43 s
 
 
+# %%
+# ## Get children data
+
+# %%
+%%time
+# Children that are onto-categories
+ontocats_children_ontocat_ids = {ontocat['id']: [] for ontocat in ontocats}
+for ontocat, siblings in zip(ontocats, ontocats_siblings):
+    if ontocat['parent_id'] != None:
+        if len(ontocats_children_ontocat_ids[ontocat['parent_id']]) < 1:
+            ontocats_children_ontocat_ids[ontocat['parent_id']] = siblings + [ontocat['id']]
+
+
+# Children that are model nodes that are not in the membership of any children onto-category
+ontocats_children_node_ids = {ontocat['id']: [] for ontocat in ontocats}
+for ontocat, parent_nodes in zip(ontocats, ontocats_parent_nodes):
+    if ontocat['parent_id'] != None:
+        if len(ontocats_children_node_ids[ontocat['parent_id']]) < 1:
+            ontocats_children_node_ids[ontocat['parent_id']] = parent_nodes
+
+
+# Flatten dict
+ontocats_children_ontocat_ids = [ontocats_children_ontocat_ids[ontocat['id']] for ontocat in ontocats]
+ontocats_children_node_ids = [ontocats_children_node_ids[ontocat['id']] for ontocat in ontocats]
+
+
+# Onto-category siblings of given model nodes
+x = set([j for i in [node_ids for node_ids in ontocats_children_node_ids] for j in i])
+nodes_siblings_ontocat_ids = {i: [] for i in x}
+for ontocat_ids, node_ids in zip(ontocats_children_ontocat_ids, ontocats_children_node_ids):
+    for i in node_ids:
+        nodes_siblings_ontocat_ids[i] = ontocat_ids
+
+
+# %%
+# ## Get Type-3 Hyperedges
+
+# %%
+%%time
+
+# Find hyperedges that has:
+# * a member of the onto-category parent that is not in any sibling onto-category as the edges' source
+# * a onto-category sibling of that model node as the edges' target
+hyperedges_nodes_ontocats_ = {}
+hyperedges_nodes_ontocats_['source'] = [node_id for node_id, ontocat_ids in nodes_siblings_ontocat_ids.items() for __ in ontocat_ids]
+hyperedges_nodes_ontocats_['target'] = [ontocat_id for __, ontocat_ids in nodes_siblings_ontocat_ids.items() for ontocat_id in ontocat_ids]
+num_hyperedges_nodes_ontocats_ = len(hyperedges_nodes_ontocats_['source'])
+
+x = [edge['source'] for edge in edges_mitre]
+z = {ontocat['id']: i for i, ontocat in enumerate(ontocats)}
+hyperedges_nodes_ontocats_['edge_indices'] = [np.flatnonzero(emlib.match_arrays(x, [node_id]) & ontocats_edges_target[z[ontocat_id]]) for node_id, ontocat_ids in nodes_siblings_ontocat_ids.items() for ontocat_id in ontocat_ids]
+
+# Map between list indices and edge ID
+map_edges_ids = {i: edge['id'] for i, edge in enumerate(edges_mitre)}
+hyperedges_nodes_ontocats_['edge_ids'] = [[map_edges_ids[i] for i in edges] for edges in hyperedges_nodes_ontocats_['edge_indices']]
+
+# Note: hyperedge_level = node_level + 1 because the level of the model node is that of the parent onto-category
+z = {node['id']: i for i, node in enumerate(nodes_mitre)}
+hyperedges_nodes_ontocats_['level'] = [nodes_mitre[z[node_id]]['ontocat_level'] + 1 for node_id, ontocat_ids in nodes_siblings_ontocat_ids.items() for __ in ontocat_ids]
+hyperedges_nodes_ontocats_['size'] = [len(edges) for edges in hyperedges_nodes_ontocats_['edge_ids']]
+hyperedges_nodes_ontocats_['id'] = list(range(len(hyperedges_nodes_ontocats_['source'])))
+
+
+# Specify source and target types
+hyperedges_nodes_ontocats_['source_type'] = ['node' for i in range(num_hyperedges_nodes_ontocats_)]
+hyperedges_nodes_ontocats_['target_type'] = ['ontocat' for i in range(num_hyperedges_nodes_ontocats_)]
+
+
+# Trim empty hyperedges and change to row-wise
+hyperedges_nodes_ontocats = [{k: hyperedges_nodes_ontocats_[k][i] for k in hyperedges_nodes_ontocats_.keys()} for i in range(num_hyperedges_nodes_ontocats_) if hyperedges_nodes_ontocats_['size'][i] > 0]
+num_hyperedges_nodes_ontocats = len(hyperedges_nodes_ontocats)
+
+
+x = z = map_edges_ids = hyperedges_nodes_ontocats_ = num_hyperedges_nodes_ontocats_ = None
+del x, z, map_edges_ids, hyperedges_nodes_ontocats_, num_hyperedges_nodes_ontocats_
+
+# time: 2.09 s
+
+
+# %%
+# ## Get Type-4 Hyperedges
+
+# %%
+%%time
+
+# Find hyperedges that has:
+# * a model node that is a member of a onto-category that is not in any child onto-category as the edges' source
+# * another other such member as the edges' target
+
+hyperedges_nodes_ = {}
+hyperedges_nodes_['source'] = [node_id_source for ids in ontocats_children_node_ids for node_id_source in ids for node_id_target in ids if node_id_target != node_id_source]
+hyperedges_nodes_['target'] = [node_id_target for ids in ontocats_children_node_ids for node_id_source in ids for node_id_target in ids if node_id_target != node_id_source]
+num_hyperedges_nodes_ = len(hyperedges_nodes_['source'])
+
+
+x = [edge['source'] for edge in edges_mitre]
+y = [edge['target'] for edge in edges_mitre]
+hyperedges_nodes_['edge_indices'] = [np.flatnonzero(emlib.match_arrays(x, [node_id_source]) & emlib.match_arrays(y, [node_id_target])) for ids in ontocats_children_node_ids for node_id_source in ids for node_id_target in ids if node_id_target != node_id_source]
+
+# Map between list indices and edge ID
+map_edges_ids = {i: edge['id'] for i, edge in enumerate(edges_mitre)}
+hyperedges_nodes_['edge_ids'] = [[map_edges_ids[i] for i in edges] for edges in hyperedges_nodes_['edge_indices']]
+
+# Note: hyperedge_level = node_level + 1 because the level of the model node is that of the parent onto-category
+z = {node['id']: i for node in nodes_mitre}
+hyperedges_nodes_['level'] = [nodes_mitre[z[node_id_source]]['ontocat_level'] + 1 for ids in ontocats_children_node_ids for node_id_source in ids for node_id_target in ids if node_id_target != node_id_source]
+hyperedges_nodes_['size'] = [len(edges) for edges in hyperedges_nodes_['edge_ids']]
+hyperedges_nodes_['id'] = list(range(len(hyperedges_nodes_['source'])))
+
+
+# Specify source and target types
+hyperedges_nodes_['source_type'] = ['node' for i in range(num_hyperedges_nodes_)]
+hyperedges_nodes_['target_type'] = ['node' for i in range(num_hyperedges_nodes_)]
+
+
+# Trim empty hyperedges and change to row-wise
+hyperedges_nodes = [{k: hyperedges_nodes_[k][i] for k in hyperedges_nodes_.keys()} for i in range(num_hyperedges_nodes_) if hyperedges_nodes_['size'][i] > 0]
+num_hyperedges_nodes = len(hyperedges_nodes)
+
+
+x = y = z = map_edges_ids = hyperedges_nodes_ = num_hyperedges_nodes_ = None
+del x, y, z, map_edges_ids, hyperedges_nodes_, num_hyperedges_nodes_
+
+# time: 4.84 ms
+
+
 # %%[markdown]
-# # ## Concatenate the hyperedges together
-hyperedges_mitre = hyperedges_parent_nodes + hyperedges_siblings
+# ## Concatenate the hyperedges together
+hyperedges_mitre = hyperedges_siblings + hyperedges_parent_nodes + hyperedges_nodes_ontocats + hyperedges_nodes
 num_hyperedges = len(hyperedges_mitre)
 for i, hyperedge in enumerate(hyperedges_mitre):
     hyperedge['id'] = i
+    del hyperedge['edge_indices']
 
 
-hyperedge = hyperedges_siblings = hyperedges_parent_nodes = None
-del hyperedge, hyperedges_siblings, hyperedges_parent_nodes
+hyperedge = hyperedges_siblings = hyperedges_parent_nodes = hyperedges_nodes_ontocats = hyperedges_nodes = None
+del hyperedge, hyperedges_siblings, hyperedges_parent_nodes, hyperedges_nodes_ontocats, hyperedges_nodes
 
 
 # %%[markdown]
@@ -869,8 +904,8 @@ with open(f'./dist/v2/hyperedges_mitre.jsonl', 'w') as x:
         'size': '<int> number of model edges that is aggregated here',
         'edge_ids': '<array of int> unordered list of edge ID of the underlying model edges (see `edges.jsonl`)',
         'source_type': '<str> object type of the source (only `ontocat`)',
-        'target_type': '<str> object type of the target (either `ontocat` or `node`)',
         'source': '<int> unique ID of the source (see `ontocats.jsonl`)' ,
+        'target_type': '<str> object type of the target (either `ontocat` or `node`)',
         'target': '<int> unique ID of the target (see `ontocats.jsonl` or `nodes.jsonl`)',
     }
     json.dump(y, x)
@@ -885,10 +920,161 @@ with open(f'./dist/v2/hyperedges_mitre.jsonl', 'w') as x:
 x = y = node = edge = None
 del x, y, node, edge
 
+
+# %%
+# Reload if necessary
+hyperedges_mitre = []
+with open(f'./dist/v2/hyperedges_mitre.jsonl', 'r') as x:
+    for i in x:
+        hyperedges_mitre.append(json.loads(i))
+
+hyperedges_mitre = hyperedges_mitre[1:]
+num_hyperedges = len(hyperedges_mitre)
+
 # %%
 
+# Add to `ontocats`
+for ontocat in ontocats:
+    ontocat['children_ids'] = ontocats_children_ontocat_ids[ontocat['id']]
+    ontocat['node_ids_direct'] = ontocats_children_node_ids[ontocat['id']]
+
+# %%
+
+# Find all hyperedges that are within each given onto-category
+map_ids_nodes = {node['id']: i for i, node in enumerate(nodes_mitre)}
+x = {ontocat['id']: [] for ontocat in ontocats}
+for hyperedge in hyperedges_mitre:
+    if (hyperedge['source_type'] == 'ontocat') & (ontocats[hyperedge['source']]['parent_id'] != None):
+        x[ontocats[hyperedge['source']]['parent_id']] = x[ontocats[hyperedge['source']]['parent_id']] + [hyperedge['id']]
+    elif hyperedge['source_type'] == 'node':
+        x[nodes_mitre[map_ids_nodes[hyperedge['source']]]['ontocat_ids'][-1]] = x[nodes_mitre[map_ids_nodes[hyperedge['source']]]['ontocat_ids'][-1]] + [hyperedge['id']]
 
 
+# Add to `ontocats`
+for ontocat in ontocats:
+    ontocat['hyperedge_ids'] = x[ontocat['id']]
+
+
+# %%
+# # Generate layout for each onto-category's children (model nodes and child onto-categories)
+
+# %%
+
+i = 4
+map_ids_hyperedges = {hyperedge['id']: i for i, hyperedge in enumerate(hyperedges_mitre)}
+H = [hyperedges_mitre[map_ids_hyperedges[hyperedge_id]] for hyperedge_id in ontocats[i]['hyperedge_ids']]
+edge_list = [(h['source_type'] + '_' + str(h['source']), h['target_type'] + '_' + str(h['target']), {'weight': h['size']}) for h in H]
+
+coors, G = emlib.generate_nx_layout([], edge_list = edge_list, layout = 'spring', plot = True)
+
+
+# Need to add nodes
+# Check what happens with disconnected nodes
+
+
+
+
+
+
+# %%
+# # Output Data
+
+# %%
+# Output model node data
+with open(f'./dist/v2/nodeData_mitre.jsonl', 'w') as x:
+
+    # Description
+    y = {
+        'id': '<int> unique ID for the node in the KB graph as specified in `nodes.jsonl`',
+        'x': '<float> position of the node in the graph layout',
+        'y': '<float> position of the node in the graph layout',
+        'z': '<float> position of the node in the graph layout',
+        'in_degree': '<int> in-degree in the KB graph',
+        'out_degree': '<int> out-degree in the KB graph',
+        'belief': '<float> max of the belief scores of all adjacent edges in the KB graph',
+        'db_ref_priority': '<str> database reference from `db_refs` of `nodes.jsonl`, that is used by the INDRA ontology (v1.3)', 
+        'grounded_onto': '<bool> whether this model node is grounded to something that exists within the ontology', 
+        'ontocat_level': '<int> level of the ontology node/category to which this model node was mapped (`-1` if not mappable, `0` if root)', 
+        'ontocat_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
+        'cluster_ids': '<array of int> (placeholder for cluster)'
+    }
+    json.dump(y, x)
+    x.write('\n')
+
+    # Data
+    for node in nodes_mitre:
+        z = {k: node[k] for k in y.keys()}
+
+        json.dump(z, x)
+        x.write('\n')
+
+
+# %%
+# Output onto category data
+with open(f'./dist/v2/ontocats_mitre.jsonl', 'w') as x:
+
+    # Description
+    y = {
+        'id': '<int> unique ID for the ontological category (referenced by `ontocat_ids` in `nodeData.jsonl`)',
+        'ref': '<str> unique reference ID of this category (as given by the INDRA Ontology v1.3)',
+        'name': '<str> name of this category (as given by the INDRA Ontology v1.3)',
+        'size': '<int> number of model nodes that were mapped to this category and its children',
+        'level': '<int> number of hops to reach the local root (`0` if root)',
+        'parent_id': '<int> ID of the parent of this category in the ontology',
+        'children_ids': '<array of int> unordered list of the child category IDs',
+        'node_ids': '<array of int> unordered list of IDs from model nodes in the membership of this category',
+        'node_ids_direct': '<array of int> node_ids but only model nodes which were directly mapped to this category and not any of the child categories',
+        'hyperedge_ids': '<array of int> unordered list of hyperedge IDs (see `hyperedges.jsonl`) that are within this category',
+        'x': '<float> position of the node in the graph layout',
+        'y': '<float> position of the node in the graph layout',
+        'z': '<float> position of the node in the graph layout'
+    }
+    json.dump(y, x)
+    x.write('\n')
+
+    # Data
+    for ontocat in ontocats:
+        z = {k: ontocat[k] for k in y.keys()}
+
+        json.dump(z, x)
+        x.write('\n')
+
+
+node = ontocat = x = y = z = None
+del node, ontocat, x, y, z
+
+# %%
+######################################################################################
+
+
+# %% 
+# Reload onto category data
+
+nodeData = []
+with open(f'./dist/v2/nodeData_mitre.jsonl', 'r') as x:
+    for i in x:
+        nodeData.append(json.loads(i))
+
+nodeData = nodeData[1:]
+for x, y in zip(nodes_mitre, nodeData):
+    for j in y.keys():
+        if isinstance(y[j], list):
+            x[j] = y[j].copy()
+        else:
+            x[j] = y[j]
+
+
+ontocats = []
+with open(f'./dist/v2/ontocats_mitre.jsonl', 'r') as x:
+    for i in x:
+        ontocats.append(json.loads(i))
+
+ontocats = ontocats[1:]
+num_ontocats = len(ontocats)
+
+
+nodeData = i = j = x = y = None
+del nodeData, i, j, x, y
 
 
 # %%
