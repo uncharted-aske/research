@@ -769,16 +769,20 @@ for ontocat, siblings in zip(ontocats, ontocats_siblings):
 
 
 # Children that are model nodes that are not in the membership of any children onto-category
-ontocats_children_node_ids = {ontocat['id']: [] for ontocat in ontocats}
+# Filled from children to parent
+ontocats_children_node_ids = {ontocat['id']: set() for ontocat in ontocats}
 for ontocat, parent_nodes in zip(ontocats, ontocats_parent_nodes):
     if ontocat['parent_id'] != None:
-        if len(ontocats_children_node_ids[ontocat['parent_id']]) < 1:
-            ontocats_children_node_ids[ontocat['parent_id']] = parent_nodes
+        ontocats_children_node_ids[ontocat['parent_id']] = ontocats_children_node_ids[ontocat['parent_id']] | set(parent_nodes)
+
+# Add children model nodes to onto-categories that have no children onto-categories from which to get node IDs
+for node in nodes_mitre:
+    ontocats_children_node_ids[node['ontocat_ids'][-1]] = ontocats_children_node_ids[node['ontocat_ids'][-1]] | set([node['id']])
 
 
 # Flatten dict
-ontocats_children_ontocat_ids = [ontocats_children_ontocat_ids[ontocat['id']] for ontocat in ontocats]
-ontocats_children_node_ids = [ontocats_children_node_ids[ontocat['id']] for ontocat in ontocats]
+ontocats_children_ontocat_ids = [list(ontocats_children_ontocat_ids[ontocat['id']]) for ontocat in ontocats]
+ontocats_children_node_ids = [list(ontocats_children_node_ids[ontocat['id']]) for ontocat in ontocats]
 
 
 # Onto-category siblings of given model nodes
@@ -959,21 +963,337 @@ for ontocat in ontocats:
 # # Generate layout for each onto-category's children (model nodes and child onto-categories)
 
 # %%
+# Reset all coordinates to None
+for x in [nodes_mitre, ontocats]:
+    for y in x:
+        for k in ['x', 'y', 'z']:
+            # y[k] = float(0.0)
+            y[k] = None
 
-i = 4
+
+# Useful hash tables
+map_ids_nodes = {node['id']: i for i, node in enumerate(nodes_mitre)}
+map_ids_ontocats = {ontocat['id']: i for i, ontocat in enumerate(ontocats)}
 map_ids_hyperedges = {hyperedge['id']: i for i, hyperedge in enumerate(hyperedges_mitre)}
-H = [hyperedges_mitre[map_ids_hyperedges[hyperedge_id]] for hyperedge_id in ontocats[i]['hyperedge_ids']]
-edge_list = [(h['source_type'] + '_' + str(h['source']), h['target_type'] + '_' + str(h['target']), {'weight': h['size']}) for h in H]
-
-coors, G = emlib.generate_nx_layout([], edge_list = edge_list, layout = 'spring', plot = True)
 
 
-# Need to add nodes
-# Check what happens with disconnected nodes
+# For each level and each parent onto-categories, generate the layout of their children
+max_level = max([ontocat['level'] for ontocat in ontocats])
+coors = [[] for l in range(max_level)]
+G = [[] for l in range(max_level)]
+
+for l in range(max_level):
+# for l in range(3):
+
+    if l == 0:
+
+        node_list = [('ontocat_' + str(ontocat['id']), {'name': ontocat['name']}) for ontocat in ontocats if (ontocat['level'] == l)]
+
+        H = [hyperedge for hyperedge in hyperedges_mitre if hyperedge['level'] == l]
+        edge_list = [(h['source_type'] + '_' + str(h['source']), h['target_type'] + '_' + str(h['target']), {'weight': h['size']}) for h in H]
+
+        layout_atts = {
+            'k': 1.0,
+            'center': (0, 0),
+            'scale': 1.0
+        }
+        coors_, G_ = emlib.generate_nx_layout([], [], node_list = node_list, edge_list = edge_list, layout = 'spring', layout_atts = layout_atts, draw = False)
+
+
+        # Put coordinates in `ontocats` and `nodes_mitre`
+        for name in coors_:
+            t = re.findall('[a-z]+', name)[0]
+            i = int(re.findall('\d+', name)[0])
+
+            if t == 'ontocat':
+                ontocats[map_ids_ontocats[i]]['x'] = float(coors_[name][0])
+                ontocats[map_ids_ontocats[i]]['y'] = float(coors_[name][1])
+                ontocats[map_ids_ontocats[i]]['z'] = float(0.0)
+            
+            if t == 'node':
+                nodes_mitre[map_ids_nodes[i]]['x'] = float(coors_[name][0])
+                nodes_mitre[map_ids_nodes[i]]['y'] = float(coors_[name][1])
+                nodes_mitre[map_ids_nodes[i]]['z'] = float(0.0)
+
+
+        # Combine the coordinate dicts and graph objects
+        coors[l].append(coors_)
+        G[l].append(G_)
+
+    else:
+
+        ontocats_parent = [ontocat for ontocat in ontocats if (ontocat['level'] == l - 1)]
+
+        for ontocat_parent in ontocats_parent:
+
+            node_list = [('ontocat_' + str(ontocat_id), {'name': ontocats[map_ids_ontocats[ontocat_id]]['name']}) for ontocat_id in ontocat_parent['children_ids']]
+            node_list = node_list + [('node_' + str(node_id), {'name': nodes_mitre[map_ids_nodes[node_id]]['name']}) for node_id in ontocat_parent['node_ids_direct']]
+            
+            H = [hyperedges_mitre[map_ids_hyperedges[h]] for h in ontocat_parent['hyperedge_ids']]
+            edge_list = [(h['source_type'] + '_' + str(h['source']), h['target_type'] + '_' + str(h['target']), {'weight': h['size']}) for h in H]
+            
+
+            layout_atts = {
+                'k': 1.0,
+                'center': (0, 0),
+                'scale': 1.0
+            }
+            coors_, G_ = emlib.generate_nx_layout([], [], node_list = node_list, edge_list = edge_list, layout = 'spring', layout_atts = layout_atts, draw = False)
+
+
+            # Rescale to parent size and shift to parent centre
+            radius = 0.01 ** l
+            coor_parent = np.asarray([ontocat_parent['x'], ontocat_parent['y']])
+            # coor_parent = np.asarray([ontocats[0]['x'], ontocats[0]['y']])
+            coors_ = {name: radius * c + coor_parent for name, c in coors_.items()}
+
+            # Put coordinates in `ontocats` and `nodes_mitre`
+            for name in coors_:
+                t = re.findall('[a-z]+', name)[0]
+                i = int(re.findall('\d+', name)[0])
+
+                if t == 'ontocat':
+                    ontocats[map_ids_ontocats[i]]['x'] = float(coors_[name][0])
+                    ontocats[map_ids_ontocats[i]]['y'] = float(coors_[name][1])
+                    ontocats[map_ids_ontocats[i]]['z'] = float(0.0)
+                
+                if t == 'node':
+                    nodes_mitre[map_ids_nodes[i]]['x'] = float(coors_[name][0])
+                    nodes_mitre[map_ids_nodes[i]]['y'] = float(coors_[name][1])
+                    nodes_mitre[map_ids_nodes[i]]['z'] = float(0.0)
+
+
+            # Combine the coordinate dicts and graph objects
+            coors[l].append(coors_)
+            G[l].append(G_)
+
+# %%
+# Min distance of 0.01
+# x = sorted([np.linalg.norm(coors[r1] - coors[r2]) for r1 in coors for r2 in coors if r1 != r2])
+
+l = 12
+G_all = nx.algorithms.operators.all.union_all(G[l])
+print(f"{G_all.number_of_nodes()} nodes and {G_all.number_of_edges()} edges.")
+
+coors_all = {}
+for c in coors[l]:
+    coors_all = {**coors_all, **c}
+
+
+
+# plt.style.use('dark_background')
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (16, 16))
+__ = plt.setp(ax, aspect = 1.0, title = 'MITRE Subgraph')
+j = 1.0
+__ = plt.setp(ax, xlim = (-j, j), ylim = (-j, j))
+
+l = 0
+for i in range(len(G[l])):
+    G_all = G[l][i]
+    coors_all = coors[l][i]
+
+    options = {
+        'ax': ax,
+        'arrows': False, 
+        'with_labels': False,
+        'labels': {ontocat_name: ontocats[map_ids_ontocats[int(re.findall('\d+', ontocat_name)[0])]]['name'] for ontocat_name in coors_all},
+        'font_size': 5,
+        # 'node_size': [100 * len(ontocats[map_ids_ontocats[int(re.findall('\d+', ontocat_name)[0])]]['node_ids']) for ontocat_name in coors_all],
+        'node_size': 50,
+        'width': 0.05,
+        'alpha': 0.8,
+        'node_color': [plt.get_cmap('tab10').colors[i % 10] for ontocat_name in coors_all], 
+        'cmap': 'tab10',
+        'edge_color': [plt.get_cmap('tab10').colors[i % 10] for ontocat_name in coors_all]
+    }
+    nx.draw_networkx(G_all, pos = coors_all, **options)
+
+
+# %%
+l = 0
+x = [[ontocat[r] for ontocat in ontocats if ontocat['level'] == l] for r in ['x', 'y']]
+
+
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (10, 10))
+__ = plt.setp(ax, aspect = 1.0, title = 'MITRE Subgraph')
+j = 1.0
+__ = plt.setp(ax, xlim = (-j, j), ylim = (-j, j))
+ax.scatter(x[0], x[1], s = 1)
 
 
 
 
+# %%
+
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (16, 16))
+__ = plt.setp(ax, aspect = 1.0, title = 'MITRE Subgraph')
+j = 1.0
+__ = plt.setp(ax, xlim = (-j, j), ylim = (-j, j))
+# __ = plt.setp(ax, xlim = (0.2, 0.25), ylim = (-0.10, -0.05))
+
+for l in [0, 1, 2, 3]:
+
+    G_all = nx.algorithms.operators.all.union_all(G[l])
+    coors_all = {}
+    for c in coors[l]:
+        coors_all = {**coors_all, **c}
+
+    options = {
+        'ax': ax,
+        'arrows': False, 
+        'with_labels': False,
+        'labels': {ontocat_name: ontocats[map_ids_ontocats[int(re.findall('\d+', ontocat_name)[0])]]['name'] for ontocat_name in coors_all},
+        'font_size': 5,
+        # 'node_size': [100 * len(ontocats[map_ids_ontocats[int(re.findall('\d+', ontocat_name)[0])]]['node_ids']) for ontocat_name in coors_all],
+        'node_size': 750.0 / (l + 1.0) ** 3,
+        'width': 0.25,
+        'alpha': 1.0 - 1.0 / (l + 1.0) + 0.2,
+        'node_color': [plt.get_cmap('tab10').colors[l % 10] for ontocat_name in coors_all], 
+        'cmap': 'tab10',
+        'edge_color': [plt.get_cmap('tab10').colors[l % 10] for ontocat_name in coors_all],
+        'label': 'Ontological Level ' + str(l)
+        }
+    __ = nx.draw_networkx(G_all, pos = coors_all, **options)
+
+ax.grid(True)
+ax.legend()
+
+# %%
+
+# Do it with plt.scatter
+
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (16, 16))
+__ = plt.setp(ax, aspect = 1.0, title = 'MITRE Subgraph')
+ax.grid(True)
+j = 1.1
+__ = plt.setp(ax, xlim = (-j, j), ylim = (-j, j))
+
+
+# Plot nodes and ontocats
+for l in range(len(G)):
+
+    G_all = nx.algorithms.operators.all.union_all(G[l])
+    coors_all = {}
+    for c in coors[l]:
+        coors_all = {**coors_all, **c}
+
+    # Get coordinates
+    node = [[coors_all[name][k] for name in coors_all if re.findall('[a-z]+', name)[0] == 'node'] for k in [0, 1]]
+    ontocat = [[coors_all[name][k] for name in coors_all if re.findall('[a-z]+', name)[0] == 'ontocat'] for k in [0, 1]]
+
+    if l == 0:
+        ax.scatter(node[0], node[1], s = 1, alpha = 1, c = 'k', zorder = 100, label = 'Model Nodes')
+
+        name = [nx.get_node_attributes(G_all, 'name')[name] for name in coors_all if re.findall('[a-z]+', name)[0] == 'ontocat']
+        __ = [ax.text(ontocat[0][i], ontocat[1][i], '   ' + j, fontsize = 7, va = 'center', alpha = 1.0, color = plt.get_cmap('tab10').colors[l % 10]) for i, j in enumerate(name) if j != None]
+    else:
+        ax.scatter(node[0], node[1], s = 1, alpha = 1, c = 'k', zorder = 100)
+
+    if l < 4:
+        ax.scatter(ontocat[0], ontocat[1], s = 500.0 / (l + 1.0) ** 3, alpha = 1.0 - 1.0 / (l + 1.0) + 0.2, color = plt.get_cmap('tab10').colors[l % 10], zorder = l, label = 'Onto-Category in Level ' + str(l))
+
+
+# Plot hyperedges
+for l in range(1):
+
+    G_all = nx.algorithms.operators.all.union_all(G[l])
+    coors_all = {}
+    for c in coors[l]:
+        coors_all = {**coors_all, **c}
+
+    for hyperedge in G_all.edges():
+
+        x = [coors_all[hyperedge[k]][0] for k in range(2)]
+        y = [coors_all[hyperedge[k]][1] for k in range(2)]
+        ax.plot(x, y, linewidth = 0.05, color = plt.get_cmap('tab10').colors[l % 10], zorder = l)
+
+__ = ax.legend()
+
+fig.savefig('./figures/v2/mitre_subgraph_layout_onto.png', dpi = 150)
+
+# %%
+# Plot again but show only edges in a single tested path from `paths_mitre_ids`
+
+
+# Find longest path in `paths_mitre_ids`
+x = [len(set(path['edge_ids']) - {None}) for path in paths_mitre_ids]
+paths_mitre_ids = [paths_mitre_ids[i] for i in np.argsort(x)[::-1]]
+hyperedge_list = [hyperedge for hyperedge in hyperedges_mitre if len(set(hyperedge['edge_ids']) & set(paths_mitre_ids[1]['edge_ids'])) > 0]
+
+
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (16, 16))
+__ = plt.setp(ax, aspect = 1.0, title = 'MITRE Subgraph')
+ax.grid(True)
+j = 1.1
+__ = plt.setp(ax, xlim = (-j, j), ylim = (-j, j))
+
+
+# Plot nodes and ontocats
+for l in range(len(G)):
+
+    G_all = nx.algorithms.operators.all.union_all(G[l])
+    coors_all = {}
+    for c in coors[l]:
+        coors_all = {**coors_all, **c}
+
+    # Get coordinates
+    node = [[coors_all[name][k] for name in coors_all if re.findall('[a-z]+', name)[0] == 'node'] for k in [0, 1]]
+    ontocat = [[coors_all[name][k] for name in coors_all if re.findall('[a-z]+', name)[0] == 'ontocat'] for k in [0, 1]]
+
+    if l == 0:
+        ax.scatter(node[0], node[1], s = 1, alpha = 1, c = 'k', zorder = 100, label = 'Model Nodes')
+
+        name = [nx.get_node_attributes(G_all, 'name')[name] for name in coors_all if re.findall('[a-z]+', name)[0] == 'ontocat']
+        __ = [ax.text(ontocat[0][i], ontocat[1][i], '   ' + j, fontsize = 7, va = 'center', alpha = 1.0, color = plt.get_cmap('tab10').colors[l % 10]) for i, j in enumerate(name) if j != None]
+    else:
+        ax.scatter(node[0], node[1], s = 1, alpha = 1, c = 'k', zorder = 100)
+
+    if l < 4:
+        ax.scatter(ontocat[0], ontocat[1], s = 500.0 / (l + 1.0) ** 3, alpha = 1.0 - 1.0 / (l + 1.0) + 0.2, color = plt.get_cmap('tab10').colors[l % 10], zorder = l, label = 'Onto-Category in Level ' + str(l))
+
+
+# Plot hyperedges
+for l in range(1):
+
+    G_all = nx.algorithms.operators.all.union_all(G[l])
+    coors_all = {}
+    for c in coors[l]:
+        coors_all = {**coors_all, **c}
+
+    for hyperedge in G_all.edges():
+
+        x = [coors_all[hyperedge[k]][0] for k in range(2)]
+        y = [coors_all[hyperedge[k]][1] for k in range(2)]
+        ax.plot(x, y, linewidth = 0.05, color = plt.get_cmap('tab10').colors[l % 10], zorder = l)
+
+
+
+# Plot hyperedges in tested path
+G_all = nx.algorithms.operators.all.union_all([i for g in G for i in g])
+coors_all = {}
+for c in coors:
+    for i in c:
+        coors_all = {**coors_all, **i}
+
+name = [nx.get_node_attributes(G_all, 'name')[name] for name in coors_all if re.findall('[a-z]+', name)[0] == 'ontocat']
+for i, hyperedge in enumerate(hyperedge_list):
+
+    source = hyperedge['source_type'] + '_' + str(hyperedge['source'])
+    target = hyperedge['target_type'] + '_' + str(hyperedge['target'])
+
+    x = [coors_all[k][0] for k in [source, target]]
+    y = [coors_all[k][1] for k in [source, target]]
+
+    if i == 0:
+        ax.plot(x, y, linewidth = 2, color = 'r', zorder = 100, label = 'Tested Path ' + str(0))
+    else:
+        ax.plot(x, y, linewidth = 2, color = 'r', zorder = 100)
+    # __ = ax.text(x[0], y[0], '   ' + nx.get_node_attributes(G_all, 'name')[source], fontsize = 7, va = 'center', alpha = 1.0, color = 'r')
+
+__ = ax.legend()
+
+
+fig.savefig('./figures/v2/mitre_subgraph_layout_onto_testpath1.png', dpi = 150)
 
 
 # %%
@@ -1048,7 +1368,7 @@ del node, ontocat, x, y, z
 
 
 # %% 
-# Reload onto category data
+# Reload model node and onto-category data
 
 nodeData = []
 with open(f'./dist/v2/nodeData_mitre.jsonl', 'r') as x:

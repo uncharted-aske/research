@@ -437,11 +437,15 @@ def reduce_nodes_db_refs(nodes, namespaces):
 
 # %%
 # Generate NetworkX layout from given subgraph (as specified by `edges`)
-def generate_nx_layout(edges, edge_list = [], layout = 'spring', plot = False, ax = None):
+def generate_nx_layout(nodes, edges, node_list = [], edge_list = [], layout = 'spring', layout_atts = {}, draw = False, draw_atts = {}, ax = None):
     
-    # Generate NetworkX graph object from edge list
-    # edge_list = <list of (u, v, d = {k: v})>
-    G = nx.DiGraph()
+    # Generate node list if unavailable
+    # node_list = <list of (node, attributes = {k: v})>
+    if len(node_list) == 0:
+        node_list = [(node['id'], {'name': node['name']}) for node in nodes]
+
+    # Generate edge list if unavailable
+    # edge_list = <list of (source_node, target_node, attributes = {k: v})>
     if len(edge_list) == 0:
 
         # Generate edge list from `edges`
@@ -452,38 +456,46 @@ def generate_nx_layout(edges, edge_list = [], layout = 'spring', plot = False, a
         # weight = number of equivalent edges
         edge_list = [(edge[0], edge[1], {'weight': edge_dict[edge]}) for edge in edge_dict]
 
+
+    # Generate NetworkX graph object from node and edge list
+    G = nx.DiGraph()
+    G.add_nodes_from(node_list)
     G.add_edges_from(edge_list)
 
-
-    print(f"{G.number_of_nodes()} nodes and {G.number_of_edges()} edges has been added to the graph object.")
+    # print(f"{G.number_of_nodes()} nodes and {G.number_of_edges()} edges has been added to the graph object.")
     # Note: self-loops are ignored
+
 
     # Generate layout coordinate
     if layout == 'kamada_kawai':
-        coors = nx.kamada_kawai_layout(G, center = (0, 0), weight = 'weight')
+        coors = nx.kamada_kawai_layout(G, weight = 'weight', **layout_atts)
     elif layout == 'spring':
-        coors = nx.spring_layout(G, center = (0, 0), weight = 'weight', seed = 0)
+        coors = nx.spring_layout(G, weight = 'weight', seed = 0, **layout_atts)
     else:
+        print(f"No layout selected!")
+        draw = False
         coors = {}
 
-    if plot == True:
+    if draw == True:
 
         if ax == None:
             fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
 
-        options = {
+        # print(plt.style.available)
+        plt.style.use('fast')
+        draw_atts = {
             'ax': ax,
-            'arrows': True, 
-            'with_labels': True,
+            'arrows': False, 
+            'with_labels': False,
             'node_size': 0.5,
-            'width': 0.5,
-            'alpha': 1.0,
+            'width': 0.05,
+            'alpha': 0.8,
             'cmap': 'cividis',
             'edge_color': 'k'
         }
 
-        nx.draw_networkx(G, pos = coors, **options)
-        __ = plt.setp(ax, aspect = 1)
+        nx.draw_networkx(G, pos = coors, **draw_atts)
+        __ = plt.setp(ax, aspect = 1.0)
     
 
     return coors, G
