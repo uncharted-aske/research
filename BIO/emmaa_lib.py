@@ -6,23 +6,22 @@
 # %% [markdown]
 # ## Import required modules.
 
-import sys
-from time import time
+# import sys
+# from time import time
+from networkx.algorithms.centrality.degree_alg import out_degree_centrality
 import numpy as np
-import scipy as sp
-import csv
+# import scipy as sp
+# import csv
 import re
+import numba
+import networkx as nx
 
-import spacy
-import nltk
-import squarify as sqf
-import sklearn as skl
-import hdbscan
+# import sklearn as skl
+# import hdbscan
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import cmocean
+# from mpl_toolkits.mplot3d import Axes3D
 
 
 # %%
@@ -78,7 +77,7 @@ def plot_emb(coor = np.array([]), labels = [], ax = [], figsize = (12, 12), mark
             vlim = (np.min(labels), np.max(labels))
 
     # # Recentre
-    # r0 = np.median(coor, axis = 0)
+    r0 = np.median(coor, axis = 0)
     # coor = coor - r0
 
     # Plot figure
@@ -233,7 +232,7 @@ def plot_emb(coor = np.array([]), labels = [], ax = [], figsize = (12, 12), mark
 
     return fig, ax
 
-
+#%%
 # Get the index of all connecting nodes and edges within N directed hops of the nodes with the given text names
 def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
 
@@ -262,3 +261,263 @@ def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
     nodeFlags = [True if j in textsNodeIndex else False for j, node in enumerate(nodes)]
 
     return textsIndex, textsNodeIndex, textsEdgeIndex, nodeFlags, edgeFlags
+
+
+
+
+
+
+# %%
+# Intersect a set of graph nodes/edges with a set of graph paths
+def intersect_graph_paths(nodes, edges, paths):
+
+    # Get the edge IDs
+    edgeIDs_edges = set([edge['id'] for edge in edges]) - {None}
+    edgeIDs_paths = set([edge for path in paths for edge in path['edge_ids']]) - {None}
+
+    # Find intersection between the graph edges and the path edges
+    edgeIDs_inter = edgeIDs_paths & edgeIDs_edges
+    # print(f"{len(edgeIDs_inter)} {len(edgeIDs_paths)} {len(edgeIDs_edges)}")
+
+    # Select the edges within the intersection
+    nodes_inter = [node for node in nodes if len(set(node['edge_ids']) & edgeIDs_inter) > 0]
+    edges_inter = [edge for edge in edges if edge['id'] in edgeIDs_inter]
+    
+    # Get the node IDs in the intersection
+    nodeIDs_inter = set([node['id'] for node in nodes_inter]) - {None}
+
+    # Remove `None` from `node_ids` and `edge_ids` of `paths`
+    paths_inter = [path for path in paths if len(set(path['edge_ids']) & edgeIDs_inter) > 0]
+    num_paths = len(paths_inter)
+    for i in range(num_paths):
+        paths_inter[i]['node_ids'] = list(set(paths_inter[i]['node_ids']) & nodeIDs_inter)
+        paths_inter[i]['edge_ids'] = list(set(paths_inter[i]['edge_ids']) & edgeIDs_inter)
+
+    # Restrict `edge_ids` in `nodes` to the subgraph
+    num_nodes = len(nodes_inter)
+    for i in range(num_nodes):
+        nodes_inter[i]['edge_ids'] = list(set(nodes_inter[i]['edge_ids']) & edgeIDs_inter)
+
+    return nodes_inter, edges_inter, paths_inter
+
+# %%
+# Reset node ids in `nodes` and `edges`
+def reset_node_ids(nodes, edges):
+
+    # Make new node-id map
+    map_nodes_ids = {node['id']: i for i, node in enumerate(nodes)}
+
+    num_nodes = len(nodes)
+    for i in range(num_nodes):
+        nodes[i]['id'] = i
+
+    num_edges = len(edges)
+    for i in range(num_edges):
+        j = edges[i]['source']
+        edges[i]['source'] = map_nodes_ids[j]
+
+        k = edges[i]['target']
+        edges[i]['target'] = map_nodes_ids[k]
+
+    return nodes, edges, map_nodes_ids
+
+# %%
+# Calculate in- and out-degree of nodes in `nodes` using `edges` data
+def calculate_node_degrees(nodes, edges):
+
+    # Make node-id map
+    map_nodes_ids = {node['id']: i for i, node in enumerate(nodes)}
+
+    # Count edge sources and targets
+    num_nodes = len(nodes)
+    in_degree = [0 for i in range(num_nodes)]
+    out_degree = [0 for i in range(num_nodes)]
+    for edge in edges:
+        i = map_nodes_ids[edge['source']]
+        j = map_nodes_ids[edge['target']]
+        in_degree[j] += 1
+        out_degree[i] += 1
+
+    # Insert into `nodes`
+    for i in range(num_nodes):
+        nodes[i]['in_degree'] = in_degree[i]
+        nodes[i]['out_degree'] = out_degree[i]
+
+
+    return nodes, in_degree, out_degree
+
+# %%
+# Get node-wise belief score from `edges`
+def calculate_node_belief(nodes, edges, mode = 'max'):
+
+    # Make node-id map
+    map_nodes_ids = {node['id']: i for i, node in enumerate(nodes)}
+
+
+    # Count edge sources and targets
+    num_nodes = len(nodes)
+    belief_edges = [[] for i in range(num_nodes)]
+    for edge in edges:
+        i = map_nodes_ids[edge['source']]
+        j = map_nodes_ids[edge['target']]
+        belief_edges[i].append(edge['belief'])
+        belief_edges[j].append(edge['belief'])
+
+
+    # Max
+    if mode == 'max':
+        belief = [float(max(b)) if len(b) > 0 else 0.0 for b in belief_edges]
+    elif mode == 'median':
+        belief = [float(np.median(b)) if len(b) > 0 else 0.0 for b in belief_edges]
+    elif mode == 'mean':
+        belief = [float(np.mean(b)) if len(b) > 0 else 0.0 for b in belief_edges]
+
+
+    # Insert into `nodes`
+    for i in range(num_nodes):
+        nodes[i]['belief'] = belief[i]
+
+    return nodes, belief
+
+# %%
+def generate_ordered_namespace_list(namespaces_priority, ontoJSON, nodes):
+
+    # Namespaces referenced in the ontology node/category names
+    namespaces_onto = set([re.findall('\w{1,}(?=:)', node['id'])[0] for node in ontoJSON['nodes']])
+
+
+    # Namespaces referenced in the model nodes 'db_refs'
+    namespaces_model = set([namespace for node in nodes for namespace in node['db_refs'].keys()])
+
+
+    # Combine the namespace lists in order: 
+    # * given priority
+    # * 'not-grounded'
+    # * from model
+    # * from ontology
+    x = sorted(list(namespaces_model - set(namespaces_priority)))
+    y = sorted(list(namespaces_onto - set(namespaces_priority) - namespaces_model))
+    namespaces = namespaces_priority + x + y
+
+
+    # Count references
+    namespaces_count = {namespace: [0, 0] for namespace in namespaces}
+    for node in nodes:
+        for name in node['db_refs'].keys():
+            namespaces_count[name][0] += 1
+    
+    for node in ontoJSON['nodes']:
+        name = re.findall('\w{1,}(?=:)', node['id'])[0]
+        namespaces_count[name][1] += 1
+
+    
+    return namespaces, namespaces_count
+
+
+# %%
+# Reduce 'db_refs' of each model node to a single entry by namespace priority
+# * `namespace`:`ref` -> 'ontocats_ref'
+# * `grounded = False` -> 'not-grounded' 
+def reduce_nodes_db_refs(nodes, namespaces):
+
+    num_nodes = len(nodes)
+    for i in range(num_nodes):
+
+        if nodes[i]['grounded'] == True:
+            n = [name for name in namespaces if name in nodes[i]['db_refs'].keys()][0]
+            nodes[i]['db_ref_priority'] = f"{n}:{nodes[i]['db_refs'][n]}"
+        else:
+            nodes[i]['db_ref_priority'] = 'not-grounded'
+
+    # Column-wise result
+    nodes_db_ref_priority = [node['db_ref_priority'] for node in nodes]
+
+    return nodes, nodes_db_ref_priority
+
+
+# %%
+# Generate NetworkX layout from given subgraph (as specified by `edges`)
+def generate_nx_layout(nodes, edges, node_list = [], edge_list = [], layout = 'spring', layout_atts = {}, draw = False, draw_atts = {}, ax = None):
+    
+    # Generate node list if unavailable
+    # node_list = <list of (node, attributes = {k: v})>
+    if len(node_list) == 0:
+        node_list = [(node['id'], {'name': node['name']}) for node in nodes]
+
+    # Generate edge list if unavailable
+    # edge_list = <list of (source_node, target_node, attributes = {k: v})>
+    if len(edge_list) == 0:
+
+        # Generate edge list from `edges`
+        edge_dict = {(edge['source'], edge['target']): 0 for edge in edges}
+        for edge in edges:
+            edge_dict[(edge['source'], edge['target'])] += 1
+
+        # weight = number of equivalent edges
+        edge_list = [(edge[0], edge[1], {'weight': edge_dict[edge]}) for edge in edge_dict]
+
+
+    # Generate NetworkX graph object from node and edge list
+    G = nx.DiGraph()
+    G.add_nodes_from(node_list)
+    G.add_edges_from(edge_list)
+
+    # print(f"{G.number_of_nodes()} nodes and {G.number_of_edges()} edges has been added to the graph object.")
+    # Note: self-loops are ignored
+
+
+    # Generate layout coordinate
+    if layout == 'kamada_kawai':
+        coors = nx.kamada_kawai_layout(G, weight = 'weight', **layout_atts)
+    elif layout == 'spring':
+        coors = nx.spring_layout(G, weight = 'weight', seed = 0, **layout_atts)
+    else:
+        print(f"No layout selected!")
+        draw = False
+        coors = {}
+
+    if draw == True:
+
+        if ax == None:
+            fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
+
+        # print(plt.style.available)
+        plt.style.use('fast')
+        draw_atts = {
+            'ax': ax,
+            'arrows': False, 
+            'with_labels': False,
+            'node_size': 0.5,
+            'width': 0.05,
+            'alpha': 0.8,
+            'cmap': 'cividis',
+            'edge_color': 'k'
+        }
+
+        nx.draw_networkx(G, pos = coors, **draw_atts)
+        __ = plt.setp(ax, aspect = 1.0)
+    
+
+    return coors, G
+    
+
+# %%
+# Match arrays using a hash table
+@numba.njit
+def match_arrays(A, B):
+
+    # hashTable = {b: True for b in B}
+    hashTable = numba.typed.Dict.empty(key_type = numba.int32, value_type = numba.boolean)
+    for b in B:
+        hashTable[b] = True
+
+    index = np.zeros((len(A), ), dtype = numba.boolean)
+    for i, a in enumerate(A):
+        try:
+            index[i] = hashTable[a]
+        except:
+            pass
+
+    return index
+
+# %%

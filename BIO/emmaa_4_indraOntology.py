@@ -6,7 +6,8 @@
 # %%[markdown]
 # Idea: 
 # * Explore the INDRA Ontology
-# * Cluster nodes 
+# * Map KB nodes to onto nodes
+# * Use the ontology as a hierarchical clustering scheme for the KB nodes 
 
 # %%
 import json
@@ -69,6 +70,7 @@ for edge in edgesKB:
     i = edge['collapsed_id']
     edge['source'] = edgesKB_[i]['source']
     edge['target'] = edgesKB_[i]['target']
+    
 
 # Count node degree
 z = np.array([[edge['source'], edge['target']] for edge in edgesKB])
@@ -128,7 +130,6 @@ for k in nodesKB[0].keys():
     if isinstance(nodesKB[0][k], dict):
         for l in nodesKB[0][k].keys():
             print(f"{'':<6}'{k}': {type(nodesKB[0][k][l])}")
-
 
 
 # %%
@@ -607,18 +608,46 @@ with open('./dist/v1/emmaa_4_indraOntology_nodesKB.pkl', 'wb') as x:
     for y in [nodesKB_degrees, nodesKB_belief, nodesKB_ontoIDs, nodesKB_ontoLevels, nodesKB_ontoPaths]:
         pickle.dump(y, x)
 
-
+# %%
+# # Reload data
 # data = []
-# with open('./dist/v1/emmaa_4_indraOntology.pkl', 'rb') as x:
+# with open('./dist/v1/emmaa_4_indraOntology_nodesKB.pkl', 'rb') as x:
 #     try:
 #         while True:
-#             data.extend(pickle.load(x))
+#             data.append(pickle.load(x))
 #     except EOFError:
 #         pass
 
 # nodesKB_degrees, nodesKB_belief, nodesKB_ontoIDs, nodesKB_ontoLevels, nodesKB_ontoPaths = data
 # data = None
 # del data
+
+# %%
+# Ensure that identical onto nodes have the same lineage (i.e. path to their ancestor) for hierarchical consistency
+nodesKB_ontoPaths_reduce = nodesKB_ontoPaths.copy()
+m = max([len(path) for path in nodesKB_ontoPaths])
+n = len(nodesKB)
+for i in range(1, m):
+
+    # All nodes
+    x = [path[i] if len(path) > i else '' for path in nodesKB_ontoPaths]
+
+    # All unique nodes
+    y = list(set(x) - set(['']))
+
+    # Mapping from all nodes to unique nodes
+    xy = [y.index(node) if node is not '' else '' for node in x]
+
+    # Choose the path segment of the first matching node for each unique node
+    z = [nodesKB_ontoPaths[x.index(node)][:i] for node in y]
+    
+    # Substitute path segments
+    for j in range(n):
+        if xy[j] is not '':
+            nodesKB_ontoPaths_reduce[j][:i] = z[xy[j]]
+        else:
+            nodesKB_ontoPaths_reduce[j][:i] = nodesKB_ontoPaths[j][:i]
+         
 
 # %%
 # Distribution of the size of onto cluster at each onto level
@@ -655,11 +684,12 @@ del a, b, c, i, j, k, n, x, y, z, fig, ax
 %%time
 
 # Generate onto cluster meta-data
-ontoClusters, ontoClusters_size = np.unique([node for path in nodesKB_ontoPaths for node in path], return_counts = True)
+ontoClusters, ontoClusters_size = np.unique([node for path in nodesKB_ontoPaths_reduce for node in path], return_counts = True)
 i = np.argsort(ontoClusters_size)[::-1]
 ontoClusters = ontoClusters[i]
 ontoClusters_size = ontoClusters_size[i]
 ontoClusters_id = list(range(len(ontoClusters)))
+
 
 # Get cluster names from ontology `name` attribute
 x = dict(ontoG.nodes(data = 'name', default = None))
@@ -670,40 +700,71 @@ for i, cluster in enumerate(ontoClusters):
     except:
         ontoClusters_name[i] = ''
 
+
 # Get onto level of each cluster
-i = max([len(path) for path in nodesKB_ontoPaths])
-x = [np.unique([path[j] if len(path) > j else '' for path in nodesKB_ontoPaths]) for j in range(i)]
+i = max([len(path) for path in nodesKB_ontoPaths_reduce])
+x = [np.unique([path[j] if len(path) > j else '' for path in nodesKB_ontoPaths_reduce]) for j in range(i)]
 ontoClusters_ontoLevels = [np.flatnonzero([cluster in y for y in x])[0] for cluster in ontoClusters]
 
 
-i = x = cluster = None
-del i, x, cluster
+# Convert nodesKB_ontoPaths_reduce to list of list of cluster ids
+x = {k: v for k, v in zip(ontoClusters, ontoClusters_id)}
+nodesKB_ontoPaths_id = [[x[node] for node in path] for path in nodesKB_ontoPaths_reduce]
 
-# %%
-%%time
+
+# Get parent cluster id for each cluster (for root nodes, parentID = None)
+y = [np.flatnonzero([True if cluster in path else False for path in nodesKB_ontoPaths_reduce])[0] for cluster in ontoClusters]
+ontoClusters_parent = [nodesKB_ontoPaths_reduce[y[i]][nodesKB_ontoPaths_reduce[y[i]].index(cluster) - 1] if nodesKB_ontoPaths_reduce[y[i]].index(cluster) > 0 else None for i, cluster in enumerate(ontoClusters)]
+ontoClusters_parentID = [x[parent] if parent is not None else None for parent in ontoClusters_parent]
+
 
 # Calculate onto cluster position
-ontoClusters_nodesKB = [np.flatnonzero([True if ontoCluster in path else False for path in nodesKB_ontoPaths]) for ontoCluster in ontoClusters]
+ontoClusters_nodesKB = [np.flatnonzero([True if ontoCluster in path else False for path in nodesKB_ontoPaths_reduce]) for ontoCluster in ontoClusters]
 ontoClusters_pos = np.array([np.median(nodesKB_pos[nodes, :], axis = 0) for nodes in ontoClusters_nodesKB])
+
+
+i = x = y = cluster = None
+del i, x, y, cluster
 
 # %%
 # Save intermediate ontoClusters results
 with open('./dist/v1/emmaa_4_indraOntology_onto.pkl', 'wb') as x:
-    for y in [ontoG, ontoClusters, ontoClusters_id, ontoClusters_name, ontoClusters_ontoLevels, ontoClusters_size, ontoClusters_name, ontoClusters_nodesKB, ontoClusters_pos]:
+    for y in [ontoG, ontoClusters, ontoClusters_id, ontoClusters_name, ontoClusters_ontoLevels, ontoClusters_size, ontoClusters_name, ontoClusters_nodesKB, ontoClusters_pos, ontoClusters_parent, ontoClusters_parentID]:
         pickle.dump(y, x)
 
-
+# %%
+# # Reload data
 # data = []
 # with open('./dist/v1/emmaa_4_indraOntology_onto.pkl', 'rb') as x:
 #     try:
 #         while True:
-#             data.extend(pickle.load(x))
+#             data.append(pickle.load(x))
 #     except EOFError:
 #         pass
 
 # ontoG, ontoClusters, ontoClusters_id, ontoClusters_name, ontoClusters_ontoLevels, ontoClusters_size, ontoClusters_name, ontoClusters_nodesKB, ontoClusters_pos = data
 # data = None
 # del data
+
+
+# %%
+# Test
+# 'protic solvent' -> ['polar solvent', 'Bronsted acid']
+k = ontoClusters_name.index('protic solvent')
+
+ontoClusters[k]
+
+for i in np.flatnonzero([True if ontoClusters[k] in path else False for path in nodesKB_ontoPaths]):
+    print([ontoClusters_name[list(ontoClusters).index(node)] for node in nodesKB_ontoPaths[i]])
+
+print('\n')
+
+for i in np.flatnonzero([True if ontoClusters[k] in path else False for path in nodesKB_ontoPaths_reduce]):
+    print([ontoClusters_name[list(ontoClusters).index(node)] for node in nodesKB_ontoPaths_reduce[i]])
+
+
+i = j = k = m = n = x = y = z = None
+del i, j, k, m, n, x, y, z
 
 # %%
 # Output KB node layout/clustering meta-data
@@ -718,7 +779,7 @@ with open(f'./dist/v1/nodeData.jsonl', 'w') as x:
         'degreeIn': '<int> in-degree in the KB graph',
         'degreeOut': '<int> out-degree in the KB graph',
         'belief': '<float> max of the belief scores of all adjacent edges in the KB graph',
-        'ontoID': '<str> unique ID of the INDRA ontology (v1.3) node to which this KB node is mapped', 
+        'ontoID': '<str> unique ref ID of the INDRA ontology (v1.3) node to which this KB node is mapped', 
         'ontoLevel': '<int> hierarchy level of the ontology node (`-1` if not mappable)',
         'clusterIDs': '<array of int> ordered list of cluster IDs (see `clusters.jsonl`) to which this node is mapped (cluster hierarchy = INDRA ontology v1.3, order = root-to-leaf)'
     }
@@ -734,10 +795,10 @@ with open(f'./dist/v1/nodeData.jsonl', 'w') as x:
             'z': float(nodesKB_pos[i, 2]), 
             'degreeOut': int(nodesKB_degrees[i, 0]),
             'degreeIn': int(nodesKB_degrees[i, 1]),
-            'belief': int(nodesKB_belief[i]),
+            'belief': float(nodesKB_belief[i]),
             'ontoID': nodesKB_ontoIDs[i], 
             'ontoLevel': int(nodesKB_ontoLevels[i]),
-            'clusterIDs': nodesKB_ontoPaths[i]
+            'clusterIDs': nodesKB_ontoPaths_id[i]
         }
 
         json.dump(z, x)
@@ -753,11 +814,13 @@ with open(f'./dist/v1/clusters.jsonl', 'w') as x:
 
     # Description
     y = {
-        'id': '<int> unique ID for the clusters to which `clusterIDs` in nodeData.jsonl` refers',
+        'id': '<int> unique ID for the clusters to which `clusterIDs` in `nodeData.jsonl` refers',
+        'parentID': '<int> `id` of the parent of this cluster in the hierarchy (`None` if no parent)', 
         'name': '<str> standard name (node `name` in `indra_ontology_v1.3.json`)', 
-        'ref': '<str> database ref id (node `id` in `indra_ontology_v1.3.json`; can be used to construct an entity url)', 
+        'ref': '<str> database ref ID (node `id` in `indra_ontology_v1.3.json`; can be used to construct an entity url)', 
         'level': '<int> hierarchical level of this cluster (number of hops to the local root node of the ontology)',
-        'size': '<float> marker size (size of the cluster, i.e. number of KB nodes that is mapped to this ontology node)',
+        'size': '<int> size of the cluster membership, i.e. number of KB nodes that is mapped to this ontology node',
+        'nodeIDs': '<array of int> unordered list of KB node IDs that have been mapped (i.e. members of) to this cluster and its descendants (this is generated from `clusterIDs` in `nodeData.jsonl`)', 
         'x': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)',
         'y': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)',
         'z': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)'
@@ -765,14 +828,17 @@ with open(f'./dist/v1/clusters.jsonl', 'w') as x:
     json.dump(y, x)
     x.write('\n')
 
+
     # Data
     for i in range(len(ontoClusters)):
         z = {
             'id': int(ontoClusters_id[i]),
-            'name': ontoClusters_name[i],
-            'ref': ontoClusters[i],
+            'parentID': ontoClusters_parentID[i],
+            'name': str(ontoClusters_name[i]),
+            'ref': str(ontoClusters[i]),
             'level': int(ontoClusters_ontoLevels[i]),
-            'size': float(ontoClusters_size[i]),
+            'size': int(ontoClusters_size[i]),
+            'nodeIDs': [int(k) for k in ontoClusters_nodesKB[i]],
             'x': float(ontoClusters_pos[i, 0]), 
             'y': float(ontoClusters_pos[i, 1]), 
             'z': float(ontoClusters_pos[i, 2])
@@ -787,224 +853,126 @@ del i, x, y, z
 
 # %%
 
+# Add a dummy universal root node as parent to all clusters with parentID = None (requested by Rosa)
+ontoClusters_parentID_ = [i if i != None else int(-1) for i in ontoClusters_parentID]
 
 
+# Flat data structure, sorted by onto level in descending order
+j = np.argsort(ontoClusters_ontoLevels)[::-1]
+output = [{
+            'id': int(ontoClusters_id[i]),
+            'parentID': ontoClusters_parentID_[i],
+            'name': ontoClusters_name[i],
+            'ref': ontoClusters[i],
+            'level': int(ontoClusters_ontoLevels[i]),
+            'size': int(ontoClusters_size[i]),
+            'nodeIDs': [int(k) for k in ontoClusters_nodesKB[i]],
+            'x': float(ontoClusters_pos[i, 0]), 
+            'y': float(ontoClusters_pos[i, 1]), 
+            'z': float(ontoClusters_pos[i, 2]),
+            'children': []
+        } for i in j]
 
 
+# Parent-child mapping
+l = {k: v for k, v in zip(j, range(len(output)))}
+
+# Generate a nested version of the cluster data
+for node in output:
+    # if node['parentID'] is not None:
+    if node['parentID'] != -1:
+        output[l[node['parentID']]]['children'].append(node)
+
+# Extract root nodes
+x = np.flatnonzero([node['level'] < 1 for node in output])
+output_nested = [output[i] for i in x]
 
 
+# Add all to as children of the dummy root node 
+output_nested_root = {
+    'id': int(-1),
+    'parentID': None, 
+    'name': 'root',
+    'ref': 'root',
+    'level': int(-1), 
+    'size': int(sum(np.asarray(ontoClusters_ontoLevels) == 0)), 
+    'nodeIDs': list(range(len(nodesKB))),
+    'x': float(0.0), 
+    'y': float(0.0),
+    'z': float(0.0), 
+    'children': output_nested,
+}
 
+
+# %%
+# Output cluster data (nested)
+with open(f'./dist/v1/clusters_nested.jsonl', 'w') as x:
+
+    # Description
+    y = {
+        'id': '<int> unique ID for the clusters to which `clusterIDs` in nodeData.jsonl` refers',
+        'parentID': '<int> `id` of the parent of this cluster in the hierarchy (`None` if no parent)', 
+        'name': '<str> standard name (node `name` in `indra_ontology_v1.3.json`)', 
+        'ref': '<str> database ref id (node `id` in `indra_ontology_v1.3.json`; can be used to construct an entity url)', 
+        'level': '<int> hierarchical level of this cluster (number of hops to the local root node of the ontology)',
+        'size': '<int> size of the cluster membership, i.e. number of KB nodes that is mapped to this ontology node',
+        'nodeIDs': '<array of int> unordered list of KB node IDs that have been mapped (i.e. members of) to this cluster and its descendants (this is generated from `clusterIDs` in `nodeData.jsonl`)', 
+        'x': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)',
+        'y': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)',
+        'z': '<float> position of the cluster node in the graph layout (symmetric Laplacian of KB graph + UMAP 3D + median of cluster members)', 
+        'childrenIDs': '<array of dicts> nested array of the `id` of immediate onto children of this cluster ([] means no child)'
+    }
+    json.dump(y, x)
+    x.write('\n')
+
+    # # Data
+    # for y in output_nested:
+    #     json.dump(y, x)
+    #     x.write('\n')
+
+    # Data (with dummy universal root)
+    json.dump(output_nested_root, x)
+
+i = x = y = z = None
+del i, x, y, z
 
 
 # %%
 
-i = 9
-y = list((ontoG.subgraph(x[i])).out_degree)
-k = np.argsort([j for __, j in y])[0]
-# z = [nx.algorithms.shortest_paths.generic.shortest_path_length(nx.reverse_view(ontoG.subgraph(x[i])), source = y[k][0], target = t) for t in nx.nodes(ontoG.subgraph(x[i]))]
+# # %%
 
-# w = nx.spring_layout(ontoG.subgraph(x[i]))
-# l = [list(np.flatnonzero(np.asarray(z) == j)) for j in np.unique(z)]
-# n = [[list(nx.nodes(ontoG.subgraph(x[i])))[m] for m in j] for j in l]
+# i = 9
+# y = list((ontoG.subgraph(x[i])).out_degree)
+# k = np.argsort([j for __, j in y])[0]
+# # z = [nx.algorithms.shortest_paths.generic.shortest_path_length(nx.reverse_view(ontoG.subgraph(x[i])), source = y[k][0], target = t) for t in nx.nodes(ontoG.subgraph(x[i]))]
 
-# w = nx.shell_layout(ontoG.subgraph(x[i]), nlist = n)
+# # w = nx.spring_layout(ontoG.subgraph(x[i]))
+# # l = [list(np.flatnonzero(np.asarray(z) == j)) for j in np.unique(z)]
+# # n = [[list(nx.nodes(ontoG.subgraph(x[i])))[m] for m in j] for j in l]
 
-fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
-# __ = nx.draw(ontoG.subgraph(x[i]), pos = w, ax = ax, arrows = False, with_labels = False, node_size = 5, width = 0.1)
-__ = nx.draw_kamada_kawai(ontoG.subgraph(x[i]), ax = ax, arrows = False, with_labels = False, node_size = 5, width = 0.1)
+# # w = nx.shell_layout(ontoG.subgraph(x[i]), nlist = n)
 
-i = 9
-fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 8))
-__ = nx.draw_planar(ontoG.subgraph(x[i]), ax = ax, arrows = False, with_labels = True, node_size = 5, width = 0.1)
+# fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
+# # __ = nx.draw(ontoG.subgraph(x[i]), pos = w, ax = ax, arrows = False, with_labels = False, node_size = 5, width = 0.1)
+# __ = nx.draw_kamada_kawai(ontoG.subgraph(x[i]), ax = ax, arrows = False, with_labels = False, node_size = 5, width = 0.1)
 
-
-# %%
-__ = [print(f'{i:<5} {nx.is_weakly_connected(ontoG.subgraph(x[i]))} {nx.is_branching(nx.reverse_view(ontoG.subgraph(x[i])))} {nx.is_arborescence(nx.reverse_view(ontoG.subgraph(x[i])))}') for i in range(20)]
-
-# Only works when there is a single root
-i = 9
-y = list((ontoG.subgraph(x[i])).out_degree)
-np.unique([j for __, j in y], return_counts = True)
-k = np.argsort([j for __, j in y])[0]
-
-# w = hierarchy_pos(nx.reverse_view(ontoG.subgraph(x[i])), root = y[k][0])
-w = hierarchy_pos(nx.reverse_view(ontoG.subgraph(x[i])), root = y[k][0], width = 2 * np.pi)
-w = {u: (r * np.cos(t), r * np.sin(t)) for u, (t, r) in w.items()}
-
-fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
-__ = nx.draw(ontoG.subgraph(x[i]), pos = w, ax = ax, arrows = False, with_labels = True, node_size = 5, width = 0.1)
+# i = 9
+# fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 8))
+# __ = nx.draw_planar(ontoG.subgraph(x[i]), ax = ax, arrows = False, with_labels = True, node_size = 5, width = 0.1)
 
 
+# # %%
+# __ = [print(f'{i:<5} {nx.is_weakly_connected(ontoG.subgraph(x[i]))} {nx.is_branching(nx.reverse_view(ontoG.subgraph(x[i])))} {nx.is_arborescence(nx.reverse_view(ontoG.subgraph(x[i])))}') for i in range(20)]
 
-# %%
-def hierarchy_pos(G, root=None, width=1., vert_gap = 0.2, vert_loc = 0, leaf_vs_root_factor = 0.5):
+# # Only works when there is a single root
+# i = 9
+# y = list((ontoG.subgraph(x[i])).out_degree)
+# np.unique([j for __, j in y], return_counts = True)
+# k = np.argsort([j for __, j in y])[0]
 
-    '''
-    If the graph is a tree this will return the positions to plot this in a 
-    hierarchical layout.
-    
-    Based on Joel's answer at https://stackoverflow.com/a/29597209/2966723,
-    but with some modifications.  
+# # w = hierarchy_pos(nx.reverse_view(ontoG.subgraph(x[i])), root = y[k][0])
+# w = hierarchy_pos(nx.reverse_view(ontoG.subgraph(x[i])), root = y[k][0], width = 2 * np.pi)
+# w = {u: (r * np.cos(t), r * np.sin(t)) for u, (t, r) in w.items()}
 
-    We include this because it may be useful for plotting transmission trees,
-    and there is currently no networkx equivalent (though it may be coming soon).
-    
-    There are two basic approaches we think of to allocate the horizontal 
-    location of a node.  
-    
-    - Top down: we allocate horizontal space to a node.  Then its ``k`` 
-      descendants split up that horizontal space equally.  This tends to result
-      in overlapping nodes when some have many descendants.
-    - Bottom up: we allocate horizontal space to each leaf node.  A node at a 
-      higher level gets the entire space allocated to its descendant leaves.
-      Based on this, leaf nodes at higher levels get the same space as leaf
-      nodes very deep in the tree.  
-      
-    We use use both of these approaches simultaneously with ``leaf_vs_root_factor`` 
-    determining how much of the horizontal space is based on the bottom up 
-    or top down approaches.  ``0`` gives pure bottom up, while 1 gives pure top
-    down.   
-    
-    
-    :Arguments: 
-    
-    **G** the graph (must be a tree)
-
-    **root** the root node of the tree 
-    - if the tree is directed and this is not given, the root will be found and used
-    - if the tree is directed and this is given, then the positions will be 
-      just for the descendants of this node.
-    - if the tree is undirected and not given, then a random choice will be used.
-
-    **width** horizontal space allocated for this branch - avoids overlap with other branches
-
-    **vert_gap** gap between levels of hierarchy
-
-    **vert_loc** vertical location of root
-    
-    **leaf_vs_root_factor**
-
-    xcenter: horizontal location of root
-    '''
-    # if not nx.is_tree(G):
-    #     raise TypeError('cannot use hierarchy_pos on a graph that is not a tree')
-
-    if root is None:
-        if isinstance(G, nx.DiGraph):
-            root = next(iter(nx.topological_sort(G)))  #allows back compatibility with nx version 1.11
-        else:
-            root = random.choice(list(G.nodes))
-
-    def _hierarchy_pos(G, root, leftmost, width, leafdx = 0.2, vert_gap = 0.2, vert_loc = 0, 
-                    xcenter = 0.5, rootpos = None, 
-                    leafpos = None, parent = None):
-        '''
-        see hierarchy_pos docstring for most arguments
-
-        pos: a dict saying where all nodes go if they have been assigned
-        parent: parent of this branch. - only affects it if non-directed
-
-        '''
-
-        if rootpos is None:
-            rootpos = {root:(xcenter,vert_loc)}
-        else:
-            rootpos[root] = (xcenter, vert_loc)
-        if leafpos is None:
-            leafpos = {}
-        children = list(G.neighbors(root))
-        leaf_count = 0
-        if not isinstance(G, nx.DiGraph) and parent is not None:
-            children.remove(parent)  
-        if len(children)!=0:
-            rootdx = width/len(children)
-            nextx = xcenter - width/2 - rootdx/2
-            for child in children:
-                nextx += rootdx
-                rootpos, leafpos, newleaves = _hierarchy_pos(G,child, leftmost+leaf_count*leafdx, 
-                                    width=rootdx, leafdx=leafdx,
-                                    vert_gap = vert_gap, vert_loc = vert_loc-vert_gap, 
-                                    xcenter=nextx, rootpos=rootpos, leafpos=leafpos, parent = root)
-                leaf_count += newleaves
-
-            leftmostchild = min((x for x,y in [leafpos[child] for child in children]))
-            rightmostchild = max((x for x,y in [leafpos[child] for child in children]))
-            leafpos[root] = ((leftmostchild+rightmostchild)/2, vert_loc)
-        else:
-            leaf_count = 1
-            leafpos[root]  = (leftmost, vert_loc)
-#        pos[root] = (leftmost + (leaf_count-1)*dx/2., vert_loc)
-#        print(leaf_count)
-        return rootpos, leafpos, leaf_count
-
-    xcenter = width/2.
-    if isinstance(G, nx.DiGraph):
-        leafcount = len([node for node in nx.descendants(G, root) if G.out_degree(node)==0])
-    elif isinstance(G, nx.Graph):
-        leafcount = len([node for node in nx.node_connected_component(G, root) if G.degree(node)==1 and node != root])
-    rootpos, leafpos, leaf_count = _hierarchy_pos(G, root, 0, width, 
-                                                    leafdx=width*1./leafcount, 
-                                                    vert_gap=vert_gap, 
-                                                    vert_loc = vert_loc, 
-                                                    xcenter = xcenter)
-    pos = {}
-    for node in rootpos:
-        pos[node] = (leaf_vs_root_factor*leafpos[node][0] + (1-leaf_vs_root_factor)*rootpos[node][0], leafpos[node][1]) 
-#    pos = {node:(leaf_vs_root_factor*x1+(1-leaf_vs_root_factor)*x2, y1) for ((x1,y1), (x2,y2)) in (leafpos[node], rootpos[node]) for node in rootpos}
-    xmax = max(x for x,y in pos.values())
-    for node in pos:
-        pos[node]= (pos[node][0]*width/xmax, pos[node][1])
-    return pos
-
-
-
-
-# %%
-# https://stackoverflow.com/questions/29586520/can-one-get-hierarchical-graphs-from-networkx-with-python-3/29597209#29597209
-def hierarchy_pos(G, root, levels=None, width=1., height=1.):
-    '''If there is a cycle that is reachable from root, then this will see infinite recursion.
-       G: the graph
-       root: the root node
-       levels: a dictionary
-               key: level number (starting from 0)
-               value: number of nodes in this level
-       width: horizontal space allocated for drawing
-       height: vertical space allocated for drawing'''
-    TOTAL = "total"
-    CURRENT = "current"
-
-    # if (root is None) & isinstance(G, nx.DiGraph):
-    #     root = next(iter(nx.topological_sort(G)))
-    # elif not isinstance(G, nx.DiGraph):
-    #     raise TypeError('graph must be a networkx digraph')
-
-    def make_levels(levels, node=root, currentLevel=0, parent=None):
-        """Compute the number of nodes for each level
-        """
-        if not currentLevel in levels:
-            levels[currentLevel] = {TOTAL : 0, CURRENT : 0}
-        levels[currentLevel][TOTAL] += 1
-        neighbors = list(G.neighbors(node))
-        neighbors.sort()
-        for neighbor in neighbors:
-            if not neighbor == parent:
-                levels =  make_levels(levels, neighbor, currentLevel + 1, node)
-        return levels
-
-    def make_pos(pos, node=root, currentLevel=0, parent=None, vert_loc=0):
-        dx = 1/levels[currentLevel][TOTAL]
-        left = dx/2
-        pos[node] = ((left + dx*levels[currentLevel][CURRENT])*width, vert_loc)
-        levels[currentLevel][CURRENT] += 1
-        neighbors = G.neighbors(node)
-        for neighbor in neighbors:
-            if not neighbor == parent:
-                pos = make_pos(pos, neighbor, currentLevel + 1, node, vert_loc-vert_gap)
-        return pos
-    if levels is None:
-        levels = make_levels({})
-    else:
-        levels = {l:{TOTAL: levels[l], CURRENT:0} for l in levels}
-    vert_gap = height / (max([l for l in levels])+1)
-    return make_pos({})
-
+# fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
+# __ = nx.draw(ontoG.subgraph(x[i]), pos = w, ax = ax, arrows = False, with_labels = True, node_size = 5, width = 0.1)
