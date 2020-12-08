@@ -5,10 +5,10 @@
 
 # %%[markdown]
 # Idea: 
-# * Reset in v3
-# * Start from the MITRE test set
-# * 
-# 
+# * Reset to the MITRE tested paths
+# * Re-extract nodes and edges from the statements to ensure 'id consistency'
+# * Output ontological categories and hyperedges
+
 
 # %%
 import json
