@@ -268,6 +268,133 @@ def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
 
 
 # %%
+# Parse EMMAA statements and return a node/edge list
+def parse_statements(statements):
+
+
+    # Only keep statements from which direct edges can be clearly extracted
+    source_target_pairs = [{'subj', 'obj'}, {'enz', 'sub'}, {'subj', 'obj_from', 'obj_to'}, {'members'}]
+    bool_ind = np.sum(np.array([[True if x <= set(s.keys()) else False for s in statements] for x in source_target_pairs]), axis = 0)
+    statements = [s for i, s in zip(bool_ind, statements) if i]
+
+
+    # Extracted edge list
+    edges = []
+    for s in statements:
+
+        # subj/obj statements
+        if source_target_pairs[0] <= set(s.keys()):
+
+            edge = [{
+                'id': None, 
+                'type': str(s['type']), 
+                'belief': float(s['belief']), 
+                'statement_id': str(s['matches_hash']), 
+                'source_name': str(s['subj']['name']),
+                'source_db_refs': s['subj']['db_refs'],
+                'target_name': str(s['obj']['name']),
+                'target_db_refs': s['obj']['db_refs']
+            }]
+
+        # enz/sub statements
+        elif source_target_pairs[1] <= set(s.keys()):
+
+            edge = [{
+                'id': None, 
+                'type': str(s['type']), 
+                'belief': float(s['belief']), 
+                'statement_id': str(s['matches_hash']), 
+                'source_name': str(s['enz']['name']), 
+                'source_db_refs': s['enz']['db_refs'],
+                'target_name': str(s['sub']['name']),
+                'target_db_refs': s['sub']['db_refs'],
+            }]
+
+        # subj/obj_from/obj_to statements
+        # 1. subj -> obj_from
+        # 2. obj_from -> obj_to
+        elif source_target_pairs[2] <= set(s.keys()):
+
+            edge = [{
+                'id': None, 
+                'type': str(s['type']), 
+                'belief': float(s['belief']), 
+                'statement_id': str(s['matches_hash']), 
+                'source_name': str(s['subj']['name']), 
+                'source_db_refs': s['subj']['db_refs'],
+                'target_name': str(s['obj_from'][0]['name']),
+                'target_db_refs': s['obj_from'][0]['db_refs'],
+            }, 
+            {
+                'id': None, 
+                'type': str(s['type']), 
+                'belief': float(s['belief']), 
+                'statement_id': str(s['matches_hash']), 
+                'source_name': str(s['obj_from'][0]['name']), 
+                'source_db_refs': s['obj_from'][0]['db_refs'],
+                'target_name': str(s['obj_to'][0]['name']),
+                'target_db_refs': s['obj_to'][0]['db_refs'],
+            }]
+
+        # many-member statements
+        # * consider only two- and three-member statements
+        # * assume bidirectionality
+        elif (source_target_pairs[3] <= set(s.keys())) & (len(s['members']) <= 3):
+            
+            num_members = len(s['members'])
+            perm = [(i, j) for i in range(num_members) for j in range(num_members) if i != j]
+
+            edge = [{
+                'id': None, 
+                'type': str(s['type']), 
+                'belief': float(s['belief']), 
+                'statement_id': str(s['matches_hash']), 
+                'source_name': str(s['members'][x[0]]['name']), 
+                'source_db_refs': s['members'][x[0]]['db_refs'], 
+                'target_name': str(s['members'][x[1]]['name']),
+                'target_db_refs': s['members'][x[1]]['db_refs'],
+            } for x in perm]
+
+    
+        edges.extend(edge)
+
+
+    # Generate edge IDs
+    for i, edge in enumerate(edges):
+        edge['id'] = i
+
+
+    # Extract node list
+    nodes_name = {**{edge['source_name']: {'edge_ids_source': [], 'edge_ids_target': []} for edge in edges}, **{edge['target_name']: {'edge_ids_source': [], 'edge_ids_target': []} for edge in edges}}
+    for edge in edges:
+        nodes_name[edge['source_name']]['db_refs'] = edge['source_db_refs']
+        nodes_name[edge['target_name']]['db_refs'] = edge['target_db_refs']
+        nodes_name[edge['source_name']]['edge_ids_source'].append(edge['id'])
+        nodes_name[edge['target_name']]['edge_ids_target'].append(edge['id'])
+
+    nodes = [{
+        'id': i,
+        'name': name, 
+        'db_refs': nodes_name[name]['db_refs'],
+        'grounded': len(set(nodes_name[name]['db_refs'].keys()) - {'TEXT'}) > 0, 
+        'edge_ids_source': nodes_name[name]['edge_ids_source'], 
+        'edge_ids_target': nodes_name[name]['edge_ids_target'],
+        'in_degree': len(nodes_name[name]['edge_ids_target']),
+        'out_degree': len(nodes_name[name]['edge_ids_source'])
+    } for i, name in enumerate(nodes_name)]
+
+
+    return nodes, edges, statements
+
+# %%
+
+
+
+
+
+
+
+# %%
 # Intersect a set of graph nodes/edges with a set of graph paths
 def intersect_graph_paths(nodes, edges, paths):
 
@@ -413,7 +540,6 @@ def generate_ordered_namespace_list(namespaces_priority, ontoJSON, nodes):
     
     return namespaces, namespaces_count
 
-
 # %%
 # Reduce 'db_refs' of each model node to a single entry by namespace priority
 # * `namespace`:`ref` -> 'ontocats_ref'
@@ -433,7 +559,6 @@ def reduce_nodes_db_refs(nodes, namespaces):
     nodes_db_ref_priority = [node['db_ref_priority'] for node in nodes]
 
     return nodes, nodes_db_ref_priority
-
 
 # %%
 # Generate NetworkX layout from given subgraph (as specified by `edges`)
@@ -499,7 +624,6 @@ def generate_nx_layout(nodes, edges, node_list = [], edge_list = [], layout = 's
     
 
     return coors, G
-    
 
 # %%
 # Match arrays using a hash table
