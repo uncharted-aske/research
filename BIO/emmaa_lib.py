@@ -12,6 +12,7 @@ from networkx.algorithms.centrality.degree_alg import out_degree_centrality
 import numpy as np
 # import scipy as sp
 # import csv
+import json
 import re
 import numba
 import networkx as nx
@@ -267,131 +268,273 @@ def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
 
 
 
+
 # %%
-# Parse EMMAA statements and return a node/edge list
-def parse_statements(statements):
+# Save list of objects as a JSONL file
+def save_jsonl(list_objects, full_path, preamble = {}):
 
+    with open(f'{full_path}', 'w') as x:
 
-    # Only keep statements from which direct edges can be clearly extracted
-    source_target_pairs = [{'subj', 'obj'}, {'enz', 'sub'}, {'subj', 'obj_from', 'obj_to'}, {'members'}]
-    bool_ind = np.sum(np.array([[True if x <= set(s.keys()) else False for s in statements] for x in source_target_pairs]), axis = 0)
-    statements = [s for i, s in zip(bool_ind, statements) if i]
+        # Preamble
+        if len(preamble) > 0:
+            json.dump(preamble, x)
+            x.write('\n')
 
+        # Data
+        for obj in list_objects:
+            json.dump(obj, x)
+            x.write('\n')
 
-    # Extracted edge list
+# %%
+# Load JSONL file
+def load_jsonl(full_path, remove_preamble = False):
+
+    list_objects = []
+    with open(f'{full_path}', 'r') as x:
+        for i in x:
+            list_objects.append(json.loads(i))
+
+    if remove_preamble:
+        list_objects = list_objects[1:]
+
+    return list_objects
+
+# %%
+# Process EMMAA statements and return a node/edge list
+def process_statements(statements, paths = [], model_id = None):
+
+    statements_processed = []
+    nodes = []
     edges = []
-    for s in statements:
+    num_statements = len(statements)
+    if num_statements > 0:
 
-        # subj/obj statements
-        if source_target_pairs[0] <= set(s.keys()):
+        # Only keep statements from which direct edges can be clearly extracted
+        source_target_pairs = [{'subj', 'obj'}, {'enz', 'sub'}, {'subj', 'obj_from', 'obj_to'}, {'members'}]
+        bool_ind = np.sum(np.array([[True if x <= set(s.keys()) else False for s in statements] for x in source_target_pairs]), axis = 0)
+        statements_processed = [s for i, s in zip(bool_ind, statements) if i]
+        num_statements_processed = len(statements_processed)
+        
+        statements = None
+        del statements
 
-            edge = [{
-                'id': None, 
-                'type': str(s['type']), 
-                'belief': float(s['belief']), 
-                'statement_id': str(s['matches_hash']), 
-                'source_name': str(s['subj']['name']),
-                'source_db_refs': s['subj']['db_refs'],
-                'target_name': str(s['obj']['name']),
-                'target_db_refs': s['obj']['db_refs']
-            }]
 
-        # enz/sub statements
-        elif source_target_pairs[1] <= set(s.keys()):
-
-            edge = [{
-                'id': None, 
-                'type': str(s['type']), 
-                'belief': float(s['belief']), 
-                'statement_id': str(s['matches_hash']), 
-                'source_name': str(s['enz']['name']), 
-                'source_db_refs': s['enz']['db_refs'],
-                'target_name': str(s['sub']['name']),
-                'target_db_refs': s['sub']['db_refs'],
-            }]
-
-        # subj/obj_from/obj_to statements
-        # 1. subj -> obj_from
-        # 2. obj_from -> obj_to
-        elif source_target_pairs[2] <= set(s.keys()):
-
-            edge = [{
-                'id': None, 
-                'type': str(s['type']), 
-                'belief': float(s['belief']), 
-                'statement_id': str(s['matches_hash']), 
-                'source_name': str(s['subj']['name']), 
-                'source_db_refs': s['subj']['db_refs'],
-                'target_name': str(s['obj_from'][0]['name']),
-                'target_db_refs': s['obj_from'][0]['db_refs'],
-            }, 
-            {
-                'id': None, 
-                'type': str(s['type']), 
-                'belief': float(s['belief']), 
-                'statement_id': str(s['matches_hash']), 
-                'source_name': str(s['obj_from'][0]['name']), 
-                'source_db_refs': s['obj_from'][0]['db_refs'],
-                'target_name': str(s['obj_to'][0]['name']),
-                'target_db_refs': s['obj_to'][0]['db_refs'],
-            }]
-
-        # many-member statements
-        # * consider only two- and three-member statements
-        # * assume bidirectionality
-        elif (source_target_pairs[3] <= set(s.keys())) & (len(s['members']) <= 3):
+        # Extracted edge list
+        edge = []
+        for s in statements_processed:
             
-            num_members = len(s['members'])
-            perm = [(i, j) for i in range(num_members) for j in range(num_members) if i != j]
+            # subj/obj statements
+            if source_target_pairs[0] <= set(s.keys()):
 
-            edge = [{
-                'id': None, 
-                'type': str(s['type']), 
-                'belief': float(s['belief']), 
-                'statement_id': str(s['matches_hash']), 
-                'source_name': str(s['members'][x[0]]['name']), 
-                'source_db_refs': s['members'][x[0]]['db_refs'], 
-                'target_name': str(s['members'][x[1]]['name']),
-                'target_db_refs': s['members'][x[1]]['db_refs'],
-            } for x in perm]
+                edge = [{
+                    'model_id': model_id,
+                    'id': None, 
+                    'type': str(s['type']), 
+                    'belief': float(s['belief']), 
+                    'statement_id': str(s['matches_hash']), 
+                    'source_id': None, 
+                    'source_name': str(s['subj']['name']),
+                    'source_db_refs': s['subj']['db_refs'],
+                    'target_id': None, 
+                    'target_name': str(s['obj']['name']),
+                    'target_db_refs': s['obj']['db_refs'], 
+                    'tested': False
+                }]
 
+            # enz/sub statements
+            if source_target_pairs[1] <= set(s.keys()):
+
+                edge = [{
+                    'model_id': model_id,
+                    'id': None, 
+                    'type': str(s['type']), 
+                    'belief': float(s['belief']), 
+                    'statement_id': str(s['matches_hash']), 
+                    'source_id': None, 
+                    'source_name': str(s['enz']['name']), 
+                    'source_db_refs': s['enz']['db_refs'],
+                    'target_id': None, 
+                    'target_name': str(s['sub']['name']),
+                    'target_db_refs': s['sub']['db_refs'],
+                    'tested': False
+                }]
+
+            # subj/obj_from/obj_to statements
+            # 1. subj -> obj_from
+            # 2. obj_from -> obj_to
+            if source_target_pairs[2] <= set(s.keys()):
+
+                edge = [{
+                    'model_id': model_id,
+                    'id': None, 
+                    'type': str(s['type']), 
+                    'belief': float(s['belief']), 
+                    'statement_id': str(s['matches_hash']), 
+                    'source_id': None, 
+                    'source_name': str(s['subj']['name']), 
+                    'source_db_refs': s['subj']['db_refs'],
+                    'target_id': None, 
+                    'target_name': str(s['obj_from'][0]['name']),
+                    'target_db_refs': s['obj_from'][0]['db_refs'],
+                    'tested': False
+                }, 
+                {
+                    'model_id': model_id,
+                    'id': None, 
+                    'type': str(s['type']), 
+                    'belief': float(s['belief']), 
+                    'statement_id': str(s['matches_hash']), 
+                    'source_id': None, 
+                    'source_name': str(s['obj_from'][0]['name']), 
+                    'source_db_refs': s['obj_from'][0]['db_refs'],
+                    'target_id': None, 
+                    'target_name': str(s['obj_to'][0]['name']),
+                    'target_db_refs': s['obj_to'][0]['db_refs'],
+                    'tested': False
+                }]
+
+            # many-member statements
+            # * consider only two- and three-member statements
+            # * assume bidirectionality
+            if source_target_pairs[3] <= set(s.keys()):
+                
+                if len(s['members']) <= 3:
+                    num_members = len(s['members'])
+                    perm = [(i, j) for i in range(num_members) for j in range(num_members) if i != j]
+
+                    edge = [{
+                        'model_id': model_id,
+                        'id': None, 
+                        'type': str(s['type']), 
+                        'belief': float(s['belief']), 
+                        'statement_id': str(s['matches_hash']), 
+                        'source_id': None, 
+                        'source_name': str(s['members'][x[0]]['name']), 
+                        'source_db_refs': s['members'][x[0]]['db_refs'], 
+                        'target_id': None, 
+                        'target_name': str(s['members'][x[1]]['name']),
+                        'target_db_refs': s['members'][x[1]]['db_refs'],
+                        'tested': False
+                    } for x in perm]
+
+            edges.extend(edge)
+            edge = []
+
+
+        # Generate edge IDs
+        num_edges = len(edges)
+        for i, edge in enumerate(edges):
+            edge['id'] = i
+
+
+        # Extract node list
+        nodes_name = {**{edge['source_name']: {'edge_ids_source': [], 'edge_ids_target': []} for edge in edges}, **{edge['target_name']: {'edge_ids_source': [], 'edge_ids_target': []} for edge in edges}}
+        for edge in edges:
+            nodes_name[edge['source_name']]['db_refs'] = edge['source_db_refs']
+            nodes_name[edge['target_name']]['db_refs'] = edge['target_db_refs']
+            nodes_name[edge['source_name']]['edge_ids_source'].append(edge['id'])
+            nodes_name[edge['target_name']]['edge_ids_target'].append(edge['id'])
+
+        nodes = [{
+            'model_id': model_id,
+            'id': i,
+            'name': name, 
+            'db_refs': nodes_name[name]['db_refs'],
+            'grounded': len(set(nodes_name[name]['db_refs'].keys()) - {'TEXT'}) > 0, 
+            'edge_ids_source': nodes_name[name]['edge_ids_source'], 
+            'edge_ids_target': nodes_name[name]['edge_ids_target'],
+            'out_degree': len(nodes_name[name]['edge_ids_source']),
+            'in_degree': len(nodes_name[name]['edge_ids_target'])
+        } for i, name in enumerate(nodes_name)]
+        num_nodes = len(nodes)
     
-        edges.extend(edge)
+
+        # Map node names to IDs
+        for i, name in enumerate(nodes_name):
+            nodes_name[name]['id'] = i
+        
+        for edge in edges:
+            edge['source_id'] = nodes_name[edge['source_name']]['id']
+            edge['target_id'] = nodes_name[edge['target_name']]['id']
 
 
-    # Generate edge IDs
-    for i, edge in enumerate(edges):
-        edge['id'] = i
+        # Delete unnecessary `edges` keys
+        for edge in edges:
+            for x in ['source_name', 'target_name', 'source_db_refs', 'target_db_refs']:
+                try:
+                    del edge[x]
+                except:
+                    pass
 
 
-    # Extract node list
-    nodes_name = {**{edge['source_name']: {'edge_ids_source': [], 'edge_ids_target': []} for edge in edges}, **{edge['target_name']: {'edge_ids_source': [], 'edge_ids_target': []} for edge in edges}}
-    for edge in edges:
-        nodes_name[edge['source_name']]['db_refs'] = edge['source_db_refs']
-        nodes_name[edge['target_name']]['db_refs'] = edge['target_db_refs']
-        nodes_name[edge['source_name']]['edge_ids_source'].append(edge['id'])
-        nodes_name[edge['target_name']]['edge_ids_target'].append(edge['id'])
-
-    nodes = [{
-        'id': i,
-        'name': name, 
-        'db_refs': nodes_name[name]['db_refs'],
-        'grounded': len(set(nodes_name[name]['db_refs'].keys()) - {'TEXT'}) > 0, 
-        'edge_ids_source': nodes_name[name]['edge_ids_source'], 
-        'edge_ids_target': nodes_name[name]['edge_ids_target'],
-        'in_degree': len(nodes_name[name]['edge_ids_target']),
-        'out_degree': len(nodes_name[name]['edge_ids_source'])
-    } for i, name in enumerate(nodes_name)]
+        # Status
+        print(f"{num_statements} statements -> {num_statements_processed} processed statements.")
+        print(f"Found {num_nodes} nodes and {num_edges} edges.")
 
 
-    return nodes, edges, statements
+    # Process paths
+    paths_processed = []
+    num_paths = len(paths)
+    if num_paths > 0:
+        
+        # Hash tables
+        map_nodes_ids = {node['name']: node['id'] for node in nodes}
+        map_edges_ids = {edge['statement_id']: [] for edge in edges}
+        for edge in edges:
+            map_edges_ids[edge['statement_id']] = map_edges_ids[edge['statement_id']] + [edge['id']]
+
+        # Map node names and statement IDs to node IDs and edge IDs
+        paths_processed = [{
+            'model_id': model_id, 
+            'node_ids': [map_nodes_ids[node_name] for node_name in path['nodes'] if node_name in map_nodes_ids],
+            'edge_ids': [map_edges_ids[str(statement_id)] for k in path['edges'] for statement_id in k if str(statement_id) in map_edges_ids],
+            'graph_type': path['graph_type']
+        } for path in paths]
+
+        # Flatten `edge_ids` in `paths_processed`
+        for path in paths_processed:
+            path['edge_ids'] = [edge_id  for k in path['edge_ids'] for edge_id in k]
+
+        # Only keep paths with non-empty node and edge lists
+        paths_processed = [path for path in paths_processed if (len(path['node_ids']) > 0) & (len(path['edge_ids']) > 0)]
+        num_paths_processed = len(paths_processed)
+
+        # Update 'tested' of `edges`
+        paths_edge_ids = [edge_id for path in paths_processed for edge_id in path['edge_ids']]
+        for edge in edges:
+            if edge['id'] in paths_edge_ids:
+                edge['tested'] = True
+
+        num_edges_tested = len([True for edge in edges if edge['tested']])
+
+
+        # Status
+        print(f"{num_paths} paths -> {num_paths_processed} processed paths.")
+        print(f"Found {num_edges_tested} tested edges.")
+
+
+    return nodes, edges, statements_processed, paths_processed
 
 # %%
+# Generate NetworkX `MultiDiGraph` from `nodes` and `edges`
+# Note that parallel edges and self-loops are allowed in this object type
+def generate_nx_object(nodes, edges):
+
+    # Generate node list from `nodes`
+    node_list = [(node['id'], node) for node in nodes]
+
+    # Generate edge list from `edges`
+    edge_list = [(edge['source_id'], edge['target_id'], edge) for edge in edges]
 
 
+    # Generate NetworkX graph object from node and edge list
+    G = nx.MultiDiGraph()
+    G.add_nodes_from(node_list)
+    G.add_edges_from(edge_list)
 
+    # print(f"{G.number_of_nodes()} nodes and {G.number_of_edges()} edges has been added to the graph object.")
 
-
+    return G
 
 
 # %%
@@ -399,54 +542,73 @@ def parse_statements(statements):
 def intersect_graph_paths(nodes, edges, paths):
 
     # Get the edge IDs
-    edgeIDs_edges = set([edge['id'] for edge in edges]) - {None}
-    edgeIDs_paths = set([edge for path in paths for edge in path['edge_ids']]) - {None}
+    edgeIDs_edges = set([edge['id'] for edge in edges])
+    edgeIDs_paths = set([edge for path in paths for edge in path['edge_ids']])
 
     # Find intersection between the graph edges and the path edges
     edgeIDs_inter = edgeIDs_paths & edgeIDs_edges
-    # print(f"{len(edgeIDs_inter)} {len(edgeIDs_paths)} {len(edgeIDs_edges)}")
+    print(f"{len(edgeIDs_paths)} {len(edgeIDs_edges)} -> {len(edgeIDs_inter)}")
 
     # Select the edges within the intersection
-    nodes_inter = [node for node in nodes if len(set(node['edge_ids']) & edgeIDs_inter) > 0]
     edges_inter = [edge for edge in edges if edge['id'] in edgeIDs_inter]
-    
-    # Get the node IDs in the intersection
-    nodeIDs_inter = set([node['id'] for node in nodes_inter]) - {None}
+    num_edges_inter = len(edges_inter)
 
-    # Remove `None` from `node_ids` and `edge_ids` of `paths`
-    paths_inter = [path for path in paths if len(set(path['edge_ids']) & edgeIDs_inter) > 0]
-    num_paths = len(paths_inter)
-    for i in range(num_paths):
-        paths_inter[i]['node_ids'] = list(set(paths_inter[i]['node_ids']) & nodeIDs_inter)
-        paths_inter[i]['edge_ids'] = list(set(paths_inter[i]['edge_ids']) & edgeIDs_inter)
+    # Select the paths within the intersection
+    paths_inter = [path for path in paths if set(path['edge_ids']) <= edgeIDs_inter]
+    num_paths_inter = len(paths_inter)
+
+    # Select the nodes within the intersection
+    nodeIDs_inter = set([edge['source_id'] for edge in edges_inter] + [edge['target_id'] for edge in edges_inter])
+    nodes_inter = [node for node in nodes if node['id'] in nodeIDs_inter]
+    num_nodes_inter = len(nodes_inter)
 
     # Restrict `edge_ids` in `nodes` to the subgraph
-    num_nodes = len(nodes_inter)
-    for i in range(num_nodes):
-        nodes_inter[i]['edge_ids'] = list(set(nodes_inter[i]['edge_ids']) & edgeIDs_inter)
+    # Update node degree values
+    num_nodes_inter = len(nodes_inter)
+    for node in nodes_inter:
+        for k, l in zip(['edge_ids_source', 'edge_ids_target'], ['out_degree', 'in_degree']):
+            node[k] = list(set(node[k]) & edgeIDs_inter)
+            node[l] = len(node[k])
+
+    # Status
+    print(f"{len(paths)} paths, {len(nodes)} nodes, and {len(edges)} edges in total.")
+    print(f"{num_paths_inter} paths, {num_nodes_inter} nodes, and {num_edges_inter} edges in the intersection.")
 
     return nodes_inter, edges_inter, paths_inter
 
 # %%
-# Reset node ids in `nodes` and `edges`
-def reset_node_ids(nodes, edges):
+# Reset the IDs in `nodes` and `edges`
+def reset_node_edge_ids(nodes, edges):
 
-    # Make new node-id map
+    # Make new node/edge-to-ID map
     map_nodes_ids = {node['id']: i for i, node in enumerate(nodes)}
+    map_edges_ids = {edge['id']: i for i, edge in enumerate(edges)}
 
-    num_nodes = len(nodes)
-    for i in range(num_nodes):
-        nodes[i]['id'] = i
 
-    num_edges = len(edges)
-    for i in range(num_edges):
-        j = edges[i]['source']
-        edges[i]['source'] = map_nodes_ids[j]
+    # Reset the node IDs in `nodes`
+    for node in nodes:
+        node['id'] = map_nodes_ids[node['id']]
 
-        k = edges[i]['target']
-        edges[i]['target'] = map_nodes_ids[k]
+    # Reset the node IDs in `edges`
+    for edge in edges:
+        for k in ['source_id', 'target_id']:
+            try:
+                edge[k] = map_nodes_ids[edge[k]]
+            except:
+                print(edge)
 
-    return nodes, edges, map_nodes_ids
+
+    # Reset the edge IDs in `nodes`
+    for node in nodes:
+        for k in ['edge_ids_source', 'edge_ids_target']:
+            node[k] = [map_edges_ids[edge_id] for edge_id in node[k]]
+
+    # Reset the edge IDs in `edges`
+    for edge in edges:
+        edge['id'] = map_edges_ids[edge['id']]
+
+
+    return map_nodes_ids, map_edges_ids
 
 # %%
 # Calculate in- and out-degree of nodes in `nodes` using `edges` data
