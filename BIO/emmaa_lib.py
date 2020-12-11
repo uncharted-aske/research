@@ -9,9 +9,11 @@
 # import sys
 # from time import time
 from networkx.algorithms.centrality.degree_alg import out_degree_centrality
+from networkx.utils.decorators import nodes_or_number
 import numpy as np
 # import scipy as sp
 # import csv
+import copy
 import json
 import re
 import numba
@@ -241,7 +243,7 @@ def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
     textsIndex = np.array([np.flatnonzero(np.asarray([(text in node['info']['text']) and (node['grounded'] == True) for node in nodes])) for text in texts]).flatten()
 
     # List of edge sources and targets
-    x = np.array([[edge['source'], edge['target']] for edge in edges])
+    x = np.array([[edge['source_id'], edge['target_id']] for edge in edges])
 
     # Flag edges 
     edgeFlags = np.full((len(edges), ), False)
@@ -256,7 +258,7 @@ def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
 
     # Get node/edge indices
     textsEdgeIndex = np.flatnonzero(edgeFlags)
-    textsNodeIndex = np.array(list(set([edges[j]['source'] for j in textsEdgeIndex] + [edges[j]['target'] for j in textsEdgeIndex])))
+    textsNodeIndex = np.array(list(set([edges[j]['source_id'] for j in textsEdgeIndex] + [edges[j]['target_id'] for j in textsEdgeIndex])))
 
     # Flag nodes
     nodeFlags = [True if j in textsNodeIndex else False for j, node in enumerate(nodes)]
@@ -282,7 +284,12 @@ def save_jsonl(list_objects, full_path, preamble = {}):
 
         # Data
         for obj in list_objects:
-            json.dump(obj, x)
+            
+            obj_ = obj
+            if len(preamble) > 0:
+                obj_ = {k: obj[k] if k in obj.keys() else None for k in preamble.keys() }
+            
+            json.dump(obj_, x)
             x.write('\n')
 
 # %%
@@ -536,7 +543,6 @@ def generate_nx_object(nodes, edges):
 
     return G
 
-
 # %%
 # Intersect a set of graph nodes/edges with a set of graph paths
 def intersect_graph_paths(nodes, edges, paths):
@@ -622,8 +628,8 @@ def calculate_node_degrees(nodes, edges):
     in_degree = [0 for i in range(num_nodes)]
     out_degree = [0 for i in range(num_nodes)]
     for edge in edges:
-        i = map_nodes_ids[edge['source']]
-        j = map_nodes_ids[edge['target']]
+        i = map_nodes_ids[edge['source_id']]
+        j = map_nodes_ids[edge['target_id']]
         in_degree[j] += 1
         out_degree[i] += 1
 
@@ -647,8 +653,8 @@ def calculate_node_belief(nodes, edges, mode = 'max'):
     num_nodes = len(nodes)
     belief_edges = [[] for i in range(num_nodes)]
     for edge in edges:
-        i = map_nodes_ids[edge['source']]
-        j = map_nodes_ids[edge['target']]
+        i = map_nodes_ids[edge['source_id']]
+        j = map_nodes_ids[edge['target_id']]
         belief_edges[i].append(edge['belief'])
         belief_edges[j].append(edge['belief'])
 
@@ -724,30 +730,37 @@ def reduce_nodes_db_refs(nodes, namespaces):
 
 # %%
 # Generate NetworkX layout from given subgraph (as specified by `edges`)
-def generate_nx_layout(nodes, edges, node_list = [], edge_list = [], layout = 'spring', layout_atts = {}, draw = False, draw_atts = {}, ax = None):
+def generate_nx_layout(G = None, nodes = None, edges = None, node_list = None, edge_list = None, layout = 'spring', layout_atts = {}, plot = False, plot_atts = {}, ax = None):
     
-    # Generate node list if unavailable
-    # node_list = <list of (node, attributes = {k: v})>
-    if len(node_list) == 0:
-        node_list = [(node['id'], {'name': node['name']}) for node in nodes]
+    if G == None:
 
-    # Generate edge list if unavailable
-    # edge_list = <list of (source_node, target_node, attributes = {k: v})>
-    if len(edge_list) == 0:
+        # Generate node list if unavailable
+        # node_list = <list of (node, attributes = {k: v})>
+        if len(node_list) == None:
+            node_list = [(node['id'], {'name': node['name']}) for node in nodes]
+            G.add_nodes_from(node_list)
+            
+        # Generate edge list if unavailable
+        # edge_list = <list of (source_node, target_node, attributes = {k: v})>
+        if len(edge_list) == None:
 
-        # Generate edge list from `edges`
-        edge_dict = {(edge['source'], edge['target']): 0 for edge in edges}
-        for edge in edges:
-            edge_dict[(edge['source'], edge['target'])] += 1
+            # Generate edge list from `edges`
+            edge_dict = {(edge['source_id'], edge['target_id']): 0 for edge in edges}
+            for edge in edges:
+                edge_dict[(edge['source_id'], edge['target_id'])] += 1
 
-        # weight = number of equivalent edges
-        edge_list = [(edge[0], edge[1], {'weight': edge_dict[edge]}) for edge in edge_dict]
+            # weight = number of equivalent edges
+            edge_list = [(edge[0], edge[1], {'weight': edge_dict[edge]}) for edge in edge_dict]
 
 
-    # Generate NetworkX graph object from node and edge list
-    G = nx.DiGraph()
-    G.add_nodes_from(node_list)
-    G.add_edges_from(edge_list)
+        # Generate NetworkX graph object from node and edge list
+        G = nx.MultiDiGraph()
+        if len(node_list) > 0:
+            G.add_nodes_from(node_list)
+
+        if len(edge_list) > 0:
+            G.add_edges_from(edge_list)
+
 
     # print(f"{G.number_of_nodes()} nodes and {G.number_of_edges()} edges has been added to the graph object.")
     # Note: self-loops are ignored
@@ -760,32 +773,38 @@ def generate_nx_layout(nodes, edges, node_list = [], edge_list = [], layout = 's
         coors = nx.spring_layout(G, weight = 'weight', seed = 0, **layout_atts)
     else:
         print(f"No layout selected!")
-        draw = False
+        plot = False
         coors = {}
 
-    if draw == True:
+    fig = None
+    ax = None
+    if plot == True:
 
         if ax == None:
             fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
 
         # print(plt.style.available)
-        plt.style.use('fast')
-        draw_atts = {
+        # plt.style.use('fast')
+        plt.style.use('dark_background')
+
+        plot_atts_default = {
             'ax': ax,
-            'arrows': False, 
-            'with_labels': False,
-            'node_size': 0.5,
+            'arrows': G.number_of_nodes() < 20, 
+            'with_labels': G.number_of_nodes() < 20,
+            'labels': {node: str(node) for node in G.nodes()},
+            'node_size': [node[1] + 0.1 for node in G.degree()],
             'width': 0.05,
             'alpha': 0.8,
             'cmap': 'cividis',
-            'edge_color': 'k'
+            'edge_color': 'w',
+            'font_color': 'w'
         }
 
-        nx.draw_networkx(G, pos = coors, **draw_atts)
+        nx.draw_networkx(G, pos = coors, **{**plot_atts_default, **plot_atts})
         __ = plt.setp(ax, aspect = 1.0)
     
 
-    return coors, G
+    return coors, G, fig, ax
 
 # %%
 # Match arrays using a hash table
@@ -805,5 +824,574 @@ def match_arrays(A, B):
             pass
 
     return index
+
+# %%
+# Calculate the shortest root-to-leaf paths of model nodes that have been grounded to a given ontological graph
+def calculate_onto_root_path(nodes, G_onto_JSON):
+
+    # Load the ontology graph as a `networkx` object
+    G_onto = nx.readwrite.json_graph.node_link_graph(G_onto_JSON)
+
+    # Extract components, sorted by size
+    ontoSubs = sorted(nx.weakly_connected_components(G_onto), key = len, reverse = True)
+
+    # Find the root nodes of each component (degree = 0 or out-degree = 0)
+    ontoSubRoots = [[node for node in sub if G_onto.out_degree(node) < 1] for sub in ontoSubs]
+
+
+    # Initialize the ontological attributes
+    # Unmappable nodes: level = `-1` and to-root list = [`not-grounded-onto`]
+    num_nodes = len(nodes)
+    for node in nodes:
+        if node['db_ref_priority'] in nx.nodes(G_onto):
+            node['grounded_onto'] = True
+            node['ontocat_level'] = -1
+            node['ontocat_refs'] = []
+        else:
+            node['grounded_onto'] = False
+            node['ontocat_level'] = -1
+            node['ontocat_refs'] = ['not-grounded-onto']
+
+
+    # Index of mappable model nodes
+    node_indices = [i for i, node in enumerate(nodes) if node['grounded_onto']]
+
+    # Index of the onto subgraph to which the model nodes are mapped
+    # (if in nontrivial subgraph -> -1)
+    num_ontoSub_nontrivial = sum([1 for sub in ontoSubs if len(sub) > 1])
+    x = [{(nodes[i]['db_ref_priority'] in sub): j for j, sub in enumerate(ontoSubs[:num_ontoSub_nontrivial])} for i in node_indices]
+    ontoSub_indices = [d[True] if True in d.keys() else -1 for d in x]
+
+
+    # Calculate shortest path to local root
+    for i, j in zip(node_indices, ontoSub_indices):
+
+        source = nodes[i]['db_ref_priority']
+
+        # Case: model node was mapped to either a trivial subgraph or the root of a non-trivial subgraph
+        if (j == -1) or (source in ontoSubRoots[j]):
+            nodes[i]['ontocat_level'] = 0
+            nodes[i]['ontocat_refs'] = [source]
+
+        else:
+
+            z = []
+            for target in ontoSubRoots[j]:
+                try:
+                    p = nx.algorithms.shortest_paths.generic.shortest_path(G_onto.subgraph(ontoSubs[j]), source = source, target = target)
+                    z.append(p)
+                except:
+                    pass
+            
+            # Find shortest path and reverse such that [target, ..., source]
+            z = sorted(z, key = len, reverse = False)
+            nodes[i]['ontocat_level'] = len(z[0]) - 1
+            nodes[i]['ontocat_refs'] = z[0][::-1]
+
+
+    # Ensure that identical onto nodes share the same lineage (path to their ancestor) for hierarchical uniqueness
+    ontocat_refs = [node['ontocat_refs'] for node in nodes]
+    m = max([len(path) for path in ontocat_refs])
+    for i in range(1, m):
+
+        # All nodes
+        x = [path[i] if len(path) > i else '' for path in ontocat_refs]
+
+        # All unique nodes
+        y = list(set(x) - set(['']))
+
+        # Mapping from all nodes to unique nodes
+        xy = [y.index(node) if node is not '' else '' for node in x]
+
+        # Choose the path segment of the first matching node for each unique node
+        z = [ontocat_refs[x.index(node)][:i] for node in y]
+        
+        # Substitute path segments
+        for j in range(num_nodes):
+            if xy[j] is not '':
+                nodes[j]['ontocat_refs'][:i] = z[xy[j]]
+            else:
+                nodes[j]['ontocat_refs'][:i] = ontocat_refs[j][:i]
+
+
+    # Copy results
+    for j in range(num_nodes):
+        nodes[j]['ontocat_refs'][:i] = ontocat_refs[j][:i].copy()
+
+# %%
+# Extract list of ontological categories that are in the shortest paths of the model nodes
+def extract_ontocats(nodes, G_onto_JSON):
+
+    # Generate list of mapped ontology categories, sorted by size
+    ontocat_refs = [node['ontocat_refs'] for node in nodes]
+    ontocats_ = {}
+    ontocats_['ref'], ontocats_['size'] = np.unique([node for path in ontocat_refs for node in path], return_counts = True)
+
+    num_ontocats = len(ontocats_['ref'])
+    i = np.argsort(ontocats_['size'])[::-1]
+    ontocats_['ref'] = list(ontocats_['ref'][i])
+    ontocats_['size'] = [int(k) for k in ontocats_['size']]
+    ontocats_['id'] = list(range(num_ontocats))
+
+
+    # Load the ontology graph as a `networkx` object
+    G_onto = nx.readwrite.json_graph.node_link_graph(G_onto_JSON)
+
+    # Get the mapped onto category names
+    x = dict(G_onto.nodes(data = 'name', default = None))
+    ontocats_['name'] = list(np.empty((num_ontocats, )))
+    for i, ref in enumerate(ontocats_['ref']):
+        try:
+            ontocats_['name'][i] = x[ref]
+        except:
+            ontocats_['name'][i] = ''
+
+
+    # Get onto level of each category
+    i = max([len(path) for path in ontocat_refs])
+    x = [np.unique([path[j] if len(path) > j else '' for path in ontocat_refs]) for j in range(i)]
+    ontocats_['level'] = [int(np.flatnonzero([ref in y for y in x])[0]) for ref in ontocats_['ref']]
+
+
+    # Get numeric id version of ontocat_refs
+    x = {k: v for k, v in zip(ontocats_['ref'], ontocats_['id'])}
+    ontocat_ids = [[x[node] for node in path] for path in ontocat_refs]
+    for node in nodes:
+        node['ontocat_ids'] = [x[ontocat] for ontocat in node['ontocat_refs']]
+
+
+    # Get parent category id for each category (for root nodes, parentID = None)
+    y = [np.flatnonzero([True if ref in path else False for path in ontocat_refs])[0] for ref in ontocats_['ref']]
+    ontocats_['parent_ref'] = [ontocat_refs[y[i]][ontocat_refs[y[i]].index(ref) - 1] if ontocat_refs[y[i]].index(ref) > 0 else None for i, ref in enumerate(ontocats_['ref'])]
+    ontocats_['parent_id'] = [x[parent] if parent is not None else None for parent in ontocats_['parent_ref']]
+
+
+    # Find membership of onto categories
+    ontocats_['node_ids'] = [[node['id'] for node, path in zip(nodes, ontocat_refs) if ref in path] for ref in ontocats_['ref']]
+
+
+    # Placeholder for hyperedges
+    ontocats_['hyperedge_ids'] = [[] for i in range(num_ontocats)]
+
+    # Model ID
+    ontocats_['model_id'] = [nodes[0]['model_id'] for i in range(num_ontocats)]
+
+    # Switch to row-wise structure
+    ontocats = [{k: ontocats_[k][i] for k in ontocats_.keys()} for i in range(num_ontocats)]
+
+
+    # # Placeholder for layout coordinates
+    # # (use median of the membership)
+    # x = {node['id']: i for i, node in enumerate(nodes)}
+    # for ontocat in ontocats:
+    #     for i in ['x', 'y', 'z']:
+    #         ontocat[i] = float(np.median([nodes[x[j]][i] for j in ontocat['node_ids']]))
+
+
+    return ontocats
+
+# %%
+# Generate hyperedges by aggregate model edges that are between children of each ontological category
+def generate_hyperedges(nodes, edges, ontocats):
+
+    # Find model edges that have the given ontocat member as their source
+    x = [edge['source_id'] for edge in edges]
+    ontocats_edges_source = [match_arrays(x, ontocat['node_ids']) for ontocat in ontocats]
+
+    x = [edge['target_id'] for edge in edges]
+    ontocats_edges_target = [match_arrays(x, ontocat['node_ids']) for ontocat in ontocats]
+
+    #####################################################
+
+    # Find the onto-category siblings of each onto-category
+    # * Generate list of parent IDs
+    # * Make lists of onto-categories with matching parent IDs for each onto-category
+    # * Remove self from each list
+    ontocats_parent = [ontocat['parent_id'] if ontocat['parent_id'] != None else -1 for ontocat in ontocats]
+    ontocats_siblings = [[ontocats[j]['id'] for j in np.flatnonzero(match_arrays(ontocats_parent, [ontocat_parent])) if ontocats[j]['id'] != ontocats[i]['id']] for i, ontocat_parent in enumerate(ontocats_parent)]
+
+    #####################################################
+
+    # Get Type-1 Hyperedges
+
+    # Find each set of edges (hyperedges) that has: 
+    # * a given onto-category members as the edges' source 
+    # * the sibling onto-category members as the edges target
+    hyperedges_siblings_ = {}
+    hyperedges_siblings_['source_id'] = [ontocat['id'] for i, ontocat in enumerate(ontocats) for sibling_id in ontocats_siblings[i]]
+    hyperedges_siblings_['target_id'] = [sibling_id for i, ontocat in enumerate(ontocats) for sibling_id in ontocats_siblings[i]]
+    hyperedges_siblings_['edge_indices'] = [np.flatnonzero([ontocats_edges_source[ontocat['id']] & ontocats_edges_target[sibling_id]]) for i, ontocat in enumerate(ontocats) for sibling_id in ontocats_siblings[i]]
+    num_hyperedges_siblings_ = len(hyperedges_siblings_['source_id'])
+
+    # Map between list indices and edge ID
+    map_edges_ids = {i: edge['id'] for i, edge in enumerate(edges)}
+    hyperedges_siblings_['edge_ids'] = [[map_edges_ids[i] for i in edge_ids] for edge_ids in hyperedges_siblings_['edge_indices']]
+
+    hyperedges_siblings_['level'] = [ontocat['level'] for i, ontocat in enumerate(ontocats) for sibling_id in ontocats_siblings[i]]
+    hyperedges_siblings_['size'] = [len(edge_ids) for edge_ids in hyperedges_siblings_['edge_indices']]
+    hyperedges_siblings_['id'] = list(range(num_hyperedges_siblings_))
+
+
+    # Specify source and target types
+    hyperedges_siblings_['source_type'] = ['ontocat' for i in range(num_hyperedges_siblings_)]
+    hyperedges_siblings_['target_type'] = ['ontocat' for i in range(num_hyperedges_siblings_)]
+
+
+    # Trim empty hyperedges and change to row-wise
+    hyperedges_siblings = [{k: hyperedges_siblings_[k][i] for k in hyperedges_siblings_.keys()} for i in range(num_hyperedges_siblings_) if hyperedges_siblings_['size'][i] > 0]
+    # num_hyperedges_siblings = len(hyperedges_siblings)
+
+    #####################################################
+
+    # Get Type-2 Hyperedges
+
+    # Find the node membership of the parent of each onto-category that is not in the node membership of the siblings
+    x = [[node for sibling_id in ontocats_siblings[i] for node in ontocats[sibling_id]['node_ids']] + ontocat['node_ids'] for i, ontocat in enumerate(ontocats)]
+    ontocats_parent_nodes = [list(set(ontocats[ontocat['parent_id']]['node_ids']) - set(x[i])) if ontocat['parent_id'] != None else [] for i, ontocat in enumerate(ontocats)]
+
+
+    # Find hyperedges that has:
+    # * a given onto-category members as the edges' source 
+    # * a member of the onto-category parent that is not in any sibling onto-category as the edges' target
+    hyperedges_parent_nodes_ = {}
+    hyperedges_parent_nodes_['source_id'] = [ontocat['id'] for i, ontocat in enumerate(ontocats) for node_id in ontocats_parent_nodes[i]]
+    hyperedges_parent_nodes_['target_id'] = [node_id for i, ontocat in enumerate(ontocats) for node_id in ontocats_parent_nodes[i]]
+    num_hyperedges_parent_nodes_ = len(hyperedges_parent_nodes_['source_id'])
+
+    x = [edge['target_id'] for edge in edges]
+    hyperedges_parent_nodes_['edge_indices'] = [np.flatnonzero(ontocats_edges_source[ontocat['id']] & match_arrays(x, [node_id])) for i, ontocat in enumerate(ontocats) for node_id in ontocats_parent_nodes[i]]
+
+    # Map between list indices and edge ID
+    map_edges_ids = {i: edge['id'] for i, edge in enumerate(edges)}
+    hyperedges_parent_nodes_['edge_ids'] = [[map_edges_ids[i] for i in edge_ids] for edge_ids in hyperedges_parent_nodes_['edge_indices']]
+
+    hyperedges_parent_nodes_['level'] = [ontocat['level'] for i, ontocat in enumerate(ontocats) for node_id in ontocats_parent_nodes[i]]
+    hyperedges_parent_nodes_['size'] = [len(edge_ids) for edge_ids in hyperedges_parent_nodes_['edge_ids']]
+    hyperedges_parent_nodes_['id'] = list(range(len(hyperedges_parent_nodes_['source_id'])))
+
+
+    # Specify source and target types
+    hyperedges_parent_nodes_['source_type'] = ['ontocat' for i in range(num_hyperedges_parent_nodes_)]
+    hyperedges_parent_nodes_['target_type'] = ['node' for i in range(num_hyperedges_parent_nodes_)]
+
+
+    # Trim empty hyperedges and change to row-wise
+    hyperedges_parent_nodes = [{k: hyperedges_parent_nodes_[k][i] for k in hyperedges_parent_nodes_.keys()} for i in range(num_hyperedges_parent_nodes_) if hyperedges_parent_nodes_['size'][i] > 0]
+    # num_hyperedges_parent_nodes = len(hyperedges_parent_nodes)
+
+    #####################################################
+
+    # Children that are onto-categories
+    ontocats_children_ontocat_ids = {ontocat['id']: [] for ontocat in ontocats}
+    for ontocat, siblings in zip(ontocats, ontocats_siblings):
+        if ontocat['parent_id'] != None:
+            if len(ontocats_children_ontocat_ids[ontocat['parent_id']]) < 1:
+                ontocats_children_ontocat_ids[ontocat['parent_id']] = siblings + [ontocat['id']]
+
+
+    # Children that are model nodes that are not in the membership of any children onto-category
+    # Filled from children to parent
+    ontocats_children_node_ids = {ontocat['id']: set() for ontocat in ontocats}
+    for ontocat, parent_nodes in zip(ontocats, ontocats_parent_nodes):
+        if ontocat['parent_id'] != None:
+            ontocats_children_node_ids[ontocat['parent_id']] = ontocats_children_node_ids[ontocat['parent_id']] | set(parent_nodes)
+
+    # Add children model nodes to onto-categories that have no children onto-categories from which to get node IDs
+    for node in nodes:
+        ontocats_children_node_ids[node['ontocat_ids'][-1]] = ontocats_children_node_ids[node['ontocat_ids'][-1]] | set([node['id']])
+
+
+    # Flatten dict
+    ontocats_children_ontocat_ids = [list(ontocats_children_ontocat_ids[ontocat['id']]) for ontocat in ontocats]
+    ontocats_children_node_ids = [list(ontocats_children_node_ids[ontocat['id']]) for ontocat in ontocats]
+
+
+    # Onto-category siblings of given model nodes
+    x = set([j for i in [node_ids for node_ids in ontocats_children_node_ids] for j in i])
+    nodes_siblings_ontocat_ids = {i: [] for i in x}
+    for ontocat_ids, node_ids in zip(ontocats_children_ontocat_ids, ontocats_children_node_ids):
+        for i in node_ids:
+            nodes_siblings_ontocat_ids[i] = ontocat_ids
+
+    #####################################################
+
+    # Get Type-3 Hyperedges
+
+    # Find hyperedges that has:
+    # * a member of the onto-category parent that is not in any sibling onto-category as the edges' source
+    # * a onto-category sibling of that model node as the edges' target
+    hyperedges_nodes_ontocats_ = {}
+    hyperedges_nodes_ontocats_['source_id'] = [node_id for node_id, ontocat_ids in nodes_siblings_ontocat_ids.items() for __ in ontocat_ids]
+    hyperedges_nodes_ontocats_['target_id'] = [ontocat_id for __, ontocat_ids in nodes_siblings_ontocat_ids.items() for ontocat_id in ontocat_ids]
+    num_hyperedges_nodes_ontocats_ = len(hyperedges_nodes_ontocats_['source_id'])
+
+    x = [edge['source_id'] for edge in edges]
+    z = {ontocat['id']: i for i, ontocat in enumerate(ontocats)}
+    hyperedges_nodes_ontocats_['edge_indices'] = [np.flatnonzero(match_arrays(x, [node_id]) & ontocats_edges_target[z[ontocat_id]]) for node_id, ontocat_ids in nodes_siblings_ontocat_ids.items() for ontocat_id in ontocat_ids]
+
+    # Map between list indices and edge ID
+    map_edges_ids = {i: edge['id'] for i, edge in enumerate(edges)}
+    hyperedges_nodes_ontocats_['edge_ids'] = [[map_edges_ids[i] for i in edge_ids] for edge_ids in hyperedges_nodes_ontocats_['edge_indices']]
+
+    # Note: hyperedge_level = node_level + 1 because the level of the model node is that of the parent onto-category
+    z = {node['id']: i for i, node in enumerate(nodes)}
+    hyperedges_nodes_ontocats_['level'] = [nodes[z[node_id]]['ontocat_level'] + 1 for node_id, ontocat_ids in nodes_siblings_ontocat_ids.items() for __ in ontocat_ids]
+    hyperedges_nodes_ontocats_['size'] = [len(edge_ids) for edge_ids in hyperedges_nodes_ontocats_['edge_ids']]
+    hyperedges_nodes_ontocats_['id'] = list(range(len(hyperedges_nodes_ontocats_['source_id'])))
+
+
+    # Specify source and target types
+    hyperedges_nodes_ontocats_['source_type'] = ['node' for i in range(num_hyperedges_nodes_ontocats_)]
+    hyperedges_nodes_ontocats_['target_type'] = ['ontocat' for i in range(num_hyperedges_nodes_ontocats_)]
+
+
+    # Trim empty hyperedges and change to row-wise
+    hyperedges_nodes_ontocats = [{k: hyperedges_nodes_ontocats_[k][i] for k in hyperedges_nodes_ontocats_.keys()} for i in range(num_hyperedges_nodes_ontocats_) if hyperedges_nodes_ontocats_['size'][i] > 0]
+    # num_hyperedges_nodes_ontocats = len(hyperedges_nodes_ontocats)
+
+    #####################################################
+
+    # Get Type-4 Hyperedges
+
+    # Find hyperedges that has:
+    # * a model node that is a member of a onto-category that is not in any child onto-category as the edges' source
+    # * another other such member as the edges' target
+
+    hyperedges_nodes_ = {}
+    hyperedges_nodes_['source_id'] = [node_id_source for ids in ontocats_children_node_ids for node_id_source in ids for node_id_target in ids if node_id_target != node_id_source]
+    hyperedges_nodes_['target_id'] = [node_id_target for ids in ontocats_children_node_ids for node_id_source in ids for node_id_target in ids if node_id_target != node_id_source]
+    num_hyperedges_nodes_ = len(hyperedges_nodes_['source_id'])
+
+    # Find edges between two such nodes
+    x = [edge['source_id'] for edge in edges]
+    y = [edge['target_id'] for edge in edges]
+    hyperedges_nodes_['edge_indices'] = [np.flatnonzero(match_arrays(x, [node_id_source]) & match_arrays(y, [node_id_target])) for ids in ontocats_children_node_ids for node_id_source in ids for node_id_target in ids if node_id_target != node_id_source]
+
+    # Map between list indices and edge ID
+    map_edges_ids = {i: edge['id'] for i, edge in enumerate(edges)}
+    hyperedges_nodes_['edge_ids'] = [[map_edges_ids[i] for i in edge_ids] for edge_ids in hyperedges_nodes_['edge_indices']]
+
+    # Note: hyperedge_level = node_level + 1 because the level of the model node is that of the parent onto-category
+    z = {node['id']: i for i, node in enumerate(nodes)}
+    hyperedges_nodes_['level'] = [nodes[z[node_id_source]]['ontocat_level'] + 1 for ids in ontocats_children_node_ids for node_id_source in ids for node_id_target in ids if node_id_target != node_id_source]
+    hyperedges_nodes_['size'] = [len(edge_ids) for edge_ids in hyperedges_nodes_['edge_ids']]
+    hyperedges_nodes_['id'] = list(range(num_hyperedges_nodes_))
+
+
+    # Specify source and target types
+    hyperedges_nodes_['source_type'] = ['node' for i in range(num_hyperedges_nodes_)]
+    hyperedges_nodes_['target_type'] = ['node' for i in range(num_hyperedges_nodes_)]
+
+
+    # Trim empty hyperedges and change to row-wise
+    hyperedges_nodes = [{k: hyperedges_nodes_[k][i] for k in hyperedges_nodes_.keys()} for i in range(num_hyperedges_nodes_) if hyperedges_nodes_['size'][i] > 0]
+    # num_hyperedges_nodes = len(hyperedges_nodes)
+
+    #####################################################
+
+    # Concatenate all hyperedges together
+    hyperedges = hyperedges_siblings + hyperedges_parent_nodes + hyperedges_nodes_ontocats + hyperedges_nodes
+    # num_hyperedges = len(hyperedges)
+    for i, hyperedge in enumerate(hyperedges):
+        hyperedge['id'] = i
+        hyperedge['model_id'] = nodes[0]['model_id']
+
+    #####################################################
+
+    # Add  `ontocats`
+    for ontocat in ontocats:
+        ontocat['children_ids'] = ontocats_children_ontocat_ids[ontocat['id']]
+        ontocat['node_ids_direct'] = ontocats_children_node_ids[ontocat['id']]
+
+    #####################################################
+
+    # Find all hyperedges that are within each given onto-category
+    map_ids_nodes = {node['id']: i for i, node in enumerate(nodes)}
+    x = {ontocat['id']: [] for ontocat in ontocats}
+    for hyperedge in hyperedges:
+        if (hyperedge['source_type'] == 'ontocat') & (ontocats[hyperedge['source_id']]['parent_id'] != None):
+            x[ontocats[hyperedge['source_id']]['parent_id']] = x[ontocats[hyperedge['source_id']]['parent_id']] + [hyperedge['id']]
+        elif hyperedge['source_type'] == 'node':
+            x[nodes[map_ids_nodes[hyperedge['source_id']]]['ontocat_ids'][-1]] = x[nodes[map_ids_nodes[hyperedge['source_id']]]['ontocat_ids'][-1]] + [hyperedge['id']]
+
+
+    # Add to `ontocats`
+    for ontocat in ontocats:
+        ontocat['hyperedge_ids'] = x[ontocat['id']]
+
+    #####################################################
+
+    return hyperedges
+
+# %%
+# Generate graph layout based on the ontological categories and hyperedges
+def generate_onto_layout(nodes, ontocats, hyperedges, plot = False, ax = None):
+
+    # Reset all coordinates to None
+    for x in [nodes, ontocats]:
+        for y in x:
+            for k in ['x', 'y', 'z']:
+                y[k] = None
+
+
+    # Hash tables
+    map_ids_nodes = {node['id']: i for i, node in enumerate(nodes)}
+    map_ids_ontocats = {ontocat['id']: i for i, ontocat in enumerate(ontocats)}
+    map_ids_hyperedges = {hyperedge['id']: i for i, hyperedge in enumerate(hyperedges)}
+
+
+    # For each level and each parent onto-categories, generate the layout of their children
+    max_level = max([ontocat['level'] for ontocat in ontocats])
+    coors = [[] for l in range(max_level)]
+    G = [[] for l in range(max_level)]
+
+    for l in range(max_level):
+
+        if l == 0:
+
+            node_list = [('ontocat_' + str(ontocat['id']), {'name': ontocat['name']}) for ontocat in ontocats if (ontocat['level'] == l)]
+
+            H = [hyperedge for hyperedge in hyperedges if hyperedge['level'] == l]
+            edge_list = [(h['source_type'] + '_' + str(h['source_id']), h['target_type'] + '_' + str(h['target_id']), {'weight': h['size']}) for h in H]
+
+            layout_atts = {
+                'k': 1.0,
+                'center': (0, 0),
+                'scale': 1.0
+            }
+            coors_, G_, __, __ = generate_nx_layout(node_list = node_list, edge_list = edge_list, layout = 'spring', layout_atts = layout_atts, plot = False)
+
+
+            # Put coordinates in `ontocats` and `nodes`
+            for name in coors_:
+                t = re.findall('[a-z]+', name)[0]
+                i = int(re.findall('\d+', name)[0])
+
+                if t == 'ontocat':
+                    ontocats[map_ids_ontocats[i]]['x'] = float(coors_[name][0])
+                    ontocats[map_ids_ontocats[i]]['y'] = float(coors_[name][1])
+                    ontocats[map_ids_ontocats[i]]['z'] = float(0.0)
+                
+                if t == 'node':
+                    nodes[map_ids_nodes[i]]['x'] = float(coors_[name][0])
+                    nodes[map_ids_nodes[i]]['y'] = float(coors_[name][1])
+                    nodes[map_ids_nodes[i]]['z'] = float(0.0)
+
+
+            # Combine the coordinate dicts and graph objects
+            coors[l].append(coors_)
+            G[l].append(G_)
+
+        else:
+
+            ontocats_parent = [ontocat for ontocat in ontocats if (ontocat['level'] == l - 1)]
+
+            for ontocat_parent in ontocats_parent:
+
+                node_list = [('ontocat_' + str(ontocat_id), {'name': ontocats[map_ids_ontocats[ontocat_id]]['name']}) for ontocat_id in ontocat_parent['children_ids']]
+                node_list = node_list + [('node_' + str(node_id), {'name': nodes[map_ids_nodes[node_id]]['name']}) for node_id in ontocat_parent['node_ids_direct']]
+                
+                H = [hyperedges[map_ids_hyperedges[h]] for h in ontocat_parent['hyperedge_ids']]
+                edge_list = [(h['source_type'] + '_' + str(h['source_id']), h['target_type'] + '_' + str(h['target_id']), {'weight': h['size']}) for h in H]
+                
+
+                layout_atts = {
+                    'k': 2.0,
+                    'center': (0, 0),
+                    'scale': 1.0
+                }
+                coors_, G_, __, __ = generate_nx_layout(node_list = node_list, edge_list = edge_list, layout = 'spring', layout_atts = layout_atts, plot = False)
+
+
+                # Rescale to parent size and shift to parent centre
+                radius = 0.01 ** l
+                coor_parent = np.asarray([ontocat_parent['x'], ontocat_parent['y']])
+                # coor_parent = np.asarray([ontocats[0]['x'], ontocats[0]['y']])
+                coors_ = {name: radius * c + coor_parent for name, c in coors_.items()}
+
+                # Put coordinates in `ontocats` and `nodes_`
+                for name in coors_:
+                    t = re.findall('[a-z]+', name)[0]
+                    i = int(re.findall('\d+', name)[0])
+
+                    if t == 'ontocat':
+                        ontocats[map_ids_ontocats[i]]['x'] = float(coors_[name][0])
+                        ontocats[map_ids_ontocats[i]]['y'] = float(coors_[name][1])
+                        ontocats[map_ids_ontocats[i]]['z'] = float(0.0)
+                    
+                    if t == 'node':
+                        nodes[map_ids_nodes[i]]['x'] = float(coors_[name][0])
+                        nodes[map_ids_nodes[i]]['y'] = float(coors_[name][1])
+                        nodes[map_ids_nodes[i]]['z'] = float(0.0)
+
+
+                # Combine the coordinate dicts and graph objects
+                coors[l].append(coors_)
+                G[l].append(G_)
+
+
+    # Plot results
+    fig = None
+    ax = None
+    if plot == True:
+
+        if ax == None:
+            fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
+            __ = plt.setp(ax, aspect = 1.0, title = 'Ontology-Based Graph Layout')
+            ax.grid(True)
+            j = 1.05
+            __ = plt.setp(ax, xlim = (-j, j), ylim = (-j, j), aspect = 1.0)
+
+
+            # print(plt.style.available)
+            plt.style.use('default')
+            # plt.style.use('dark_background')
+
+
+        # Plot nodes and ontocats
+        for l in range(len(G)):
+
+            G_all = nx.algorithms.operators.all.union_all(G[l])
+            coors_all = {}
+            for c in coors[l]:
+                coors_all = {**coors_all, **c}
+
+            # Get coordinates
+            node = [[coors_all[name][k] for name in coors_all if re.findall('[a-z]+', name)[0] == 'node'] for k in [0, 1]]
+            ontocat = [[coors_all[name][k] for name in coors_all if re.findall('[a-z]+', name)[0] == 'ontocat'] for k in [0, 1]]
+
+            if l == 0:
+                ax.scatter(node[0], node[1], s = 1, alpha = 1, c = 'k', zorder = 100, label = 'Model Nodes')
+
+                name = [nx.get_node_attributes(G_all, 'name')[name] for name in coors_all if re.findall('[a-z]+', name)[0] == 'ontocat']
+                __ = [ax.text(ontocat[0][i], ontocat[1][i], '   ' + j, fontsize = 7, va = 'center', alpha = 1.0, color = plt.get_cmap('tab10').colors[l % 10]) for i, j in enumerate(name) if j != None]
+            else:
+                ax.scatter(node[0], node[1], s = 1, alpha = 1, c = 'k', zorder = 100)
+
+            if l < 4:
+                ax.scatter(ontocat[0], ontocat[1], s = 500.0 / (l + 1.0) ** 3, alpha = 1.0 - 1.0 / (l + 1.0) + 0.2, color = plt.get_cmap('tab10').colors[l % 10], zorder = l, label = 'Onto-Category in Level ' + str(l))
+
+
+        # Plot hyperedges
+        # Levels 0 and 1 only
+        for l in range(2):
+
+            G_all = nx.algorithms.operators.all.union_all(G[l])
+            coors_all = {}
+            for c in coors[l]:
+                coors_all = {**coors_all, **c}
+
+            for hyperedge in G_all.edges():
+
+                x = [coors_all[hyperedge[k]][0] for k in range(2)]
+                y = [coors_all[hyperedge[k]][1] for k in range(2)]
+                ax.plot(x, y, linewidth = 0.05, color = plt.get_cmap('tab10').colors[l % 10], zorder = l)
+
+        __ = ax.legend()
+
+
+    return G, coors, fig, ax
+
+# %%
 
 # %%

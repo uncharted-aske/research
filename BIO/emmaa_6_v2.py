@@ -863,7 +863,7 @@ map_edges_ids = {i: edge['id'] for i, edge in enumerate(edges_mitre)}
 hyperedges_nodes_['edge_ids'] = [[map_edges_ids[i] for i in edges] for edges in hyperedges_nodes_['edge_indices']]
 
 # Note: hyperedge_level = node_level + 1 because the level of the model node is that of the parent onto-category
-z = {node['id']: i for node in nodes_mitre}
+z = {node['id']: i for i, node in enumerate(nodes_mitre)}
 hyperedges_nodes_['level'] = [nodes_mitre[z[node_id_source]]['ontocat_level'] + 1 for ids in ontocats_children_node_ids for node_id_source in ids for node_id_target in ids if node_id_target != node_id_source]
 hyperedges_nodes_['size'] = [len(edges) for edges in hyperedges_nodes_['edge_ids']]
 hyperedges_nodes_['id'] = list(range(len(hyperedges_nodes_['source'])))
