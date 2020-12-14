@@ -30,13 +30,15 @@ import matplotlib.pyplot as plt
 # %%
 
 # Scatter plot of (un)labeled data points
-def plot_emb(coor = np.array([]), labels = [], ax = [], figsize = (12, 12), marker_size = 2.0, marker_alpha = 0.5,  cmap_name = 'qual', colorbar = True, str_title = '', xlim = (), ylim = (), zlim = (), vlim = (), hull = []):
+def plot_emb(coor = np.array([]), edge_list = {}, labels = [], ax = [], figsize = (12, 12), marker_size = 2.0, marker_alpha = 0.5,  cmap_name = 'qual', colorbar = True, str_title = '', xlim = (), ylim = (), zlim = (), vlim = (), hull = []):
 
     # Error handling
     if not isinstance(coor, np.ndarray):
         raise TypeError("'coor' must be an numpy ndarray.")
     if not (coor.shape[1] <= 3):
         raise ValueError("'coor' must be a N x 2 or N x 3 array.")
+    if not isinstance(edge_list, dict):
+        raise TypeError("'edge_list' must be a dict.")
     if not ((isinstance(labels, list) | isinstance(labels, np.ndarray)) and (len(labels) in [0, coor.shape[0]])): 
         raise TypeError("'labels' must be either [] or a N x 1 list or numpy ndarrray.")
     if not (isinstance(marker_size, int) | isinstance(marker_size, float) | isinstance(marker_size, list) | isinstance(marker_size, np.ndarray)):
@@ -171,6 +173,15 @@ def plot_emb(coor = np.array([]), labels = [], ax = [], figsize = (12, 12), mark
                 plt_obj = ax.scatter(coor[:, 0], coor[:, 1], coor[:, 2], c = labels, cmap = col, marker = 'o', s = marker_size, alpha = marker_alpha, label = f'')
             else:
                 plt_obj = ax.scatter(coor[:, 0], coor[:, 1], coor[:, 2], c = labels, cmap = col, marker = 'o', s = marker_size[j], alpha = marker_alpha, label = f'')
+
+
+    # Draw edges
+    if len(edge_list) > 0:
+
+        for edge in edge_list:
+            # __ = mpl.lines.Line2D(coor[edge, 0], coor[edge, 1], linewidth = 1, marker = None, color = 'k', alpha = 0.5, zorder = 0)
+            __ = ax.plot(coor[edge, 0], coor[edge, 1], linewidth = 0.05, marker = None, color = 'k', alpha = 0.5, zorder = 0)
+
 
     # Default ranges
     ax_lim = np.asarray([plt.getp(ax, 'xlim'), plt.getp(ax, 'ylim'), (0, 0)])
@@ -736,13 +747,12 @@ def generate_nx_layout(G = None, nodes = None, edges = None, node_list = None, e
 
         # Generate node list if unavailable
         # node_list = <list of (node, attributes = {k: v})>
-        if len(node_list) == None:
+        if node_list == None:
             node_list = [(node['id'], {'name': node['name']}) for node in nodes]
-            G.add_nodes_from(node_list)
             
         # Generate edge list if unavailable
         # edge_list = <list of (source_node, target_node, attributes = {k: v})>
-        if len(edge_list) == None:
+        if edge_list == None:
 
             # Generate edge list from `edges`
             edge_dict = {(edge['source_id'], edge['target_id']): 0 for edge in edges}
