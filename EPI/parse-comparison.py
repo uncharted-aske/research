@@ -2,35 +2,55 @@ import argparse
 import json
 
 
-def add_node(common, name, all_nodes):
+def add_node(common, name, all_nodes, grfn_id_by_name, linked_to_nodes):
     node_id = common[name]
+    for n in common:
+        if n is not name:
+            if node_id not in linked_to_nodes:
+                linked_to_nodes[node_id] = []
+            linked_to_nodes[node_id].append({"grfn-id":  grfn_id_by_name[n], "node-id": common[n]})
     # TODO validate that the node is in the GrFN
     all_nodes.add(node_id)
 
 
-def add_edge(common, name, all_edges):
+def add_edge(common, name, all_edges, grfn_id_by_name, linked_to_edges):
     src_id = common[name]["src"]
     dst_id = common[name]["dst"]
+    for n in common:
+        if n is not name:
+            if (src_id, dst_id) not in linked_to_edges:
+                linked_to_edges[(src_id, dst_id)] = []
+            linked_to_edges[(src_id, dst_id)].append({
+                "grfn-id": grfn_id_by_name[n],
+                "source": common[n]["src"],
+                "target": common[n]["dst"]
+            })
     # TODO validate that the edge is in the GrFN
     all_edges.add((src_id, dst_id))
 
 
-def populate_comparison_hmi(comparison_hmi, comparison_az, name, grfn):
+def populate_comparison_hmi(comparison_hmi, comparison_az, name, grfn, grfn_id_by_name):
     subgraph = {"id": grfn["uid"], "name": grfn_name, "nodes": [], "edges": []}
 
     all_nodes = set()
-    [add_node(common, name, all_nodes) for common in comparison_az["common_model_input_nodes"]]
-    [add_node(common, name, all_nodes) for common in comparison_az["common_model_output_nodes"]]
-    [add_node(common, name, all_nodes) for common in comparison_az["common_model_variable_nodes"]]
+    linked_to_nodes = {}
+    [add_node(common, name, all_nodes, grfn_id_by_name, linked_to_nodes) for common in comparison_az["common_model_input_nodes"]]
+    [add_node(common, name, all_nodes, grfn_id_by_name, linked_to_nodes) for common in comparison_az["common_model_output_nodes"]]
+    [add_node(common, name, all_nodes, grfn_id_by_name, linked_to_nodes) for common in comparison_az["common_model_variable_nodes"]]
     for node_id in all_nodes:
-        subgraph["nodes"].append({"id": node_id})
+        subgraph["nodes"].append({
+            "id": node_id,
+            "linked-to": linked_to_nodes[node_id]
+        })
 
     all_edges = set()
-    [add_edge(common, name, all_edges) for common in comparison_az["common_edges"]]
+    linked_to_edges = {}
+    [add_edge(common, name, all_edges, grfn_id_by_name, linked_to_edges) for common in comparison_az["common_edges"]]
     for src_id, dst_id in all_edges:
         subgraph["edges"].append({
             "source": src_id,
-            "target": dst_id
+            "target": dst_id,
+            "linked-to": linked_to_edges[(src_id, dst_id)]
         })
     
     comparison_hmi["subgraphs"].append(subgraph)
@@ -68,7 +88,7 @@ if __name__ == '__main__':
     # populate comparison_hmi
     for grfn_name in grfn_id_by_name:
         grfn_id = grfn_id_by_name[grfn_name]
-        populate_comparison_hmi(comparison_hmi, comparison_az, grfn_name, grfn_by_id[grfn_id])
+        populate_comparison_hmi(comparison_hmi, comparison_az, grfn_name, grfn_by_id[grfn_id], grfn_id_by_name)
 
     with open(args.output, "w") as f:
         json.dump(comparison_hmi, f)
