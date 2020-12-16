@@ -28,8 +28,6 @@ def formatGraph(data):
     for edge in hyperEdges: 
         [edges.append({ 'source': i, 'target': edge['function']}) for i in edge['inputs']]
         [edges.append({ 'source': edge['function'], 'target': o }) for o in edge['outputs']]
-    for i in range(len(edges)):
-        edges[i]['id'] = i
 
     subgraphs = data['subgraphs']
     for subgraph in subgraphs:
@@ -63,34 +61,50 @@ def formatGraph(data):
                 nodes.append(node)
             else:
                 raise Exception(n + ' Node missing')
-    # Append root for visualization purposes so we don't have multiple roots
-    nodes.append({'concept': 'root', 'parent': '', 'id': 'root'}) 
-   
 
     modelMetadata = data['metadata']
     if modelMetadata:
         variableTypes = modelMetadata[0]['attributes']
         variableTypesDict = {}
-        # Distinguish variable type
         for item in variableTypes:
             for i in item['inputs']:
-                variableTypesDict[i] = 'input'
+                variableTypesDict[i] = ['input']
             for i in item['outputs']:
-                variableTypesDict[i] = 'output'
+                variableTypesDict[i] = ['output']
+            
+            # Distinguish variable type (inputs and outputs can also be classified as model variables, params, initial conditions or internal variables)
             for i in item['parameters']:
-                variableTypesDict[i] = 'parameter'
+                found = i in variableTypesDict
+                if (found):
+                    variableTypesDict[i].append('parameter')
+                else:
+                    variableTypesDict[i] = ['parameter']
             for i in item['model_variables']:
-                variableTypesDict[i] = 'model_variable'
+                found = i in variableTypesDict
+                if (found):
+                    variableTypesDict[i].append('model_variable')
+                else:
+                    variableTypesDict[i] = ['model_variable']
             for i in item['initial_conditions']:
-                variableTypesDict[i] = 'initial_condition'
+                found = i in variableTypesDict
+                if (found):
+                    variableTypesDict[i].append('initial_condition')
+                else:
+                    variableTypesDict[i] = 'initial_condition'
             for i in item['internal_variables']:
-                variableTypesDict[i] = 'internal_variable'
+                found = i in variableTypesDict
+                if (found):
+                    variableTypesDict[i].append('internal_variable')
+                else:
+                    variableTypesDict[i] = 'internal_variable'
         for node in nodes:
             if 'nodeType' in node and node['nodeType'] == 'variable' and node['id'] in variableTypesDict:
                 node['nodeSubType'] = variableTypesDict[node['id']]
             else:
-                node['nodeSubType'] = ''
-
+                node['nodeSubType'] = []
+    
+    # Append root for visualization purposes so we don't have multiple roots
+    nodes.append({'concept': 'root', 'parent': '', 'id': 'root'}) 
     
     return  { 'metadata': modelMetadata, 'nodes': nodes,'edges': edges }
 
