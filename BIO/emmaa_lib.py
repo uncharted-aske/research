@@ -140,17 +140,17 @@ def plot_emb(coor = np.array([]), edge_list = {}, labels = [], ax = [], figsize 
                     j = (labels == labels_uniq[i])
 
                     if isinstance(marker_size, int) or isinstance(marker_size, float):
-                        plt_obj = ax.scatter(coor[j, 0], coor[j, 1], marker = 'o', s = marker_size, facecolor = col[i % 10, :3], alpha = marker_alpha, label = f'{labels_uniq[i]}', zorder = 0)
+                        plt_obj = ax.scatter(coor[j, 0], coor[j, 1], marker = 'o', s = marker_size, facecolor = col[i % 10, :3], alpha = marker_alpha, label = f'{labels_uniq[i]}', zorder = 100)
                     else:
-                        plt_obj = ax.scatter(coor[j, 0], coor[j, 1], marker = 'o', s = marker_size[j], facecolor = col[i % 10, :3], alpha = marker_alpha, label = f'{labels_uniq[i]}', zorder = 0)
+                        plt_obj = ax.scatter(coor[j, 0], coor[j, 1], marker = 'o', s = marker_size[j], facecolor = col[i % 10, :3], alpha = marker_alpha, label = f'{labels_uniq[i]}', zorder = 100)
 
             # Sequential colours
             elif cmap_name != '':
 
                 if isinstance(marker_size, int) or isinstance(marker_size, float):
-                    plt_obj = ax.scatter(coor[:, 0], coor[:, 1], c = labels, cmap = col, vmin = vlim[0], vmax = vlim[1], marker = 'o', s = marker_size, alpha = marker_alpha, label = f'', zorder = 0)
+                    plt_obj = ax.scatter(coor[:, 0], coor[:, 1], c = labels, cmap = col, vmin = vlim[0], vmax = vlim[1], marker = 'o', s = marker_size, alpha = marker_alpha, label = f'', zorder = 100)
                 else:
-                    plt_obj = ax.scatter(coor[:, 0], coor[:, 1], c = labels, cmap = col, vmin = vlim[0], vmax = vlim[1], marker = 'o', s = marker_size[j], alpha = marker_alpha, label = f'', zorder = 0)
+                    plt_obj = ax.scatter(coor[:, 0], coor[:, 1], c = labels, cmap = col, vmin = vlim[0], vmax = vlim[1], marker = 'o', s = marker_size, alpha = marker_alpha, label = f'', zorder = 100)
     # 3D plot
     elif n_dim_emb == 3:
 
@@ -179,8 +179,8 @@ def plot_emb(coor = np.array([]), edge_list = {}, labels = [], ax = [], figsize 
     if len(edge_list) > 0:
 
         for edge in edge_list:
-            # __ = mpl.lines.Line2D(coor[edge, 0], coor[edge, 1], linewidth = 1, marker = None, color = 'k', alpha = 0.5, zorder = 0)
-            __ = ax.plot(coor[edge, 0], coor[edge, 1], linewidth = 0.05, marker = None, color = 'k', alpha = 0.5, zorder = 0)
+            # __ = mpl.lines.Line2D(coor[edge, 0], coor[edge, 1], linewidth = 1, marker = None, color = 'k', alpha = 0.5, zorder = 1)
+            __ = ax.plot(coor[edge, 0], coor[edge, 1], linewidth = 0.05, marker = None, color = 'k', alpha = 0.5, zorder = 1)
 
 
     # Default ranges

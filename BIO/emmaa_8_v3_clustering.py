@@ -17,6 +17,7 @@ import time
 import numpy as np
 import scipy as sp
 import networkx as nx
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numba
 import umap
@@ -36,9 +37,12 @@ nodes_mitre = emlib.load_jsonl('./dist/v3/nodes_mitre.jsonl', remove_preamble = 
 edges_mitre = emlib.load_jsonl('./dist/v3/edges_mitre.jsonl', remove_preamble = True)
 
 nodeEmb_mitre = []
+nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p4_q1_n10len80_undirected.jsonl', remove_preamble = False))
 nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q05_n10len80_undirected.jsonl', remove_preamble = False))
 nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q1_n10len80_undirected.jsonl', remove_preamble = False))
+nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q1_n10len80_directed.jsonl', remove_preamble = False))
 nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q2_n10len80_undirected.jsonl', remove_preamble = False))
+nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q4_n10len80_undirected.jsonl', remove_preamble = False))
 
 num_nodes = len(nodes_mitre)
 num_embs = len(nodeEmb_mitre)
@@ -50,12 +54,12 @@ print(f"Node embeddings: {num_nodes} nodes x {num_emb_dim} dimensions")
 # Check if node IDs match between the embeddings and `nodes`
 print(f"Embedding and Node ID Match: {len([False for x, y in zip(nodes_mitre, nodeEmb_mitre[0]) if x['id'] != y['id']]) == 0}")
 
+
 # %%[markdown]
 # # Apply dimensional reduction with UMAP
 
 # %%
 emb_nodes = [np.array([node['embedding'] for node in emb]) for emb in nodeEmb_mitre]
-
 
 # %%
 %%time
@@ -66,8 +70,7 @@ model_umap = umap.UMAP(n_components = num_emb_dim_red, n_neighbors = 10, min_dis
 emb_nodes_red = [model_umap.fit_transform(emb) for emb in emb_nodes]
 emb_nodes_red = [emb - np.mean(emb, axis = 0) for emb in emb_nodes_red]
 
-# Time: 40.1 s
-
+# Time: 1 m 10 s
 
 # %%
 %%time
@@ -76,13 +79,13 @@ def pairwise_distance(u, v, p = 1):
     return np.sum(np.abs(u - v) ** p) ** (1.0 / p)
 
 
-pdist = [{(i, j): -1.0 for i in range(num_nodes) for j in range(0, i) if i != j} for emb in nodeEmb_mitre]
+pdist = [{(i, j): -1.0 for i in range(num_nodes) for j in range(0, i) if i != j} for __ in nodeEmb_mitre]
 for p, emb in zip(pdist, emb_nodes):
     for u, v in p:
         p[(u, v)] = pairwise_distance(emb[u, :], emb[v, :], p = 2.0/3.0)
 
 
-pdist_red = [{(i, j): -1.0 for i in range(num_nodes) for j in range(0, i) if i != j} for emb in nodeEmb_mitre]
+pdist_red = [{(i, j): -1.0 for i in range(num_nodes) for j in range(0, i) if i != j} for __ in nodeEmb_mitre]
 for p, emb in zip(pdist_red, emb_nodes_red):
     for u, v in p:
         p[(u, v)] = pairwise_distance(emb[u, :], emb[v, :], p = 2.0/3.0)
@@ -91,7 +94,7 @@ for p, emb in zip(pdist_red, emb_nodes_red):
 p = u = v = emb = None
 del p, u, v, emb
 
-# time: 1 m 54 s
+# time: 3 m 2 s
 
 # %%
 
@@ -100,9 +103,9 @@ m = min([v for __, v in pdist[i].items()] + [v for __, v in pdist_red[i].items()
 n = max([v for __, v in pdist[i].items()] + [v for __, v in pdist_red[i].items()])
 x = 10 ** np.linspace(np.log10(m), np.log10(n), 100)
 
-fig, ax = plt.subplots(nrows = num_embs, ncols = 1, figsize = (12, 12))
+fig, ax = plt.subplots(nrows = num_embs, ncols = 1, figsize = (12, 30))
 
-for i, (ax_, s) in enumerate(zip(ax, ['0.5', '1', '2'])):
+for i, (ax_, s) in enumerate(zip(ax, ['0.5, undirected', '1, undirected', '2, undirected', '4, undirected', '1, directed'])):
 
     h, __ = np.histogram([v for k, v in pdist[i].items()], bins = x, density = False)
     h_red, __ = np.histogram([v for k, v in pdist_red[i].items()], bins = x, density = False)
@@ -140,35 +143,110 @@ coors_nx, __, __, __ = emlib.generate_nx_layout(nodes = nodes_mitre, edges = edg
 map_ids_nodes = {node['id']: i for i, node in enumerate(nodes_mitre)}
 edge_list = {(map_ids_nodes[edge['source_id']], map_ids_nodes[edge['target_id']]): {'weight': edge['belief']} for edge in edges_mitre}
 
+# %%
+# Load graph object to get graph measures
+with open('./dist/v3/G_mitre.pkl', 'rb') as x:
+    G_mitre = pickle.load(x)
 
-# Label by the two obvious clusters in node-embedding space
-labels = np.array([0 if x < 5.0 else 1 for x in emb_nodes_red[0][:, 0]])
 
-labels_ = np.array([node['out_degree'] + node['in_degree'] for node in nodes_mitre])
+# Labels from centrality measures
+labels = [dict(G_mitre.degree()),
+    nx.algorithms.centrality.closeness_centrality(G_mitre), 
+    # nx.algorithms.centrality.eigenvector_centrality(G_mitre),
+    # nx.algorithms.centrality.katz_centrality(G_mitre),
+    # nx.algorithms.centrality.current_flow_closeness_centrality(G_mitre),
+    # nx.algorithms.centrality.betweenness_centrality(G_mitre),
+    # nx.algorithms.centrality.communicability_betweenness_centrality(G_mitre),
+    # nx.algorithms.centrality.load_centrality(G_mitre),
+    # nx.algorithms.centrality.subgraph_centrality(G_mitre),
+    nx.algorithms.centrality.harmonic_centrality(G_mitre),
+    # nx.algorithms.centrality.percolation_centrality(G_mitre),
+    # nx.algorithms.centrality.second_order_centrality(G_mitre),
+    # nx.algorithms.centrality.trophic_levels(G_mitre),
+    # nx.algorithms.centrality.voterank(G_mitre),
+]
+labels = [np.array([v for __, v in l.items()]) if isinstance(l, dict) else l for l in labels]
 
+for i in [0]:
+    labels[i] = np.log10(labels[i])
+
+
+labels_name = ['Log Degree', 'Closeness', 'Harmonic']
 
 # %%
-fig, ax = plt.subplots(nrows = num_embs, ncols = 2, figsize = (18, 9 * num_embs))
+fig, ax = plt.subplots(nrows = len(labels), ncols = 2, figsize = (6 * 2, 6 * len(labels)))
 
-for i, (emb, s) in enumerate(zip(emb_nodes_red, ['0.5', '1', '2'])):
+emb = emb_nodes_red[0]
+for i, (labels_, s) in enumerate(zip(labels, labels_name)):
 
-    if i == 0:
-        __ = emlib.plot_emb(coor = emb, labels = labels, marker_size = labels_, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
-    else:
-        __ = emlib.plot_emb(coor = -emb, labels = labels, marker_size = labels_, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
+    __ = emlib.plot_emb(coor = emb, labels = labels_, cmap_name = 'cool', colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
 
-    __ = emlib.plot_emb(coor = np.array([v for __, v in coors_nx.items()]), labels = labels, marker_size = labels_, edge_list = edge_list, ax = ax[i, 1], str_title = ' ')
+    __ = emlib.plot_emb(coor = np.array([v for __, v in coors_nx.items()]), labels = labels_, cmap_name = 'cool', colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 1], str_title = ' ')
 
-    __ = ax[i, 0].text(0.5, 0.9, f"node2vec p = 1, q = {s}", transform = ax[i, 0].transAxes, horizontalAlignment = 'center')
-    __ = ax[i, 0].axis('off')
-    __ = ax[i, 1].axis('off')
+    # __ = ax[i, 0].text(0, 0.5, f"{s} Centrality", transform = ax[i, 0].transAxes, horizontalAlignment = 'center', rotation = 'vertical')
+    __ = plt.setp(ax[i, 0], xlabel = '', ylabel = f"{s} Centrality")
+    __ = plt.setp(ax[i, 1], xlabel = '', ylabel = '')
+    ax[i, 0].tick_params(length = 0, labelbottom = False, labelleft = False)
+    ax[i, 1].tick_params(length = 0, labelbottom = False, labelleft = False)
+
 
 i = 0
-__ = plt.setp(ax[i, 0], title = '`node2vec` Embeddings (Dim. Reduced and Clustered)')
+__ = plt.setp(ax[i, 0], title = 'node2vec Embeddings (p = 1, q = 1, UMAP)')
 __ = plt.setp(ax[i, 1], title = 'Reference Forced-Directed Layout (k = 0.08)')
 
+
+fig.savefig('./figures/v3/mitre_subgraph_node2vec_umap_centralities.png', dpi = 150)
+
+i = s = fig = ax = emb = labels_ = None
+del i, s, fig, ax, emb, labels_
+
 # %%
-fig.savefig('./figures/v3/mitre_subgraph_node2vec_umap.png', dpi = 150)
+
+
+
+
+# %%
+
+# Cluster labels
+# labels = np.array([0 if x < 5.0 else 1 for x in emb_nodes_red[0][:, 0]])
+
+emb_names = [
+    'node2vec p = 4, q = 1, undirected', 
+    'node2vec p = 1, q = 0.5, undirected', 
+    'node2vec p = 1, q = 1, undirected', 
+    'node2vec p = 1, q = 1, directed', 
+    'node2vec p = 1, q = 2, undirected', 
+    'node2vec p = 1, q = 4, undirected',
+    ]
+
+# %%
+fig, ax = plt.subplots(nrows = num_embs, ncols = 2, figsize = (6 * 2, 6 * num_embs))
+
+for i, (emb, s) in enumerate(zip(emb_nodes_red, emb_names)):
+
+    if i == 1:
+        __ = emlib.plot_emb(coor = emb, labels = labels[1], cmap_name = 'cool', colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
+
+        # ax[i, 0].add_patch(mpl.patches.Rectangle([-6, -5], 10, 12, fill = False, edgecolor = plt.cm.get_cmap('tab10')(0), zorder = 0))
+        # ax[i, 0].add_patch(mpl.patches.Rectangle([6, -5], 5, 12, fill = False, edgecolor = plt.cm.get_cmap('tab10')(1), zorder = 0))
+
+    else:
+        __ = emlib.plot_emb(coor = -emb, labels = labels[1], cmap_name = 'cool', colorbar = False, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
+
+    __ = emlib.plot_emb(coor = np.array([v for __, v in coors_nx.items()]), labels = labels[1], cmap_name = 'cool', colorbar = False, edge_list = edge_list, ax = ax[i, 1], str_title = ' ')
+
+    __ = ax[i, 0].text(0.5, 0.9, f"{s}", transform = ax[i, 0].transAxes, horizontalAlignment = 'center')
+    __ = plt.setp(ax[i, 0], xlabel = '', ylabel = '')
+    __ = plt.setp(ax[i, 1], xlabel = '', ylabel = '')
+    ax[i, 0].tick_params(length = 0, labelbottom = False, labelleft = False)
+    ax[i, 1].tick_params(length = 0, labelbottom = False, labelleft = False)
+
+i = 0
+__ = plt.setp(ax[i, 0], title = 'node2vec Embeddings (UMAP & HDBSCAN)')
+__ = plt.setp(ax[i, 1], title = 'Reference Forced-Directed Layout (k = 0.08)')
+
+
+fig.savefig('./figures/v3/mitre_subgraph_node2vec_umap_pq.png', dpi = 150)
 
 i = s = fig = ax = emb = None
 del i, s, fig, ax, emb
