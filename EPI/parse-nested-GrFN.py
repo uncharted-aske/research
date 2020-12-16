@@ -66,32 +66,32 @@ def formatGraph(data):
     if modelMetadata:
         variableTypes = modelMetadata[0]['attributes']
         variableTypesDict = {}
-        for item in variableTypes:
-            for i in item['inputs']:
+        for varType in variableTypes:
+            for i in varType['inputs']:
                 variableTypesDict[i] = ['input']
-            for i in item['outputs']:
+            for i in varType['outputs']:
                 variableTypesDict[i] = ['output']
             
             # Distinguish variable type (inputs and outputs can also be classified as model variables, params, initial conditions or internal variables)
-            for i in item['parameters']:
+            for i in varType['parameters']:
                 found = i in variableTypesDict
                 if (found):
                     variableTypesDict[i].append('parameter')
                 else:
                     variableTypesDict[i] = ['parameter']
-            for i in item['model_variables']:
+            for i in varType['model_variables']:
                 found = i in variableTypesDict
                 if (found):
                     variableTypesDict[i].append('model_variable')
                 else:
                     variableTypesDict[i] = ['model_variable']
-            for i in item['initial_conditions']:
+            for i in varType['initial_conditions']:
                 found = i in variableTypesDict
                 if (found):
                     variableTypesDict[i].append('initial_condition')
                 else:
                     variableTypesDict[i] = 'initial_condition'
-            for i in item['internal_variables']:
+            for i in varType['internal_variables']:
                 found = i in variableTypesDict
                 if (found):
                     variableTypesDict[i].append('internal_variable')
