@@ -40,9 +40,22 @@ nodeEmb_mitre = []
 nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p4_q1_n10len80_undirected.jsonl', remove_preamble = False))
 nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q05_n10len80_undirected.jsonl', remove_preamble = False))
 nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q1_n10len80_undirected.jsonl', remove_preamble = False))
+nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q1_n10len80_undirected_w2.jsonl', remove_preamble = False))
 nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q1_n10len80_directed.jsonl', remove_preamble = False))
 nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q2_n10len80_undirected.jsonl', remove_preamble = False))
 nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q4_n10len80_undirected.jsonl', remove_preamble = False))
+
+
+emb_names = [
+    'node2vec p = 4, q = 1, undirected', 
+    'node2vec p = 1, q = 0.5, undirected', 
+    'node2vec p = 1, q = 1, undirected', 
+    'node2vec p = 1, q = 1, undirected, w = 2', 
+    'node2vec p = 1, q = 1, directed', 
+    'node2vec p = 1, q = 2, undirected', 
+    'node2vec p = 1, q = 4, undirected',
+    ]
+
 
 num_nodes = len(nodes_mitre)
 num_embs = len(nodeEmb_mitre)
@@ -105,7 +118,7 @@ x = 10 ** np.linspace(np.log10(m), np.log10(n), 100)
 
 fig, ax = plt.subplots(nrows = num_embs, ncols = 1, figsize = (12, 30))
 
-for i, (ax_, s) in enumerate(zip(ax, ['0.5, undirected', '1, undirected', '2, undirected', '4, undirected', '1, directed'])):
+for i, (ax_, s) in enumerate(zip(ax, emb_names)):
 
     h, __ = np.histogram([v for k, v in pdist[i].items()], bins = x, density = False)
     h_red, __ = np.histogram([v for k, v in pdist_red[i].items()], bins = x, density = False)
@@ -114,7 +127,7 @@ for i, (ax_, s) in enumerate(zip(ax, ['0.5, undirected', '1, undirected', '2, un
     __ = ax_.bar(x[:-1], h_red, width = 1.0 * np.diff(x), align = 'edge', alpha = 0.5, label = f"{num_emb_dim_red} Dimensions")
 
 
-    __ = ax_.text(0.5, 0.9, f"node2vec p = 1, q = {s}", transform = ax_.transAxes, horizontalAlignment = 'center')
+    __ = ax_.text(0.5, 0.9, f"{s}", transform = ax_.transAxes, horizontalAlignment = 'center')
     __ = plt.setp(ax_, ylabel = 'Counts', xscale = 'log', yscale = 'log')
     if i == 0:
         __ = plt.setp(ax_, title = 'Un-Normalized Pairwise Distribution - Before/After UMAP Dimensional Reduction')
@@ -144,6 +157,8 @@ map_ids_nodes = {node['id']: i for i, node in enumerate(nodes_mitre)}
 edge_list = {(map_ids_nodes[edge['source_id']], map_ids_nodes[edge['target_id']]): {'weight': edge['belief']} for edge in edges_mitre}
 
 # %%
+%%time
+
 # Load graph object to get graph measures
 with open('./dist/v3/G_mitre.pkl', 'rb') as x:
     G_mitre = pickle.load(x)
@@ -165,13 +180,16 @@ labels = [dict(G_mitre.degree()),
     # nx.algorithms.centrality.trophic_levels(G_mitre),
     # nx.algorithms.centrality.voterank(G_mitre),
 ]
+
 labels = [np.array([v for __, v in l.items()]) if isinstance(l, dict) else l for l in labels]
 
 for i in [0]:
     labels[i] = np.log10(labels[i])
 
-
 labels_name = ['Log Degree', 'Closeness', 'Harmonic']
+
+
+# time: 
 
 # %%
 fig, ax = plt.subplots(nrows = len(labels), ncols = 2, figsize = (6 * 2, 6 * len(labels)))
@@ -210,14 +228,7 @@ del i, s, fig, ax, emb, labels_
 # Cluster labels
 # labels = np.array([0 if x < 5.0 else 1 for x in emb_nodes_red[0][:, 0]])
 
-emb_names = [
-    'node2vec p = 4, q = 1, undirected', 
-    'node2vec p = 1, q = 0.5, undirected', 
-    'node2vec p = 1, q = 1, undirected', 
-    'node2vec p = 1, q = 1, directed', 
-    'node2vec p = 1, q = 2, undirected', 
-    'node2vec p = 1, q = 4, undirected',
-    ]
+
 
 # %%
 fig, ax = plt.subplots(nrows = num_embs, ncols = 2, figsize = (6 * 2, 6 * num_embs))
