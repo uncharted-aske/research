@@ -4,7 +4,7 @@
 # Email: [nliu@uncharted.software](mailto:nliu@uncharted.software)
 
 # %%[markdown]
-# Idea: 
+# Content: 
 # * Read `node2vec` node embeddings from Luis
 # * Cluster with HDSCAN
 # * Reduce to 3D with UMAP
@@ -19,7 +19,6 @@ import scipy as sp
 import networkx as nx
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import numba
 import umap
 import hdbscan
 
@@ -37,13 +36,13 @@ nodes_mitre = emlib.load_jsonl('./dist/v3/nodes_mitre.jsonl', remove_preamble = 
 edges_mitre = emlib.load_jsonl('./dist/v3/edges_mitre.jsonl', remove_preamble = True)
 
 nodeEmb_mitre = []
-nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p4_q1_n10len80_undirected.jsonl', remove_preamble = False))
-nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q05_n10len80_undirected.jsonl', remove_preamble = False))
-nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q1_n10len80_undirected.jsonl', remove_preamble = False))
-nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q1_n10len80_undirected_w2.jsonl', remove_preamble = False))
-nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q1_n10len80_directed.jsonl', remove_preamble = False))
-nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q2_n10len80_undirected.jsonl', remove_preamble = False))
-nodeEmb_mitre.append(emlib.load_jsonl('./G_mitre_p1_q4_n10len80_undirected.jsonl', remove_preamble = False))
+nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p4_q1_n10len80_undirected.jsonl', remove_preamble = False))
+nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q05_n10len80_undirected.jsonl', remove_preamble = False))
+nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q1_n10len80_undirected.jsonl', remove_preamble = False))
+nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q1_n10len80_undirected_w2.jsonl', remove_preamble = False))
+nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q1_n10len80_directed.jsonl', remove_preamble = False))
+nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q2_n10len80_undirected.jsonl', remove_preamble = False))
+nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q4_n10len80_undirected.jsonl', remove_preamble = False))
 
 
 emb_names = [
