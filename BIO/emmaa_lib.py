@@ -30,7 +30,7 @@ import matplotlib.pyplot as plt
 # %%
 
 # Scatter plot of (un)labeled data points
-def plot_emb(coor = np.array([]), edge_list = {}, labels = [], ax = [], figsize = (12, 12), marker_size = 2.0, marker_alpha = 0.5,  cmap_name = 'qual', colorbar = True, str_title = '', xlim = (), ylim = (), zlim = (), vlim = (), hull = []):
+def plot_emb(coor = np.array([]), edge_list = {}, labels = [], ax = [], figsize = (12, 12), marker_size = 2.0, marker_alpha = 0.5,  cmap_name = 'qual', legend_kwargs = {'loc': 'lower left', 'ncol': 1}, colorbar = True, str_title = '', xlim = (), ylim = (), zlim = (), vlim = (), hull = []):
 
     # Error handling
     if not isinstance(coor, np.ndarray):
@@ -213,11 +213,13 @@ def plot_emb(coor = np.array([]), edge_list = {}, labels = [], ax = [], figsize 
         plt.setp(ax, xlabel = '$x$', ylabel = '$y$', zlabel = '$z$')
     
     # Legend
-    if (cmap_name == 'qual') & (n_uniq <= 10) & (n_uniq > 1):
+    if (cmap_name == 'qual') & (n_uniq <= 10) & (n_uniq > 1) & (len(legend_kwargs) > 1):
 
         # Custom
         legend_obj = [mpl.lines.Line2D([0], [0], marker = 'o', markersize = 2.0 ** 2, color = 'none', markeredgecolor = 'none', markerfacecolor = col[i, :3], alpha = 1.0, label = f'{labels_uniq[i]}') for i in range(n_uniq)]
-        ax.legend(handles = legend_obj, loc = 'lower left')
+        
+        # ax.legend(handles = legend_obj, loc = 'lower left')
+        ax.legend(handles = legend_obj, **legend_kwargs)
 
     # Axis title
     if str_title == ' ':
