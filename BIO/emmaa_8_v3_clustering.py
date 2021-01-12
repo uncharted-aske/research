@@ -36,24 +36,26 @@ nodes_mitre = emlib.load_jsonl('./dist/v3/nodes_mitre.jsonl', remove_preamble = 
 edges_mitre = emlib.load_jsonl('./dist/v3/edges_mitre.jsonl', remove_preamble = True)
 
 nodeEmb_mitre = []
-nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p4_q1_n10len80_undirected.jsonl', remove_preamble = False))
-nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q05_n10len80_undirected.jsonl', remove_preamble = False))
-nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q1_n10len80_undirected.jsonl', remove_preamble = False))
-nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q1_n10len80_undirected_w2.jsonl', remove_preamble = False))
+nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1000000_q1_n10len80_directed.jsonl', remove_preamble = False))
+# nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p4_q1_n10len80_undirected.jsonl', remove_preamble = False))
+# nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q05_n10len80_undirected.jsonl', remove_preamble = False))
+# nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q1_n10len80_undirected.jsonl', remove_preamble = False))
+# nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q1_n10len80_undirected_w2.jsonl', remove_preamble = False))
 nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q1_n10len80_directed.jsonl', remove_preamble = False))
-nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q2_n10len80_undirected.jsonl', remove_preamble = False))
-nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q4_n10len80_undirected.jsonl', remove_preamble = False))
+# nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q2_n10len80_undirected.jsonl', remove_preamble = False))
+# nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q4_n10len80_undirected.jsonl', remove_preamble = False))
 nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q1000000_n10len80_directed.jsonl', remove_preamble = False))
 
 
 emb_names = [
-    'node2vec p = 4, q = 1, undirected, w = 10', 
-    'node2vec p = 1, q = 0.5, undirected, w = 10', 
-    'node2vec p = 1, q = 1, undirected, w = 10', 
-    'node2vec p = 1, q = 1, undirected, w = 2', 
+    'node2vec p = 1e6, q = 1, directed, w = 10', 
+    # 'node2vec p = 4, q = 1, undirected, w = 10', 
+    # 'node2vec p = 1, q = 0.5, undirected, w = 10', 
+    # 'node2vec p = 1, q = 1, undirected, w = 10', 
+    # 'node2vec p = 1, q = 1, undirected, w = 2', 
     'node2vec p = 1, q = 1, directed, w = 10', 
-    'node2vec p = 1, q = 2, undirected, w = 10', 
-    'node2vec p = 1, q = 4, undirected, w = 10',
+    # 'node2vec p = 1, q = 2, undirected, w = 10', 
+    # 'node2vec p = 1, q = 4, undirected, w = 10',
     'node2vec p = 1, q = 1e6, directed, w = 10', 
     ]
 
@@ -203,14 +205,15 @@ labels_name = ['Log Degree', 'Closeness', 'Harmonic']
 # %%
 fig, ax = plt.subplots(nrows = len(labels), ncols = 2, figsize = (6 * 2, 6 * len(labels)))
 
-emb = emb_nodes_red[4]
+k = 1
+emb = emb_nodes_red[k]
 for i, (labels_, s) in enumerate(zip(labels, labels_name)):
 
-    __ = emlib.plot_emb(coor = -emb, labels = labels_, cmap_name = 'cool', colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
+    __ = emlib.plot_emb(coor = emb, labels = labels_, cmap_name = 'cool', legend_kwargs = {}, colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
 
-    __ = emlib.plot_emb(coor = np.array([v for __, v in coors_nx.items()]), labels = labels_, cmap_name = 'cool', colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 1], str_title = ' ')
+    __ = emlib.plot_emb(coor = np.array([v for __, v in coors_nx.items()]), labels = labels_, cmap_name = 'cool', legend_kwargs = {}, colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 1], str_title = ' ')
 
-    __ = ax[i, 0].text(0.5, 0.9, f"{emb_names[4]}", transform = ax[i, 0].transAxes, horizontalAlignment = 'center')
+    __ = ax[i, 0].text(0.5, 0.9, f"{emb_names[k]}", transform = ax[i, 0].transAxes, horizontalAlignment = 'center')
     # __ = ax[i, 0].text(0, 0.5, f"{s} Centrality", transform = ax[i, 0].transAxes, horizontalAlignment = 'center', rotation = 'vertical')
     __ = plt.setp(ax[i, 0], xlabel = '', ylabel = f"{s} Centrality")
     __ = plt.setp(ax[i, 1], xlabel = '', ylabel = '')
@@ -237,16 +240,16 @@ fig, ax = plt.subplots(nrows = num_embs, ncols = 2, figsize = (6 * 2, 6 * num_em
 
 for i, (emb, s) in enumerate(zip(emb_nodes_red, emb_names)):
 
-    if i == 1:
-        __ = emlib.plot_emb(coor = emb, labels = labels[1], cmap_name = 'cool', colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
+    if i == 0:
+        __ = emlib.plot_emb(coor = emb, labels = labels[1], cmap_name = 'cool', legend_kwargs = {}, colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
 
         # ax[i, 0].add_patch(mpl.patches.Rectangle([-6, -5], 10, 12, fill = False, edgecolor = plt.cm.get_cmap('tab10')(0), zorder = 0))
         # ax[i, 0].add_patch(mpl.patches.Rectangle([6, -5], 5, 12, fill = False, edgecolor = plt.cm.get_cmap('tab10')(1), zorder = 0))
 
     else:
-        __ = emlib.plot_emb(coor = -emb, labels = labels[1], cmap_name = 'cool', colorbar = False, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
+        __ = emlib.plot_emb(coor = emb, labels = labels[1], cmap_name = 'cool', legend_kwargs = {}, colorbar = False, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
 
-    __ = emlib.plot_emb(coor = np.array([v for __, v in coors_nx.items()]), labels = labels[1], cmap_name = 'cool', colorbar = False, edge_list = edge_list, ax = ax[i, 1], str_title = ' ')
+    __ = emlib.plot_emb(coor = np.array([v for __, v in coors_nx.items()]), labels = labels[1], cmap_name = 'cool', legend_kwargs = {}, colorbar = False, edge_list = edge_list, ax = ax[i, 1], str_title = ' ')
 
     __ = ax[i, 0].text(0.5, 0.9, f"{s}", transform = ax[i, 0].transAxes, horizontalAlignment = 'center')
     __ = plt.setp(ax[i, 0], xlabel = '', ylabel = '')
@@ -273,7 +276,7 @@ del i, s, fig, ax, emb
 # Generate cluster labels using the (p = 1, q = 4) embeddings
 
 # kwargs = {'metric': 'minkowski', 'p': 2.0 / 3.0, 'min_cluster_size': 2, 'min_samples': 3, 'cluster_selection_epsilon': 0.2}
-kwargs = {'metric': 'euclidean', 'min_cluster_size': 2, 'min_samples': 3, 'cluster_selection_epsilon': 0.5}
+kwargs = {'metric': 'euclidean', 'min_cluster_size': 2, 'min_samples': 3, 'cluster_selection_epsilon': 0.45}
 clusterer = hdbscan.HDBSCAN(**kwargs)
 clusterer.fit(emb_nodes_red[-1])
 labels_ = clusterer.labels_
@@ -297,15 +300,15 @@ fig, ax = plt.subplots(nrows = num_embs, ncols = 2, figsize = (6 * 2, 6 * num_em
 
 for i, (emb, s) in enumerate(zip(emb_nodes_red, emb_names)):
 
-    if i == 1:
-        __ = emlib.plot_emb(coor = emb, labels = labels_, cmap_name = 'qual', colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
+    if i == 2:
+        __ = emlib.plot_emb(coor = emb, labels = labels_, cmap_name = 'qual', legend_kwargs = {'loc': 'lower left', 'ncol': 3}, colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
 
     else:
-        __ = emlib.plot_emb(coor = -emb, labels = labels_, cmap_name = 'qual', colorbar = False, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
+        __ = emlib.plot_emb(coor = emb, labels = labels_, cmap_name = 'qual', legend_kwargs = {}, colorbar = False, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
 
-    __ = emlib.plot_emb(coor = np.array([v for __, v in coors_nx.items()]), labels = labels_, cmap_name = 'qual', colorbar = False, edge_list = edge_list, ax = ax[i, 1], str_title = ' ')
+    __ = emlib.plot_emb(coor = np.array([v for __, v in coors_nx.items()]), labels = labels_, cmap_name = 'qual', legend_kwargs = {}, colorbar = False, edge_list = edge_list, ax = ax[i, 1], str_title = ' ')
 
-    __ = ax[i, 0].text(0.5, 0.9, f"{s}", transform = ax[i, 0].transAxes, horizontalAlignment = 'center')
+    __ = ax[i, 0].text(0.5, 0.95, f"{s}", transform = ax[i, 0].transAxes, horizontalAlignment = 'center')
     __ = plt.setp(ax[i, 0], xlabel = '', ylabel = '')
     __ = plt.setp(ax[i, 1], xlabel = '', ylabel = '')
     ax[i, 0].tick_params(length = 0, labelbottom = False, labelleft = False)
@@ -322,6 +325,30 @@ i = s = fig = ax = emb = None
 del i, s, fig, ax, emb
 
 # %%
+
+fig, ax = plt.subplots(nrows = 1, ncols = 2, figsize = (12, 6))
+
+ax[0].scatter(emb_nodes_red[0][:, 0], labels[1], marker = 'o', s = 20, alpha = 0.15, label = 'p/q = 1e6')
+ax[0].scatter(emb_nodes_red[2][:, 0], labels[1], marker = 'o', s = 20, alpha = 0.15, label = 'p/q = 1e-6')
+__ = plt.setp(ax[0], xlabel = '1st Embedding Dimension', ylabel = 'Closeness Centrality')
+__ = ax[0].legend()
+
+ax[1].scatter(labels_, labels[1], marker = 'o', s = 50, alpha = 0.2)
+__ = plt.setp(ax[1], xlabel = "Cluster Labels, Derived from 'p/q = 1e-6' Case", ylabel = 'Closeness Centrality')
+
+
+fig.savefig('./figures/v3/mitre_subgraph_node2vec_umap_hdbscan_pq_comp.png', dpi = 150)
+
+fig = ax = None
+del fig, ax
+
+
+# %%
+
+
+
+
+
 
 
 
