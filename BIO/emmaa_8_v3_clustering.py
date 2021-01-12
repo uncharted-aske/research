@@ -43,18 +43,21 @@ nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q1_n10len80
 nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q1_n10len80_directed.jsonl', remove_preamble = False))
 nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q2_n10len80_undirected.jsonl', remove_preamble = False))
 nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q4_n10len80_undirected.jsonl', remove_preamble = False))
+nodeEmb_mitre.append(emlib.load_jsonl('./dist/v3/node2vec/G_mitre_p1_q1000000_n10len80_directed.jsonl', remove_preamble = False))
 
 
 emb_names = [
-    'node2vec p = 4, q = 1, undirected', 
-    'node2vec p = 1, q = 0.5, undirected', 
-    'node2vec p = 1, q = 1, undirected', 
+    'node2vec p = 4, q = 1, undirected, w = 10', 
+    'node2vec p = 1, q = 0.5, undirected, w = 10', 
+    'node2vec p = 1, q = 1, undirected, w = 10', 
     'node2vec p = 1, q = 1, undirected, w = 2', 
-    'node2vec p = 1, q = 1, directed', 
-    'node2vec p = 1, q = 2, undirected', 
-    'node2vec p = 1, q = 4, undirected',
+    'node2vec p = 1, q = 1, directed, w = 10', 
+    'node2vec p = 1, q = 2, undirected, w = 10', 
+    'node2vec p = 1, q = 4, undirected, w = 10',
+    'node2vec p = 1, q = 1e6, directed, w = 10', 
     ]
 
+# 'node2vec p = 1e6, q = 1, directed, w = 10'
 
 num_nodes = len(nodes_mitre)
 num_embs = len(nodeEmb_mitre)
@@ -82,7 +85,7 @@ model_umap = umap.UMAP(n_components = num_emb_dim_red, n_neighbors = 10, min_dis
 emb_nodes_red = [model_umap.fit_transform(emb) for emb in emb_nodes]
 emb_nodes_red = [emb - np.mean(emb, axis = 0) for emb in emb_nodes_red]
 
-# Time: 1 m 10 s
+# Time: 1 m 14 s
 
 # %%
 %%time
@@ -145,8 +148,12 @@ del m, n, h, h_red, x, fig, ax, ax_
 
 # %%
 # # Compare Dimensionally Reduced Node Embeddings with Reference Layout
+# 
+# ## Change Centrality Measures
 
 # %%
+%%time
+
 # Generate reference force-directed graph layout with NetworkX
 coors_nx, __, __, __ = emlib.generate_nx_layout(nodes = nodes_mitre, edges = edges_mitre, layout = 'spring', layout_atts = {'k': 0.08})
 
@@ -161,6 +168,9 @@ edge_list = {(map_ids_nodes[edge['source_id']], map_ids_nodes[edge['target_id']]
 # Load graph object to get graph measures
 with open('./dist/v3/G_mitre.pkl', 'rb') as x:
     G_mitre = pickle.load(x)
+
+x = None
+del x
 
 
 # Labels from centrality measures
@@ -188,18 +198,19 @@ for i in [0]:
 labels_name = ['Log Degree', 'Closeness', 'Harmonic']
 
 
-# time: 
+# time: 2.99 s
 
 # %%
 fig, ax = plt.subplots(nrows = len(labels), ncols = 2, figsize = (6 * 2, 6 * len(labels)))
 
-emb = emb_nodes_red[0]
+emb = emb_nodes_red[4]
 for i, (labels_, s) in enumerate(zip(labels, labels_name)):
 
-    __ = emlib.plot_emb(coor = emb, labels = labels_, cmap_name = 'cool', colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
+    __ = emlib.plot_emb(coor = -emb, labels = labels_, cmap_name = 'cool', colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
 
     __ = emlib.plot_emb(coor = np.array([v for __, v in coors_nx.items()]), labels = labels_, cmap_name = 'cool', colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 1], str_title = ' ')
 
+    __ = ax[i, 0].text(0.5, 0.9, f"{emb_names[4]}", transform = ax[i, 0].transAxes, horizontalAlignment = 'center')
     # __ = ax[i, 0].text(0, 0.5, f"{s} Centrality", transform = ax[i, 0].transAxes, horizontalAlignment = 'center', rotation = 'vertical')
     __ = plt.setp(ax[i, 0], xlabel = '', ylabel = f"{s} Centrality")
     __ = plt.setp(ax[i, 1], xlabel = '', ylabel = '')
@@ -217,17 +228,9 @@ fig.savefig('./figures/v3/mitre_subgraph_node2vec_umap_centralities.png', dpi = 
 i = s = fig = ax = emb = labels_ = None
 del i, s, fig, ax, emb, labels_
 
-# %%
 
-
-
-
-# %%
-
-# Cluster labels
-# labels = np.array([0 if x < 5.0 else 1 for x in emb_nodes_red[0][:, 0]])
-
-
+# %%[markdown]
+# ## Change in Embedding Parameters
 
 # %%
 fig, ax = plt.subplots(nrows = num_embs, ncols = 2, figsize = (6 * 2, 6 * num_embs))
@@ -252,7 +255,7 @@ for i, (emb, s) in enumerate(zip(emb_nodes_red, emb_names)):
     ax[i, 1].tick_params(length = 0, labelbottom = False, labelleft = False)
 
 i = 0
-__ = plt.setp(ax[i, 0], title = 'node2vec Embeddings (UMAP & HDBSCAN)')
+__ = plt.setp(ax[i, 0], title = 'node2vec Embeddings (UMAP)')
 __ = plt.setp(ax[i, 1], title = 'Reference Forced-Directed Layout (k = 0.08)')
 
 
@@ -261,7 +264,68 @@ fig.savefig('./figures/v3/mitre_subgraph_node2vec_umap_pq.png', dpi = 150)
 i = s = fig = ax = emb = None
 del i, s, fig, ax, emb
 
+# %%[markdown]
+# ## Track by Clusters (UMAP Dim)
+
 # %%
+%%time
+
+# Generate cluster labels using the (p = 1, q = 4) embeddings
+
+# kwargs = {'metric': 'minkowski', 'p': 2.0 / 3.0, 'min_cluster_size': 2, 'min_samples': 3, 'cluster_selection_epsilon': 0.2}
+kwargs = {'metric': 'euclidean', 'min_cluster_size': 2, 'min_samples': 3, 'cluster_selection_epsilon': 0.5}
+clusterer = hdbscan.HDBSCAN(**kwargs)
+clusterer.fit(emb_nodes_red[-1])
+labels_ = clusterer.labels_
+# cluster_probs = clusterer.probabilities_
+# outlier_scores = clusterer.outlier_scores_
+# cluster_persist = clusterer.cluster_persistence_
+
+
+print(f'Number of clusters: {len(np.unique(labels_)):d}')
+print(f'Number of unclustered points: {sum(labels_ == -1):d} (of {num_nodes:d})')
+
+
+kwargs = clusterer = None
+del kwargs, clusterer
+
+# Time: 58.3 ms
+
+
+# %%
+fig, ax = plt.subplots(nrows = num_embs, ncols = 2, figsize = (6 * 2, 6 * num_embs))
+
+for i, (emb, s) in enumerate(zip(emb_nodes_red, emb_names)):
+
+    if i == 1:
+        __ = emlib.plot_emb(coor = emb, labels = labels_, cmap_name = 'qual', colorbar = False, marker_size = 2.0, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
+
+    else:
+        __ = emlib.plot_emb(coor = -emb, labels = labels_, cmap_name = 'qual', colorbar = False, edge_list = edge_list, ax = ax[i, 0], str_title = ' ')
+
+    __ = emlib.plot_emb(coor = np.array([v for __, v in coors_nx.items()]), labels = labels_, cmap_name = 'qual', colorbar = False, edge_list = edge_list, ax = ax[i, 1], str_title = ' ')
+
+    __ = ax[i, 0].text(0.5, 0.9, f"{s}", transform = ax[i, 0].transAxes, horizontalAlignment = 'center')
+    __ = plt.setp(ax[i, 0], xlabel = '', ylabel = '')
+    __ = plt.setp(ax[i, 1], xlabel = '', ylabel = '')
+    ax[i, 0].tick_params(length = 0, labelbottom = False, labelleft = False)
+    ax[i, 1].tick_params(length = 0, labelbottom = False, labelleft = False)
+
+i = 0
+__ = plt.setp(ax[i, 0], title = 'node2vec Embeddings (UMAP & HDBSCAN)')
+__ = plt.setp(ax[i, 1], title = 'Reference Forced-Directed Layout (k = 0.08)')
+
+
+fig.savefig('./figures/v3/mitre_subgraph_node2vec_umap_hdbscan_pq.png', dpi = 150)
+
+i = s = fig = ax = emb = None
+del i, s, fig, ax, emb
+
+# %%
+
+
+
+
 
 
 
