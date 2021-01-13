@@ -343,16 +343,3 @@ fig = ax = None
 del fig, ax
 
 
-# %%
-
-
-
-
-
-
-
-
-
-
-
-
