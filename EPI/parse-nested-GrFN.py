@@ -31,18 +31,13 @@ def formatGraph(data):
 
     subgraphs = data['subgraphs']
     for subgraph in subgraphs:
-        # Get parent name
-        parent_name = subgraph['scope']
-        if (parent_name == '@global'):
-            parent_name = 'root'
-        
-        # Get container name
-        splitted_id = subgraph['basename'].split('.')
-
         #Get container metadata
         metadata = subgraph['metadata'][0] if 'metadata' in subgraph else {}
 
-        node = { 'id': subgraph['basename'], 'concept': splitted_id[(len(splitted_id) - 1)], 'nodeType': 'container', 'dataType': '', 'label': splitted_id[(len(splitted_id) - 1)], 'parent': parent_name, 'metadata': metadata }
+        #Get parent id
+        parent_id = 'root' if subgraph['parent'] is None else subgraph['parent'] 
+
+        node = { 'id': subgraph['uid'], 'concept': subgraph['basename'], 'nodeType': 'container', 'label': subgraph['basename'], 'parent': parent_id, 'metadata': metadata }
         nodes.append(node)
         for n in subgraph['nodes']:
             found = n in nodesDict
@@ -51,10 +46,10 @@ def formatGraph(data):
                 # Variables
                 if (found_node['nodeType'] == 'variable'):
                     splitted_identifier = found_node['identifier'].split('::')
-                    node = { 'id': n, 'concept': splitted_identifier[len(splitted_identifier)-2], 'label': splitted_identifier[len(splitted_identifier)-2], 'nodeType': 'variable', 'dataType': found_node['type'], 'parent': subgraph['basename'], 'metadata': found_node['metadata']}
+                    node = { 'id': n, 'concept': splitted_identifier[len(splitted_identifier)-2], 'label': splitted_identifier[len(splitted_identifier)-2], 'nodeType': 'variable', 'dataType': found_node['type'], 'parent': subgraph['uid'], 'metadata': found_node['metadata']}
                 # Functions
                 elif found_node['nodeType'] == 'function':
-                    node = { 'id': n, 'concept': found_node['type'], 'label': found_node['type'], 'dataType': found_node['type'], 'nodeType': 'function', 'parent': subgraph['basename'], 'metadata': found_node['metadata']}
+                    node = { 'id': n, 'concept': found_node['type'], 'label': found_node['type'], 'dataType': found_node['type'], 'nodeType': 'function', 'parent': subgraph['uid'], 'metadata': found_node['metadata']}
                 else: 
                     raise Exception('Unrecognized node type')
 
@@ -62,7 +57,9 @@ def formatGraph(data):
             else:
                 raise Exception(n + ' Node missing')
 
-    modelMetadata = data['metadata']
+    metadata = data['metadata'] if 'metadata' in data else {}
+    modelMetadata = metadata
+    
     if modelMetadata:
         variableTypes = modelMetadata[0]['attributes']
         variableTypesDict = {}
@@ -104,7 +101,7 @@ def formatGraph(data):
                 node['nodeSubType'] = []
     
     # Append root for visualization purposes so we don't have multiple roots
-    nodes.append({'concept': 'root', 'parent': '', 'id': 'root'}) 
+    nodes.append({'concept': 'root', 'parent': None, 'id': 'root'}) 
     
     return  { 'metadata': modelMetadata, 'nodes': nodes,'edges': edges }
 

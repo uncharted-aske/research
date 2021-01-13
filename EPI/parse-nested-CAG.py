@@ -22,18 +22,13 @@ def formatGraph(data):
     
     subgraphs = data['subgraphs']
     for subgraph in subgraphs:
-        # Get parent name
-        parent_name = subgraph['scope']
-        if (parent_name == '@global'):
-            parent_name = 'root'
-
-        # Get container name
-        splitted_id = subgraph['basename'].split('.')
-
         #Get container metadata
         metadata = subgraph['metadata'][0] if 'metadata' in subgraph else {}
 
-        node = { 'id': subgraph['basename'], 'concept': splitted_id[(len(splitted_id) - 1)], 'nodeType': 'container', 'label': splitted_id[(len(splitted_id) - 1)], 'parent': parent_name, 'metadata': metadata }
+        #Get parent id
+        parent_id = 'root' if subgraph['parent'] is None else subgraph['parent'] 
+
+        node = { 'id': subgraph['uid'], 'concept': subgraph['basename'], 'nodeType': 'container', 'label': subgraph['basename'], 'parent': parent_id, 'metadata': metadata }
         formattedNodes.append(node)
         for n in subgraph['nodes']:
             found = n in nodesDict
@@ -42,7 +37,7 @@ def formatGraph(data):
                 # Variables
                 if (found_node['nodeType'] == 'variable'):
                     splitted_identifier = found_node['identifier'].split('::')
-                    node = { 'id': n, 'concept': splitted_identifier[len(splitted_identifier)-2], 'label': splitted_identifier[len(splitted_identifier)-2], 'nodeType': 'variable', 'type': found_node['type'], 'parent': subgraph['basename'], 'metadata': found_node['metadata']}
+                    node = { 'id': n, 'concept': splitted_identifier[len(splitted_identifier)-2], 'label': splitted_identifier[len(splitted_identifier)-2], 'nodeType': 'variable', 'type': found_node['type'], 'parent': subgraph['uid'], 'metadata': found_node['metadata']}
                     formattedNodes.append(node)
                 else: 
                     raise Exception('Unrecognized node type')
@@ -93,7 +88,7 @@ def formatGraph(data):
     
 
     # Append root for visualization purposes so we don't have multiple roots
-    formattedNodes.append({'concept': 'root', 'parent': '', 'id': 'root'}) 
+    formattedNodes.append({'concept': 'root', 'parent': None, 'id': 'root'}) 
     
     return  { 'metadata': modelMetadata, 'nodes': formattedNodes,'edges': formattedEdges }
 
