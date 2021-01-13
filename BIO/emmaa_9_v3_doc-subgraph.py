@@ -128,9 +128,103 @@ del x, fig, G_doc
 
 # %%
 
+with open('./data/bio_ontology_v1.5.json', 'r') as x:
+    G_onto_JSON = json.load(x)
 
+# Remove 'xref' links
+G_onto_JSON['links'] = [link for link in G_onto_JSON['links'] if link['type'] != 'xref']
+
+# Generate a namespace list common to the model graph and the ontology
+namespaces_priority = ['FPLX', 'UPPRO', 'HGNC', 'UP', 'CHEBI', 'GO', 'MESH', 'MIRBASE', 'DOID', 'HP', 'EFO']
+namespaces, namespaces_count = emlib.generate_ordered_namespace_list(namespaces_priority, G_onto_JSON, nodes_doc)
+
+# Reduce 'db_refs' of each model node to a single entry by namespace priority
+nodes_doc, __ = emlib.reduce_nodes_db_refs(nodes_doc, namespaces)
+
+# Calculate in-ontology paths
+emlib.calculate_onto_root_path(nodes_doc, G_onto_JSON)
+
+# Extract Ontological Categories
+ontocats_doc = emlib.extract_ontocats(nodes_doc, G_onto_JSON)
+
+
+# Generate Hyperedges
+hyperedges_doc = emlib.generate_hyperedges(nodes_doc, edges_doc, ontocats_doc)
+
+
+# Compute Layout using Ontological Categories and Hyperedges
+__ = emlib.generate_onto_layout(nodes_doc, ontocats_doc, hyperedges_doc, plot = True)
+
+# %%
+# # Save Outputs
+
+# %%
+# Save layout of `nodes` as `nodeLayout`
+preamble = {
+    'model_id': '<int> unique model ID that is present in all related distribution files',
+    'id': '<int> unique node ID that is defined in `nodes.jsonl`',
+    'x': '<float> position of the node in the graph layout',
+    'y': '<float> position of the node in the graph layout',
+    'z': '<float> position of the node in the graph layout',
+}
+emlib.save_jsonl(nodes_doc, './dist/v3/doc/nodeLayout_doc.jsonl', preamble = preamble)
+
+
+# Save new attributes of `nodes` as `nodeAtts`
+preamble = {
+    'model_id': '<int> unique model ID that is present in all related distribution files',
+    'id': '<int> unique node ID that is defined in `nodes.jsonl`',
+    'db_ref_priority': '<str> database reference from `db_refs` of `nodes.jsonl`, that is used by the INDRA ontology v1.5', 
+    'grounded_onto': '<bool> whether this model node is grounded to something that exists within the ontology', 
+    'ontocat_level': '<int> level of the ontology node/category to which this model node was mapped (`-1` if not mappable, `0` if root)', 
+    'ontocat_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
+    'cluster_ids': '<array of int> (placeholder for cluster)'
+}
+emlib.save_jsonl(nodes_doc, './dist/v3/doc/nodeAtts_doc.jsonl', preamble = preamble)
+
+
+# Save `ontocats`
+preamble = {
+    'model_id': '<int> unique model ID that is present in all related distribution files',
+    'id': '<int> unique ID for the ontological category that is referenced by other files',
+    'ref': '<str> unique reference ID of this category (as given by the INDRA Ontology v1.5)',
+    'name': '<str> name of this category (as given by the INDRA Ontology v1.5)',
+    'size': '<int> number of model nodes that were mapped to this category and its children',
+    'level': '<int> number of hops to reach the local root (`0` if root)',
+    'parent_id': '<int> ID of the parent of this category in the ontology',
+    'children_ids': '<array of int> unordered list of the child category IDs',
+    'node_ids': '<array of int> unordered list of IDs from model nodes in the membership of this category',
+    'node_ids_direct': '<array of int> node_ids but only model nodes which were directly mapped to this category and not any of the child categories',
+    'hyperedge_ids': '<array of int> unordered list of hyperedge IDs (see `hyperedges.jsonl`) that are within this category',
+}
+emlib.save_jsonl(ontocats_doc, './dist/v3/doc/ontocats_doc.jsonl', preamble = preamble)
+
+
+# Save layout of ontocats as `ontocatLayout`
+preamble = {
+    'model_id': '<int> unique model ID that is present in all related distribution files',
+    'id': '<int> unique ID for the ontological category that is referenced by other files',
+    'x': '<float> position of the node in the graph layout',
+    'y': '<float> position of the node in the graph layout',
+    'z': '<float> position of the node in the graph layout'
+}
+emlib.save_jsonl(ontocats_doc, './dist/v3/doc/ontocatLayout_doc.jsonl', preamble = preamble)
+
+
+# Save `hyperedges`
+preamble = {
+    'model_id': '<int> unique model ID that is present in all related distribution files',
+    'id': '<int> unique hyperedge ID that is referenced by other files',
+    'level': '<float> ontological level of this hyperedge (taken from the source ontocat)',
+    'size': '<int> number of model edges that is aggregated here',
+    'edge_ids': '<array of int> unordered list of edge ID of the underlying model edges (see `edges.jsonl`)',
+    'source_type': '<str> object type of the source (only `ontocat`)',
+    'source_id': '<int> ID of the source (defined in `ontocats.jsonl`)' ,
+    'target_type': '<str> object type of the target (either `ontocat` or `node`)',
+    'target_id': '<int> ID of the target (defined in either `ontocats.jsonl` or `nodes.jsonl`)',
+}
+emlib.save_jsonl(hyperedges_doc, './dist/v3/doc/hyperedges_doc.jsonl', preamble = preamble)
 
 
 
 # %%
-

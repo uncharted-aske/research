@@ -797,7 +797,7 @@ def generate_nx_layout(G = None, nodes = None, edges = None, node_list = None, e
 
         # print(plt.style.available)
         # plt.style.use('fast')
-        plt.style.use('dark_background')
+        # plt.style.use('dark_background')
 
         plot_atts_default = {
             'ax': ax,
@@ -808,8 +808,8 @@ def generate_nx_layout(G = None, nodes = None, edges = None, node_list = None, e
             'width': 0.05,
             'alpha': 0.8,
             'cmap': 'cividis',
-            'edge_color': 'w',
-            'font_color': 'w'
+            'edge_color': 'k',
+            'font_color': 'k'
         }
 
         nx.draw_networkx(G, pos = coors, **{**plot_atts_default, **plot_atts})
