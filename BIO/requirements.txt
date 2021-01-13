@@ -1,15 +1,13 @@
 pylint
-pymongo
 numpy
 scipy
 spacy
 hdbscan
 umap-learn
 matplotlib
-cmocean
 scikit-learn
 pandas
 jupyterlab
-gensim
-nltk
 networkx
+minio
+tqdm
