@@ -1,0 +1,68 @@
+IL6 activates STAT3
+severe acute respiratory syndrome coronavirus 2 activates COVID-19
+STAT3 activates IL6
+NFkappaB activates IL6
+cytokine activates STAT3
+IL6ST activates STAT3
+STAT3 activates NFkappaB
+ACE2 inhibits inflammatory response
+Severe Acute Respiratory Syndrome activates Severe Acute Respiratory Syndrome
+AGT activates ADAM17
+Syndrome activates Severe Acute Respiratory Syndrome
+ARDS activates Death
+RENBP activates COVID-19
+Infections activates NFkappaB
+Infections activates STAT3
+Sepsis activates Syndrome
+camostat activates severe acute respiratory syndrome coronavirus 2
+Pneumonia activates Syndrome
+ACE2 inhibits ARDS
+severe acute respiratory syndrome coronavirus 2 activates NFkappaB
+IL6 activates severe acute respiratory syndrome coronavirus 2
+IL6 activates Autoimmune Diseases
+acute respiratory syndrome coronavirus SARS-CoV respiratory syndrome coronavirus MERS-CoV were transmitted animals humans activates respiratory diseases SARS
+AngII-AT1R activates ADAM17
+AngII-AT1R activates disintegrin
+AngII-AT1R activates metalloprotease 17
+proinflammatory cytokines inhibits host
+RENBP activates IL-6 Amp
+severe acute respiratory syndrome coronavirus 2 inhibits cell entry
+TMPRSS2 activates cell entry
+accumulated AngII activates inflammatory cytokines including TNFalpha IL-6-soluble s IL-6R
+ACE2 activates SARS-2-S protein
+ACE2-mediated inhibits angiotensin
+AGT activates IL-6-soluble (s)IL-6R
+AGT activates metalloprotease 17
+alveola cells express ACE2 TMPRSS2 steady activates cells be primary entry cells SARS-CoV-2 lung
+ammonium chloride inhibits ACE2
+ammonium chloride inhibits SARS-2-S-driven entry 293T cells TMPRSS2-negative expressing ACE2
+AngII-AT1R activates NFkappaB
+AngII-AT1R axis activates NF-kappaB disintegrin metalloprotease ADAM17
+angiotensin receptor activates SARS-CoV-induced ARDS animal model
+antigen binding activates SARS-2-S-driven entry human cell lines
+antigen binding inhibits SARS-S
+camostat mesylate inhibits SARS-2-S-driven entry Caco-2 cells
+camostat mesylate inhibits SARS-2-S-driven entry lung cells
+camostat mesylate E-64d inhibits entry
+CatB/L inhibits ACE2
+chronic inflammation induced latter phase activates ARDS-mediated death
+chronic inflammation induced latter phase is main cause ARDS-mediated death activates therapeutic targets
+Eguchi activates mature epidermal growth receptor EGFR ligands TNFalpha
+hyper-activation transcription NF-kappaB activates cytokine-related syndrome
+IL-6 Amp activates Autoimmune Diseases
+IL-6 Amp activates Chemokine
+IL-6 Amp activates severe acute respiratory syndrome coronavirus 2
+IL-6 is functional marker cellular senescence activates age-dependent correspond age-dependent COVID-19 mortality
+lung inflammation inhibits renin-angiotensin pathway followed development
+members IL-6 family cytokines activates STAT3
+models inhibits ARDS development
+molecule activates indicate possible therapeutic targets COVID-19
+NFkappaB activates mature epidermal growth receptor EGFR ligands TNFalpha
+NF-kappaB disintegrin metalloprotease ADAM17 activates mature epidermal growth receptor EGFR ligands TNFalpha
+pathogenic SARS-coronavirus activates COVID-19
+potential AngII-AT1R pathway ACE2 inhibits cytokine release syndrome
+proven TMPRSS2 activates SARS-2-S-driven entry Caco-2 cells
+recombinant ACE2 inhibits ARDS development
+SARS-CoV-2 infection respiratory system activates NFkappaB
+SARS-CoV-2 infection respiratory system activates STAT3
+TWIST1 activates found chimeric antigen receptor

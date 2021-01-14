@@ -1210,7 +1210,7 @@ def generate_hyperedges(nodes, edges, ontocats):
 
     #####################################################
 
-    # Add  `ontocats`
+    # Add child list to `ontocats`
     for ontocat in ontocats:
         ontocat['children_ids'] = ontocats_children_ontocat_ids[ontocat['id']]
         ontocat['node_ids_direct'] = ontocats_children_node_ids[ontocat['id']]
@@ -1403,7 +1403,5 @@ def generate_onto_layout(nodes, ontocats, hyperedges, plot = False, ax = None):
 
 
     return G, coors, fig, ax
-
-# %%
 
 # %%

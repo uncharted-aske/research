@@ -5,9 +5,8 @@
 
 # %%[markdown]
 # Content: 
-# * Load data of the full EMMAA Covid-19 graph
-# * Filter statements by a given document DOI/PMID/PMCID
-# * Get the nodes and edges associated with these statements
+# * Load text sentences to be used to build the boutique model graph
+# * Use INDRA API to generate compatible statement objects
 # * Generate the associated output files (`nodes.jsonl, edges.jsonl, G.pkl, ...`)
 
 # %%
@@ -19,6 +18,7 @@ import scipy as sp
 import networkx as nx
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import requests
 
 import emmaa_lib as emlib
 import importlib
@@ -28,49 +28,56 @@ import importlib
 np.random.seed(0)
 
 # %%[markdown]
-# # Define the document of interest
-# doc = {'id_type': 'DOI', 'id': '10.1016/j.immuni.2020.04.003'.upper()}
-doc = {'id_type': 'PMID', 'id': '32325025'}
+# # Load Boutique Text Sentences
+# 
+# These text sentences were the result of querying a paper with `PMID = 32325025` on the [INDRA Database](https://db.indra.bio/search).
+
+texts_boutique = []
+with open('./data/covid19-boutique_jan14-2021.txt', 'r') as f:
+    # texts_boutique = [line.rstrip('\n') for line in f]
+    texts_boutique = f.read().splitlines()
+
+f = None
+del f
 
 # %%[markdown]
-# # Load Statement Data
-statements_all = {}
-with open('./data/covid19-snapshot_dec8-2020/source/latest_statements_covid19.json', 'r') as x:
-    statements_all = json.load(x)
-
-x = None
-del x
-
-# %%[markdown]
-# # Filter Statements by Reference
-statements_doc = [statements_all[j] for j in set([i for i, s in enumerate(statements_all) for ev in s['evidence'] if ('text_refs' in ev.keys()) if (doc['id_type'] in ev['text_refs'].keys()) if ev['text_refs'][doc['id_type']] == doc['id']])]
-
-statements_all = None
-del statements_all
+# # Generate INDRA Statement Objects
 
 # %%
-print(f"{len(statements_doc)} statements found to reference the document with {doc['id_type']} = {doc['id']}")
-# 7 statements found to reference the document with DOI = 10.1016/J.IMMUNI.2020.04.003
+%%time
+
+statements_boutique = []
+for text in texts_boutique:
+
+    # Get raw statements
+    request_body = requests.post('http://api.indra.bio:8000/reach/process_text', json = {'text': text})
+    s_raw = request_body.json()['statements']
+
+    # Assemble
+    assembly_pipeline = [{'function': 'map_grounding'}, {'function': 'map_sequence'}, {'function': 'run_preassembly'}]
+    request_body = requests.post('http://api.indra.bio:8000/preassembly/pipeline', json = {'statements': s_raw, 'pipeline': assembly_pipeline})
+
+    statements_boutique = statements_boutique + request_body.json()['statements']
+
+
+print(f"{len(statements_boutique)} INDRA statements are generated from the {len(texts_boutique)} boutique text sentences.")
+# 49 INDRA statements are generated from the 68 boutique text sentences.
+
+
+text = request_body = s_raw = assembly_pipeline = None
+del text, request_body, s_raw, assembly_pipeline
+
+# time: 11.1 s
 
 # %%[markdown]
-# # Load the Nodes and Edges Data of the Model Graph
+# # Extract Node and Edge Lists
 
-nodes_model = emlib.load_jsonl('./dist/v3/nodes_model.jsonl', remove_preamble = True)
-edges_model = emlib.load_jsonl('./dist/v3/edges_model.jsonl', remove_preamble = True)
-
-# %%[markdown]
-# # Filter the Node and Edge List
-
-x = [s['matches_hash'] for s in statements_doc]
-edges_doc = [edge for edge in edges_model if edge['statement_id'] in x]
-nodes_doc = [nodes_model[j] for j in set([edge['source_id'] for edge in edges_doc] + [edge['target_id'] for edge in edges_doc])]
-
-nodes_model = edges_model = x = None
-del nodes_model, edges_model, x
+model_id = 3
+nodes_boutique, edges_boutique, __, __ = emlib.process_statements(statements_boutique, paths = [], model_id = model_id)
 
 # %%
-print(f"{len(nodes_doc)} nodes and {len(edges_doc)} edges found to be associated with the document with {doc['id_type']} = {doc['id']}")
-# 10 nodes and 8 edges found to be associated with the document with DOI = 10.1016/J.IMMUNI.2020.04.003
+print(f"{len(nodes_boutique)} nodes and {len(edges_boutique)} edges are extracted from the {len(statements_boutique)} boutique INDRA statements.")
+# 36 nodes and 49 edges are extracted from the 49 boutique INDRA statements.
 
 # %%
 # Save `nodes`
@@ -85,9 +92,9 @@ preamble = {
     'out_degree': '<int> out-degree of this node',
     'in_degree': '<int> in-degree of this node', 
 }
-emlib.save_jsonl(nodes_doc, './dist/v3/doc/nodes_doc.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_boutique, './dist/v3/boutique/nodes_boutique.jsonl', preamble = preamble)
 
-# %%
+
 # Save `edges`
 preamble = {
     'model_id': '<int> unique model ID that is present in all related distribution files',
@@ -99,7 +106,7 @@ preamble = {
     'target_id': '<int> ID of the target node (as defined in `nodes.jsonl`)',
     'tested': '<bool> whether this edge is tested'
 }
-emlib.save_jsonl(edges_doc, './dist/v3/doc/edges_doc.jsonl', preamble = preamble)
+emlib.save_jsonl(edges_boutique, './dist/v3/boutique/edges_boutique.jsonl', preamble = preamble)
 
 preamble = None
 del preamble
@@ -107,21 +114,20 @@ del preamble
 # %%
 # Generate a `G.pkl`
 
-G_doc = emlib.generate_nx_object(nodes_doc, edges_doc)
-with open('./dist/v3/doc/G_doc.pkl', 'wb') as x:
-    pickle.dump(G_doc, x)
+G_boutique = emlib.generate_nx_object(nodes_boutique, edges_boutique)
+with open('./dist/v3/boutique/G_boutique.pkl', 'wb') as x:
+    pickle.dump(G_boutique, x)
 
 
-map_ids_edges = {edge['id']: i for i, edge in enumerate(edges_doc)}
-# x = [max([edges_doc[map_ids_edges[edge_id]]['belief'] for edge_id in node[1]]) if len(node[1]) > 0 else 0.0 for node in G_doc.nodes.data('edge_ids_target')]
-# __, __, fig, __ = emlib.generate_nx_layout(G = G_doc, layout = 'spring', layout_atts = {'k': 0.1}, plot = True, plot_atts = {'node_color': x, 'vmin': 0.0, 'vmax': 1.0, 'cmap': 'cool'})
-__, __, fig, __ = emlib.generate_nx_layout(G = G_doc, layout = 'spring', layout_atts = {'k': 0.1}, plot = True, plot_atts = {'width': 1, 'node_size': 100, 'labels': {node: G_doc.nodes[node]['name'] for node in G_doc.nodes()}, 'cmap': 'cool'})
-fig.savefig('./figures/v3/doc_subgraph_layout_degree.png', dpi = 150)
+map_ids_edges = {edge['id']: i for i, edge in enumerate(edges_boutique)}
+# __, __, fig, __ = emlib.generate_nx_layout(G = G_boutique, layout = 'spring', layout_atts = {'k': 0.1}, plot = True, plot_atts = {'node_color': x, 'vmin': 0.0, 'vmax': 1.0, 'cmap': 'cool'})
+__, __, fig, __ = emlib.generate_nx_layout(G = G_boutique, layout = 'spring', layout_atts = {'k': 0.5}, plot = True, 
+    plot_atts = {'verticalalignment': 'top','font_size': 10, 'with_labels': True, 'arrows': True, 'node_size': [50 * node[1] for node in G_boutique.degree()], 'width': 1, 'labels': {node: G_boutique.nodes[node]['name'] for node in G_boutique.nodes()}, 'cmap': 'cool'})
+fig.savefig('./figures/v3/boutique_subgraph_layout_degree.png', dpi = 150)
 
 
-G_doc = x = fig = None
-del x, fig, G_doc
-
+G_boutique = x = fig = None
+del x, fig, G_boutique
 
 # %%[markdown]
 # # Impose Ontology and Generate Hyperedges
@@ -137,24 +143,31 @@ G_onto_JSON['links'] = [link for link in G_onto_JSON['links'] if link['type'] !=
 
 # Generate a namespace list common to the model graph and the ontology
 namespaces_priority = ['FPLX', 'UPPRO', 'HGNC', 'UP', 'CHEBI', 'GO', 'MESH', 'MIRBASE', 'DOID', 'HP', 'EFO']
-namespaces, namespaces_count = emlib.generate_ordered_namespace_list(namespaces_priority, G_onto_JSON, nodes_doc)
+namespaces, namespaces_count = emlib.generate_ordered_namespace_list(namespaces_priority, G_onto_JSON, nodes_boutique)
 
 # Reduce 'db_refs' of each model node to a single entry by namespace priority
-nodes_doc, __ = emlib.reduce_nodes_db_refs(nodes_doc, namespaces)
+nodes_boutique, __ = emlib.reduce_nodes_db_refs(nodes_boutique, namespaces)
 
 # Calculate in-ontology paths
-emlib.calculate_onto_root_path(nodes_doc, G_onto_JSON)
+emlib.calculate_onto_root_path(nodes_boutique, G_onto_JSON)
 
 # Extract Ontological Categories
-ontocats_doc = emlib.extract_ontocats(nodes_doc, G_onto_JSON)
+ontocats_boutique = emlib.extract_ontocats(nodes_boutique, G_onto_JSON)
 
 
 # Generate Hyperedges
-hyperedges_doc = emlib.generate_hyperedges(nodes_doc, edges_doc, ontocats_doc)
+hyperedges_boutique = emlib.generate_hyperedges(nodes_boutique, edges_boutique, ontocats_boutique)
 
 
 # Compute Layout using Ontological Categories and Hyperedges
-__ = emlib.generate_onto_layout(nodes_doc, ontocats_doc, hyperedges_doc, plot = True)
+__ = emlib.generate_onto_layout(nodes_boutique, ontocats_boutique, hyperedges_boutique, plot = True)
+
+
+G_onto_JSON = None
+del G_onto_JSON
+
+# time: 1 m 30 s
+
 
 # %%[markdown]
 # # Save Outputs
@@ -168,7 +181,7 @@ preamble = {
     'y': '<float> position of the node in the graph layout',
     'z': '<float> position of the node in the graph layout',
 }
-emlib.save_jsonl(nodes_doc, './dist/v3/doc/nodeLayout_doc.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_boutique, './dist/v3/boutique/nodeLayout_boutique.jsonl', preamble = preamble)
 
 
 # Save new attributes of `nodes` as `nodeAtts`
@@ -181,7 +194,7 @@ preamble = {
     'ontocat_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
     'cluster_ids': '<array of int> (placeholder for cluster)'
 }
-emlib.save_jsonl(nodes_doc, './dist/v3/doc/nodeAtts_doc.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_boutique, './dist/v3/boutique/nodeAtts_boutique.jsonl', preamble = preamble)
 
 
 # Save `ontocats`
@@ -196,9 +209,9 @@ preamble = {
     'children_ids': '<array of int> unordered list of the child category IDs',
     'node_ids': '<array of int> unordered list of IDs from model nodes in the membership of this category',
     'node_ids_direct': '<array of int> node_ids but only model nodes which were directly mapped to this category and not any of the child categories',
-    'hyperedge_ids': '<array of int> unordered list of hyperedge IDs (see `hyperedges.jsonl`) that are within this category',
+    'hyperedge_ids': '<array of int> unordered list of hyperedge IDs (see `hyperedges.jsonl`) that are within this category (i.e. the source is a child of this ontocat)',
 }
-emlib.save_jsonl(ontocats_doc, './dist/v3/doc/ontocats_doc.jsonl', preamble = preamble)
+emlib.save_jsonl(ontocats_boutique, './dist/v3/boutique/ontocats_boutique.jsonl', preamble = preamble)
 
 
 # Save layout of ontocats as `ontocatLayout`
@@ -209,7 +222,7 @@ preamble = {
     'y': '<float> position of the node in the graph layout',
     'z': '<float> position of the node in the graph layout'
 }
-emlib.save_jsonl(ontocats_doc, './dist/v3/doc/ontocatLayout_doc.jsonl', preamble = preamble)
+emlib.save_jsonl(ontocats_boutique, './dist/v3/boutique/ontocatLayout_boutique.jsonl', preamble = preamble)
 
 
 # Save `hyperedges`
@@ -224,8 +237,7 @@ preamble = {
     'target_type': '<str> object type of the target (either `ontocat` or `node`)',
     'target_id': '<int> ID of the target (defined in either `ontocats.jsonl` or `nodes.jsonl`)',
 }
-emlib.save_jsonl(hyperedges_doc, './dist/v3/doc/hyperedges_doc.jsonl', preamble = preamble)
-
+emlib.save_jsonl(hyperedges_boutique, './dist/v3/boutique/hyperedges_boutique.jsonl', preamble = preamble)
 
 
 # %%
