@@ -1221,9 +1221,12 @@ def generate_hyperedges(nodes, edges, ontocats):
     map_ids_nodes = {node['id']: i for i, node in enumerate(nodes)}
     x = {ontocat['id']: [] for ontocat in ontocats}
     for hyperedge in hyperedges:
-        if (hyperedge['source_type'] == 'ontocat') & (ontocats[hyperedge['source_id']]['parent_id'] != None):
-            x[ontocats[hyperedge['source_id']]['parent_id']] = x[ontocats[hyperedge['source_id']]['parent_id']] + [hyperedge['id']]
-        elif hyperedge['source_type'] == 'node':
+
+        if (hyperedge['source_type'] == 'ontocat'):
+            if (ontocats[hyperedge['source_id']]['parent_id'] != None):
+                x[ontocats[hyperedge['source_id']]['parent_id']] = x[ontocats[hyperedge['source_id']]['parent_id']] + [hyperedge['id']]
+        
+        if hyperedge['source_type'] == 'node':
             x[nodes[map_ids_nodes[hyperedge['source_id']]]['ontocat_ids'][-1]] = x[nodes[map_ids_nodes[hyperedge['source_id']]]['ontocat_ids'][-1]] + [hyperedge['id']]
 
 

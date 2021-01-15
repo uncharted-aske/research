@@ -53,11 +53,17 @@ for text in texts_boutique:
     request_body = requests.post('http://api.indra.bio:8000/reach/process_text', json = {'text': text})
     s_raw = request_body.json()['statements']
 
-    # Assemble
-    assembly_pipeline = [{'function': 'map_grounding'}, {'function': 'map_sequence'}, {'function': 'run_preassembly'}]
-    request_body = requests.post('http://api.indra.bio:8000/preassembly/pipeline', json = {'statements': s_raw, 'pipeline': assembly_pipeline})
+    if len(s_raw) > 0:
 
-    statements_boutique = statements_boutique + request_body.json()['statements']
+        # Assemble
+        assembly_pipeline = [{'function': 'map_grounding'}, {'function': 'map_sequence'}, {'function': 'run_preassembly'}]
+        request_body = requests.post('http://api.indra.bio:8000/preassembly/pipeline', json = {'statements': s_raw, 'pipeline': assembly_pipeline})
+        s = request_body.json()['statements']
+        
+        # Flag to distinguish from machine-read statements
+        s[0]['evidence'][0]['text_refs'] = {}
+
+        statements_boutique = statements_boutique + s
 
 
 print(f"{len(statements_boutique)} INDRA statements are generated from the {len(texts_boutique)} boutique text sentences.")
@@ -70,16 +76,54 @@ del text, request_body, s_raw, assembly_pipeline
 # time: 11.1 s
 
 # %%[markdown]
+# # Append to Full Model Graph
+
+# %%
+# Load statements from the full model graph
+statements_all = {}
+with open('./data/covid19-snapshot_dec8-2020/source/latest_statements_covid19.json', 'r') as x:
+    statements_all = json.load(x)
+
+x = None
+del x
+
+
+# Extend
+statements_all.extend(statements_boutique)
+
+print(f"There are now {len(statements_all)} INDRA statements in total in the full model graph.")
+# There are now 379766 INDRA statements in total in the full model graph.
+
+# %%[markdown]
 # # Extract Node and Edge Lists
 
+# %%
+# Generate new node and edge list for the extended model graph
 model_id = 3
-nodes_boutique, edges_boutique, __, __ = emlib.process_statements(statements_boutique, paths = [], model_id = model_id)
+nodes_model, edges_model, __, __ = emlib.process_statements(statements_all, paths = [], model_id = model_id)
 
-# %%
+# Extract the node and edge list of the boutique subgraph
+x = [s['matches_hash'] for s in statements_boutique]
+edges_boutique = [edge for edge in edges_model if edge['statement_id'] in x]
+nodes_boutique = [nodes_model[j] for j in set([edge['source_id'] for edge in edges_boutique] + [edge['target_id'] for edge in edges_boutique])]
+
+
+print(f"{len(nodes_model)} nodes and {len(edges_model)} edges are extracted from the {len(statements_all)} extended INDRA statements.")
+# 42206 nodes and 430025 edges are extracted from the 379766 extended INDRA statements.
+
 print(f"{len(nodes_boutique)} nodes and {len(edges_boutique)} edges are extracted from the {len(statements_boutique)} boutique INDRA statements.")
-# 36 nodes and 49 edges are extracted from the 49 boutique INDRA statements.
+# 36 nodes and 59 edges are extracted from the 49 boutique INDRA statements.
+
+
+# %% [markdown]
+# # Save Data
 
 # %%
+# Save `statements`
+emlib.save_jsonl(statements_all, './dist/v3/boutique/statements_model.jsonl', preamble = {})
+emlib.save_jsonl(statements_boutique, './dist/v3/boutique/statements_boutique.jsonl', preamble = {})
+
+
 # Save `nodes`
 preamble = {
     'model_id': '<int> unique model ID that is present in all related distribution files',
@@ -92,7 +136,9 @@ preamble = {
     'out_degree': '<int> out-degree of this node',
     'in_degree': '<int> in-degree of this node', 
 }
+emlib.save_jsonl(nodes_model, './dist/v3/boutique/nodes_model.jsonl', preamble = preamble)
 emlib.save_jsonl(nodes_boutique, './dist/v3/boutique/nodes_boutique.jsonl', preamble = preamble)
+
 
 
 # Save `edges`
@@ -106,6 +152,7 @@ preamble = {
     'target_id': '<int> ID of the target node (as defined in `nodes.jsonl`)',
     'tested': '<bool> whether this edge is tested'
 }
+emlib.save_jsonl(edges_model, './dist/v3/boutique/edges_model.jsonl', preamble = preamble)
 emlib.save_jsonl(edges_boutique, './dist/v3/boutique/edges_boutique.jsonl', preamble = preamble)
 
 preamble = None
@@ -239,5 +286,8 @@ preamble = {
 }
 emlib.save_jsonl(hyperedges_boutique, './dist/v3/boutique/hyperedges_boutique.jsonl', preamble = preamble)
 
+
+preamble = None
+del preamble
 
 # %%
