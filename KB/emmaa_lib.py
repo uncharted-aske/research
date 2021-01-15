@@ -797,7 +797,7 @@ def generate_nx_layout(G = None, nodes = None, edges = None, node_list = None, e
 
         # print(plt.style.available)
         # plt.style.use('fast')
-        plt.style.use('dark_background')
+        # plt.style.use('dark_background')
 
         plot_atts_default = {
             'ax': ax,
@@ -808,8 +808,8 @@ def generate_nx_layout(G = None, nodes = None, edges = None, node_list = None, e
             'width': 0.05,
             'alpha': 0.8,
             'cmap': 'cividis',
-            'edge_color': 'w',
-            'font_color': 'w'
+            'edge_color': 'k',
+            'font_color': 'k'
         }
 
         nx.draw_networkx(G, pos = coors, **{**plot_atts_default, **plot_atts})
@@ -1210,7 +1210,7 @@ def generate_hyperedges(nodes, edges, ontocats):
 
     #####################################################
 
-    # Add  `ontocats`
+    # Add child list to `ontocats`
     for ontocat in ontocats:
         ontocat['children_ids'] = ontocats_children_ontocat_ids[ontocat['id']]
         ontocat['node_ids_direct'] = ontocats_children_node_ids[ontocat['id']]
@@ -1221,9 +1221,12 @@ def generate_hyperedges(nodes, edges, ontocats):
     map_ids_nodes = {node['id']: i for i, node in enumerate(nodes)}
     x = {ontocat['id']: [] for ontocat in ontocats}
     for hyperedge in hyperedges:
-        if (hyperedge['source_type'] == 'ontocat') & (ontocats[hyperedge['source_id']]['parent_id'] != None):
-            x[ontocats[hyperedge['source_id']]['parent_id']] = x[ontocats[hyperedge['source_id']]['parent_id']] + [hyperedge['id']]
-        elif hyperedge['source_type'] == 'node':
+
+        if (hyperedge['source_type'] == 'ontocat'):
+            if (ontocats[hyperedge['source_id']]['parent_id'] != None):
+                x[ontocats[hyperedge['source_id']]['parent_id']] = x[ontocats[hyperedge['source_id']]['parent_id']] + [hyperedge['id']]
+        
+        if hyperedge['source_type'] == 'node':
             x[nodes[map_ids_nodes[hyperedge['source_id']]]['ontocat_ids'][-1]] = x[nodes[map_ids_nodes[hyperedge['source_id']]]['ontocat_ids'][-1]] + [hyperedge['id']]
 
 
@@ -1403,7 +1406,5 @@ def generate_onto_layout(nodes, ontocats, hyperedges, plot = False, ax = None):
 
 
     return G, coors, fig, ax
-
-# %%
 
 # %%
