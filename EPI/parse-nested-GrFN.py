@@ -2,111 +2,112 @@ import json
 from argparse import ArgumentParser
 
 
-def formatGraph(data): 
-    modelMetadata = {}
-    nodesDict = {}
+def populate_types_dict(types, type_name, types_dict):
+    for t in types:
+        if t in types_dict:
+            types_dict[t].append(type_name)
+        else:
+            types_dict[t] = [type_name]
+
+
+def format_graph(data):
+    nodes_dict = {}
     nodes = []
     edges = []
 
-    variables = data['variables']
-    for variable in variables:
+    for variable in data['variables']:
         metadata = variable['metadata'][0] if 'metadata' in variable else {}
         variable['nodeType'] = 'variable'
         variable['dataType'] = variable['type']
         variable['metadata'] = metadata
-        nodesDict[variable['uid']] = variable
+        nodes_dict[variable['uid']] = variable
    
-    functions = data['functions']
-    for function in functions:
+    for function in data['functions']:
         metadata = function['metadata'][0] if 'metadata' in function else {}
         function['nodeType'] = 'function'
         function['dataType'] = function['type']
         function['metadata'] = metadata
-        nodesDict[function['uid']] = function
+        nodes_dict[function['uid']] = function
     
-    hyperEdges = data['hyper_edges']
-    for edge in hyperEdges: 
-        [edges.append({ 'source': i, 'target': edge['function']}) for i in edge['inputs']]
-        [edges.append({ 'source': edge['function'], 'target': o }) for o in edge['outputs']]
+    for edge in data['hyper_edges']:
+        [edges.append({'source': i, 'target': edge['function']}) for i in edge['inputs']]
+        [edges.append({'source': edge['function'], 'target': o}) for o in edge['outputs']]
 
-    subgraphs = data['subgraphs']
-    for subgraph in subgraphs:
-        # Get parent name
-        parent_name = subgraph['scope']
-        if (parent_name == '@global'):
-            parent_name = 'root'
-        
-        # Get container name
-        splitted_id = subgraph['basename'].split('.')
-
-        #Get container metadata
+    for subgraph in data['subgraphs']:
+        # Get container metadata
         metadata = subgraph['metadata'][0] if 'metadata' in subgraph else {}
 
-        node = { 'id': subgraph['basename'], 'concept': splitted_id[(len(splitted_id) - 1)], 'nodeType': 'container', 'dataType': '', 'label': splitted_id[(len(splitted_id) - 1)], 'parent': parent_name, 'metadata': metadata }
-        nodes.append(node)
+        # Get parent id
+        parent_id = 'root' if subgraph['parent'] is None else subgraph['parent'] 
+
+        nodes.append({
+            'id': subgraph['uid'],
+            'concept': subgraph['basename'],
+            'nodeType': 'container',
+            'label': subgraph['basename'],
+            'parent': parent_id,
+            'metadata': metadata
+        })
         for n in subgraph['nodes']:
-            found = n in nodesDict
-            if (found): 
-                found_node = nodesDict[n]
+            if n in nodes_dict:
+                found_node = nodes_dict[n]
                 # Variables
-                if (found_node['nodeType'] == 'variable'):
+                if found_node['nodeType'] == 'variable':
                     splitted_identifier = found_node['identifier'].split('::')
-                    node = { 'id': n, 'concept': splitted_identifier[len(splitted_identifier)-2], 'label': splitted_identifier[len(splitted_identifier)-2], 'nodeType': 'variable', 'dataType': found_node['type'], 'parent': subgraph['basename'], 'metadata': found_node['metadata']}
+                    nodes.append({
+                        'id': n,
+                        'concept': splitted_identifier[len(splitted_identifier)-2],
+                        'label': splitted_identifier[len(splitted_identifier)-2],
+                        'nodeType': 'variable',
+                        'dataType': found_node['type'],
+                        'parent': subgraph['uid'],
+                        'metadata': found_node['metadata']
+                    })
                 # Functions
                 elif found_node['nodeType'] == 'function':
-                    node = { 'id': n, 'concept': found_node['type'], 'label': found_node['type'], 'dataType': found_node['type'], 'nodeType': 'function', 'parent': subgraph['basename'], 'metadata': found_node['metadata']}
+                    nodes.append({
+                        'id': n,
+                        'concept': found_node['type'],
+                        'label': found_node['type'],
+                        'dataType': found_node['type'],
+                        'nodeType': 'function',
+                        'parent': subgraph['uid'],
+                        'metadata': found_node['metadata']
+                    })
                 else: 
-                    raise Exception('Unrecognized node type')
-
-                nodes.append(node)
+                    raise Exception('Unrecognized node type: %s' % found_node['nodeType'])
             else:
-                raise Exception(n + ' Node missing')
+                raise Exception('Node missing: %s' % n)
 
-    modelMetadata = data['metadata']
-    if modelMetadata:
-        variableTypes = modelMetadata[0]['attributes']
-        variableTypesDict = {}
-        for varType in variableTypes:
-            for i in varType['inputs']:
-                variableTypesDict[i] = ['input']
-            for i in varType['outputs']:
-                variableTypesDict[i] = ['output']
-            
-            # Distinguish variable type (inputs and outputs can also be classified as model variables, params, initial conditions or internal variables)
-            for i in varType['parameters']:
-                found = i in variableTypesDict
-                if (found):
-                    variableTypesDict[i].append('parameter')
-                else:
-                    variableTypesDict[i] = ['parameter']
-            for i in varType['model_variables']:
-                found = i in variableTypesDict
-                if (found):
-                    variableTypesDict[i].append('model_variable')
-                else:
-                    variableTypesDict[i] = ['model_variable']
-            for i in varType['initial_conditions']:
-                found = i in variableTypesDict
-                if (found):
-                    variableTypesDict[i].append('initial_condition')
-                else:
-                    variableTypesDict[i] = 'initial_condition'
-            for i in varType['internal_variables']:
-                found = i in variableTypesDict
-                if (found):
-                    variableTypesDict[i].append('internal_variable')
-                else:
-                    variableTypesDict[i] = 'internal_variable'
+    metadata = data['metadata'] if 'metadata' in data else {}
+
+    if metadata:
+        variable_types = metadata[0]['attributes']
+        variable_types_dict = {}
+        for var_type in variable_types:
+            for i in var_type['inputs']:
+                variable_types_dict[i] = ['input']
+            for i in var_type['outputs']:
+                variable_types_dict[i] = ['output']
+
+            # Distinguish variable type (inputs and outputs can also be classified as model variables, params,
+            #   initial conditions or internal variables)
+            populate_types_dict(var_type['parameters'], 'parameter', variable_types_dict)
+            populate_types_dict(var_type['model_variables'], 'model_variable', variable_types_dict)
+            populate_types_dict(var_type['initial_conditions'], 'initial_condition', variable_types_dict)
+            populate_types_dict(var_type['internal_variables'], 'internal_variable', variable_types_dict)
+
         for node in nodes:
-            if 'nodeType' in node and node['nodeType'] == 'variable' and node['id'] in variableTypesDict:
-                node['nodeSubType'] = variableTypesDict[node['id']]
+            if 'nodeType' in node and node['nodeType'] == 'variable' and node['id'] in variable_types_dict:
+                node['nodeSubType'] = variable_types_dict[node['id']]
             else:
                 node['nodeSubType'] = []
-    
+
     # Append root for visualization purposes so we don't have multiple roots
-    nodes.append({'concept': 'root', 'parent': '', 'id': 'root'}) 
+    nodes.append({'concept': 'root', 'parent': None, 'id': 'root'})
     
-    return  { 'metadata': modelMetadata, 'nodes': nodes,'edges': edges }
+    return {'metadata': metadata, 'nodes': nodes,'edges': edges}
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -118,13 +119,7 @@ if __name__ == '__main__':
 
     with open(args.input) as f:
         data = json.load(f)
-        graph = formatGraph(data)
+        graph = format_graph(data)
 
     with open(args.output, 'w') as f:
         json.dump(graph, f)
-
-
-
-
-
-         
