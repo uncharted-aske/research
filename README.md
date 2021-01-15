@@ -25,3 +25,6 @@ Fetch the ASKE files from the Minio server. From the root of the project:
 $ python get_files.py
 ```
 This will create a folder, `aske_files`, in the root of the project. The folder is not under version control.
+The local target directory name can be changed by supplying the `--dir` argument. Also, by providing the 
+`--prefix` argument, only certain content will be downloaded (e.g. `--prefix research/EPI`). 
+NOTE: All the content in the local target directory will be deleted before fetching the files from the storage.
