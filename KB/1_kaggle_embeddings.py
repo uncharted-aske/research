@@ -150,51 +150,18 @@ fig = ax = None
 del fig, ax
 
 # %%[markdown]
-# # Generate Node/Edge List
+# # Generate Node Lists
 
 # %%
 %%time
 
-nodes, edges, G = emlib.generate_nn_graph(coors = embs[:2000, :], metadata = docs[:2000], model_id = 0)
+nodes, nodeLayout, nodeAtts = emlib.generate_nodelist(model_id = 0, node_metadata = docs, node_coors = embs_red, node_labels = np.array(labels))
 
-# time: 1 m 3 s
+# time: 8.93 s
 
-# %%[markdown]
-# # Generate kNN layout
+# %%[markdown
+# Save node lists
 
-# %%
-%%time
-
-embs_knn, __, __, __ = emlib.generate_nx_layout(G = G, layout = 'spring', layout_atts = {'k': 0.01}, plot = False)
-
-# time: 16.5 s
-
-# %%
-with open('./dist/kaggle/embeddings_knn.pkl', 'wb') as f:
-    pickle.dump(embs_knn, f)
-
-# %%
-if False:
-    with open('./dist/kaggle/embeddings_knn.pkl', 'rb') as f:
-        embs_knn = pickle.load(f)
-
-# %%[markdown]
-# Plot result
-
-fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
-__ = emlib.plot_emb(coor = np.array([v for __, v in embs_knn.items()]), labels = labels[:2000], cmap_name = 'qual', edge_list = G.edges(data = False), legend_kwargs = {}, colorbar = False, marker_size = 2.0, ax = ax, str_title = 'kNN Graph of the Document Embeddings of the Kaggle Covid-19 Dataset')
-__ = plt.setp(ax, xlabel = 'x', ylabel = 'y')
-
-fig.savefig('./figures/kaggle/embeddings_knn.png', dpi = 150)
-
-fig = ax = None
-del fig, ax
-
-
-# %%
-%%time
-
-# Save `nodes`
 preamble = {
     'model_id': '<int> unique model ID that is present in all related distribution files',
     'id': '<int> unique node ID that is referenced by other files',
@@ -209,7 +176,93 @@ preamble = {
 emlib.save_jsonl(nodes, './dist/kaggle/nodes.jsonl', preamble = preamble)
 
 
-# Save `edges`
+preamble = {
+    'model_id': '<int> unique model ID that is present in all related distribution files',
+    'id': '<int> unique node ID that is defined in `nodes.jsonl`',
+    'x': '<float> position of the node in the graph layout',
+    'y': '<float> position of the node in the graph layout',
+    'z': '<float> position of the node in the graph layout',
+}
+emlib.save_jsonl(nodeLayout, './dist/kaggle/nodeLayout.jsonl', preamble = preamble)
+
+
+preamble = {
+    'model_id': '<int> unique model ID that is present in all related distribution files',
+    'id': '<int> unique node ID that is defined in `nodes.jsonl`',
+    'db_ref_priority': '<str> database reference from `db_refs` of `nodes.jsonl`, that is used by the INDRA ontology v1.5', 
+    'grounded_onto': '<bool> whether this model node is grounded to something that exists within the ontology', 
+    'ontocat_level': '<int> the level of the most fine-grained ontology node/category to which this model node was mapped (`-1` if not mappable, `0` if root)', 
+    'ontocat_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
+    'grounded_cluster': '<bool> whether this model node is grounded to any cluster', 
+    'cluster_level': '<int> the level of the most fine-grained cluster at which this model node was mapped (`-1` if not mappable, `0` if root)', 
+    'cluster_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
+}
+emlib.save_jsonl(nodeAtts, './dist/kaggle/nodeAtts.jsonl', preamble = preamble)
+
+
+# %%[markdown]
+# # Generate kNN Graph
+
+# %%
+i = np.random.default_rng().integers(0, num_docs, size = 2000)
+
+# %%
+%%time
+
+nodes_knn, edges_knn, G_knn = emlib.generate_nn_graph(node_coors = embs[i, :], node_metadata = [docs[j] for j in i], model_id = 0)
+
+# time: 37.8 s
+
+# %%[markdown]
+# # Generate kNN layout
+
+# %%
+%%time
+
+embs_knn, __, __, __ = emlib.generate_nx_layout(G = G_knn, layout = 'spring', layout_atts = {'k': 0.01}, plot = False)
+# embs_knn, __, __, __ = emlib.generate_nx_layout(G = G_knn, layout = 'kamada_kawai', layout_atts = {}, plot = False)
+
+# time: 15.6 s
+
+# %%
+with open('./dist/kaggle/embeddings_knn.pkl', 'wb') as f:
+    pickle.dump(embs_knn, f)
+
+# %%
+if False:
+    with open('./dist/kaggle/embeddings_knn.pkl', 'rb') as f:
+        embs_knn = pickle.load(f)
+
+# %%[markdown]
+# Plot result
+
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
+__ = emlib.plot_emb(coor = np.array([v for __, v in embs_knn.items()]), labels = labels[i], cmap_name = 'qual', edge_list = G_knn.edges(data = False), legend_kwargs = {}, colorbar = False, marker_size = 2.0, ax = ax, str_title = 'kNN Graph of the Document Embeddings of the Kaggle Covid-19 Dataset')
+__ = plt.setp(ax, xlabel = 'x', ylabel = 'y')
+
+fig.savefig('./figures/kaggle/embeddings_knn.png', dpi = 150)
+
+fig = ax = None
+del fig, ax
+
+
+# %%[markdown
+# Save outputs
+
+preamble = {
+    'model_id': '<int> unique model ID that is present in all related distribution files',
+    'id': '<int> unique node ID that is referenced by other files',
+    'name': '<str> unique human-interpretable name of this node (from the `title` attribute in `metadata.csv`)',
+    'db_refs': '<dict> database references of this node (`doi`, `pmcid`, `pubmed_id` attributes in `metadata.csv`)',
+    'grounded': '<bool> whether this node is grounded to any database (`True` for all)',
+    'edge_ids_source': '<list of int> ID of edges that have this node as a source',
+    'edge_ids_target': '<list of int> ID of edges that have this node as a target',
+    'out_degree': '<int> out-degree of this node',
+    'in_degree': '<int> in-degree of this node', 
+}
+emlib.save_jsonl(nodes_knn, './dist/kaggle/nodes_knn.jsonl', preamble = preamble)
+
+
 preamble = {
     'model_id': '<int> unique model ID that is present in all related distribution files',
     'id': '<int> unique edge ID that is referenced by other files',
@@ -220,9 +273,7 @@ preamble = {
     'target_id': '<int> ID of the target node (as defined in `nodes.jsonl`)',
     'tested': '<bool> whether this edge is tested (`True` for all)'
 }
-emlib.save_jsonl(edges, './dist/kaggle/edges.jsonl', preamble = preamble)
-
-# time: 
+emlib.save_jsonl(edges_knn, './dist/kaggle/edges_knn.jsonl', preamble = preamble)
 
 # %%
 
