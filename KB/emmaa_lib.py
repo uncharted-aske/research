@@ -19,7 +19,7 @@ import re
 import numba
 import networkx as nx
 
-# import sklearn as skl
+import sklearn as skl
 # import hdbscan
 
 import matplotlib as mpl
@@ -30,15 +30,13 @@ import matplotlib.pyplot as plt
 # %%
 
 # Scatter plot of (un)labeled data points
-def plot_emb(coor = np.array([]), edge_list = {}, labels = [], ax = [], figsize = (12, 12), marker_size = 2.0, marker_alpha = 0.5,  cmap_name = 'qual', legend_kwargs = {'loc': 'lower left', 'ncol': 1}, colorbar = True, str_title = '', xlim = (), ylim = (), zlim = (), vlim = (), hull = []):
+def plot_emb(coor = np.array([]), edge_list = [], labels = [], ax = [], figsize = (12, 12), marker_size = 2.0, marker_alpha = 0.5,  cmap_name = 'qual', legend_kwargs = {'loc': 'lower left', 'ncol': 1}, colorbar = True, str_title = '', xlim = (), ylim = (), zlim = (), vlim = (), hull = []):
 
     # Error handling
     if not isinstance(coor, np.ndarray):
         raise TypeError("'coor' must be an numpy ndarray.")
     if not (coor.shape[1] <= 3):
         raise ValueError("'coor' must be a N x 2 or N x 3 array.")
-    if not isinstance(edge_list, dict):
-        raise TypeError("'edge_list' must be a dict.")
     if not ((isinstance(labels, list) | isinstance(labels, np.ndarray)) and (len(labels) in [0, coor.shape[0]])): 
         raise TypeError("'labels' must be either [] or a N x 1 list or numpy ndarrray.")
     if not (isinstance(marker_size, int) | isinstance(marker_size, float) | isinstance(marker_size, list) | isinstance(marker_size, np.ndarray)):
@@ -1406,5 +1404,72 @@ def generate_onto_layout(nodes, ontocats, hyperedges, plot = False, ax = None):
 
 
     return G, coors, fig, ax
+
+# %%
+# Generate a nearest-neighbour graph from a set of coordinates
+def generate_nn_graph(coors, metadata = [], model_id = -1):
+
+    # Define custom Minkowski distance function to enable non-integer `p`
+    def minkowski_distance(u, v, p = 2.0):
+        return np.sum(np.abs(u - v) ** p) ** (1.0 / p)
+
+    # Find k-nearest neighbours
+    # knn = skl.neighbors.NearestNeighbors(n_neighbors = 1, metric = 'minkowski', p = 2.0 / 3.0)
+    knn = skl.neighbors.NearestNeighbors(n_neighbors = 2, metric = lambda u, v: minkowski_distance(u, v, p = 2.0 / 3.0))
+    knn.fit(coors)
+    knn_dist, knn_ind = knn.kneighbors(coors)
+
+
+    # Define edge list
+    num_coors = coors.shape[0]
+    edges = [{
+        'model_id': model_id,
+        'id': i,
+        'type': 'knn',
+        'belief': float(1.0 / knn_dist[i][1]),
+        'statement_id': None,
+        'source_id': i,
+        'target_id': int(knn_ind[i][1]),
+        'tested': True
+    } for i in range(num_coors)]
+
+
+    # Define NetworkX graph object
+    edge_list = [(edge['source_id'], edge['target_id'], edge) for edge in edges]
+    G = nx.MultiDiGraph()
+    G.add_edges_from(edge_list)
+
+
+    # Define node list
+    num_coors = coors.shape[0]
+    nodes = []
+    nodes = [{
+        'model_id': model_id,
+        'id': i,
+        'name': None,
+        'db_refs': None,
+        'grounded': False,
+        'edge_ids_source': [i],
+        'edge_ids_target': [j for j, k in G.in_edges(i)],
+        'out_degree': G.out_degree(i),
+        'in_degree:': G.in_degree(i),
+    } for i in range(num_coors)]
+
+
+    # Add meta-data if available
+    if len(metadata) == num_coors:
+
+        for i, node in enumerate(nodes):
+            node['grounded'] = True
+            node['name'] = metadata[i]['title']
+            node['db_refs'] = {
+                'DOI': metadata[i]['doi'].upper(), 
+                'PMCID': metadata[i]['pmcid'].upper(), 
+                'PMID': metadata[i]['pubmed_id'].upper()
+            }
+
+
+    return nodes, edges, G
+
 
 # %%
