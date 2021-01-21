@@ -7,7 +7,10 @@
 # Content: 
 # * Load data of the full EMMAA Covid-19 graph
 # * Filter statements by a given document DOI/PMID/PMCID
-# * Get the nodes and edges associated with these statements
+# * Get the list of nodes and edges associated with these statements
+# * Get documents referenced by these edges
+# * Filter statements by these documents
+# * Get the expanded list of nodes and edges
 # * Generate the associated output files (`nodes.jsonl, edges.jsonl, G.pkl, ...`)
 
 # %%
@@ -42,14 +45,14 @@ x = None
 del x
 
 # %%[markdown]
-# # Filter Statements by Reference
-statements_doc = [statements_all[j] for j in set([i for i, s in enumerate(statements_all) for ev in s['evidence'] if ('text_refs' in ev.keys()) if (doc['id_type'] in ev['text_refs'].keys()) if ev['text_refs'][doc['id_type']] == doc['id']])]
+# # Filter Statements by Referenced Document
+s_doc = set([i for i, s in enumerate(statements_all) for ev in s['evidence'] if ('text_refs' in ev.keys()) if (doc['id_type'] in ev['text_refs'].keys()) if ev['text_refs'][doc['id_type']] == doc['id']])
 
-statements_all = None
-del statements_all
+# statements_all = None
+# del statements_all
 
 # %%
-print(f"{len(statements_doc)} statements found to reference the document with {doc['id_type']} = {doc['id']}")
+print(f"{len(s_doc)} statements found to reference the document with {doc['id_type']} = {doc['id']}")
 # 7 statements found to reference the document with DOI = 10.1016/J.IMMUNI.2020.04.003
 
 # %%[markdown]
@@ -61,16 +64,86 @@ edges_model = emlib.load_jsonl('./dist/v3/edges_model.jsonl', remove_preamble = 
 # %%[markdown]
 # # Filter the Node and Edge List
 
-x = [s['matches_hash'] for s in statements_doc]
-edges_doc = [edge for edge in edges_model if edge['statement_id'] in x]
-nodes_doc = [nodes_model[j] for j in set([edge['source_id'] for edge in edges_doc] + [edge['target_id'] for edge in edges_doc])]
+x = [statements_all[s]['matches_hash'] for s in s_doc]
+e_doc = [e for e, edge in enumerate(edges_model) if edge['statement_id'] in x]
+n_doc = set([edges_model[e]['source_id'] for e in e_doc] + [edges_model[e]['target_id'] for e in e_doc])
 
-nodes_model = edges_model = x = None
-del nodes_model, edges_model, x
+x = None
+del x
 
 # %%
-print(f"{len(nodes_doc)} nodes and {len(edges_doc)} edges found to be associated with the document with {doc['id_type']} = {doc['id']}")
+print(f"{len(n_doc)} nodes and {len(e_doc)} edges found to be associated with the document with {doc['id_type']} = {doc['id']}")
 # 10 nodes and 8 edges found to be associated with the document with DOI = 10.1016/J.IMMUNI.2020.04.003
+
+# %%[markdown]
+# # Get Documents Referenced by the Edge List
+
+# %%
+
+
+e_exp = set([e for n in n_doc for e in nodes_model[n]['edge_ids_source']] + [e for n in n_doc for e in nodes_model[n]['edge_ids_target']])
+n_exp = set([edges_model[e]['source_id'] for e in e_exp] + [edges_model[e]['target_id'] for e in e_exp])
+
+x = set([edges_model[e]['statement_id'] for e in e_exp])
+s_exp = [s for s, statement in enumerate(statements_all) if statement['matches_hash'] in x]
+docs_exp = list(set([ev['text_refs']['PMID'] for s in s_exp for ev in statements_all[s]['evidence'] if ('text_refs' in ev.keys()) if 'PMID' in ev['text_refs'].keys()]))
+
+x = None
+del x
+
+
+# %%
+print(f"The previous {len(n_doc)} nodes are linked to {len(e_exp)} edges, which are linked to {len(n_exp)} nodes and reference {len(docs_exp)} documents in total.")
+# The previous 10 nodes are linked to 12715 edges, which are linked to 4924 nodes and reference 9252 documents in total.
+
+# %%
+# # Plot Results
+
+# %%
+
+nodes_doc = [nodes_model[n] for n in n_doc]
+edges_doc = [edges_model[e] for e in e_doc]
+
+G_doc = emlib.generate_nx_object(nodes_doc, edges_doc)
+
+
+
+
+__ = emlib.generate_nx_layout(G = G_doc, layout = 'kamada_kawai', plot = True, 
+    plot_atts = {'verticalalignment': 'top','font_size': 10, 'with_labels': True, 'arrows': True, 
+    'node_size': [10 * node[1] for node in G_doc.degree()], 'width': 1, 
+    'labels': {node: G_doc.nodes[node]['name'] for node in G_doc.nodes()}, 
+    'cmap': 'cool'})
+# fig.savefig('./figures/v3/boutique_subgraph_layout_degree.png', dpi = 150)
+
+
+
+
+# %%
+
+nodes_exp = [nodes_model[n] for n in n_exp]
+edges_exp = [edges_model[e] for e in e_exp]
+
+G_exp = emlib.generate_nx_object(nodes_exp, edges_exp)
+
+__, __, fig, __ = emlib.generate_nx_layout(G = G_exp, layout = 'spring', layout_atts = {'k': 0.5}, plot = True, 
+    plot_atts = {'verticalalignment': 'top','font_size': 10, 'with_labels': False, 'arrows': False, 
+    'node_size': [node[1] for node in G_exp.degree()], 'width': 1, 
+    'labels': {node: G_exp.nodes[node]['name'] for node in G_exp.nodes()}, 
+    'cmap': 'cool'})
+# fig.savefig('./figures/v3/boutique_subgraph_layout_degree.png', dpi = 150)
+
+
+
+
+
+
+
+
+
+
+
+
 
 # %%
 # Save `nodes`
