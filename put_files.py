@@ -1,5 +1,5 @@
 # Usage: python put_files.py <path_of_source_directory> <path_of_target_directory>
-
+# Example: python put_files.py ./BIO/dist/v3.1/full/ aske/research/BIO/dist/3.1/full/
 import os 
 import sys
 from argparse import ArgumentParser
