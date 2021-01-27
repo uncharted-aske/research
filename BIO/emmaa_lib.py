@@ -18,7 +18,7 @@ import json
 import re
 import numba
 import networkx as nx
-
+import tqdm
 # import sklearn as skl
 # import hdbscan
 
@@ -326,6 +326,8 @@ def process_statements(statements, paths = [], model_id = None):
     statements_processed = []
     nodes = []
     edges = []
+    evidences = []
+    documents = []
     num_statements = len(statements)
     if num_statements > 0:
 
@@ -339,7 +341,86 @@ def process_statements(statements, paths = [], model_id = None):
         del statements
 
 
-        # Extracted edge list
+        # Extract evidence list
+        evidences_all = []
+        for s in statements_processed:
+
+            evidence = []
+
+            if ('evidence' in s.keys()) & (len(s['evidence']) > 0):
+
+                for ev in s['evidence']:
+
+                    evidence = {
+                        'model_id': model_id,
+                        'id': None,
+                        'text': None,
+                        'text_refs': None, 
+                        'doc_id': None,
+                        'statement_id': s['matches_hash'], 
+                        'statement_ids': None,
+                        'edge_ids': None,
+                        'source_hash': str(ev['source_hash']),
+                    }
+
+                    if 'text' in ev.keys():
+                        evidence['text'] = ev['text']
+
+                    if 'text_refs' in ev.keys():
+                        evidence['text_refs'] = ev['text_refs']
+
+                    evidences_all.append(evidence)
+
+
+        # De-duplicate evidence list
+        evidences_hash = {ev['source_hash']: ev for ev in evidences_all}
+        evidences = list(evidences_hash.values())
+
+
+        # Link statement list to evidence list
+        map_evidences_statement_ids = {ev['source_hash']: set() for ev in evidences}
+        for ev in evidences_all:
+            map_evidences_statement_ids[ev['source_hash']] = map_evidences_statement_ids[ev['source_hash']] | {ev['statement_id']}
+
+        for ev in evidences:
+            ev['statement_ids'] = list(map_evidences_statement_ids[ev['source_hash']])
+
+        evidences_all = evidences_hash = map_evidences_statement_ids = None
+        del evidences_all, evidences_hash, map_evidences_statement_ids
+
+
+        # Generate evidence IDs
+        num_evidences = len(evidences)
+        for i, ev in enumerate(evidences):
+            ev['id'] = i
+
+
+        # Hash the document DOIs in `evidences`
+        documents_hash = {ev['text_refs']['DOI']: None for ev in evidences if (ev['text_refs'] is not None) and ('DOI' in ev['text_refs'].keys())}
+
+
+        # Extract document list
+        documents = [{
+            'model_id': model_id,
+            'id': i,
+            'DOI': doi,
+            # 'evidence_ids': [ev['id'] for ev in evidences if (ev['text_refs'] is not None) and ('DOI' in ev['text_refs'].keys()) and ev['text_refs']['DOI'] == doi],
+            # 'statement_ids': [ev['statement_id'] for ev in evidences if (ev['text_refs'] is not None) and ('DOI' in ev['text_refs'].keys()) and ev['text_refs']['DOI'] == doi]
+        } for i, doi in enumerate(documents_hash.keys())]
+        num_docs = len(documents)
+
+        documents_hash = None
+        del documents_hash
+
+
+        # Link document list to evidence list
+        map_doi_ids = {doc['DOI']: doc['id'] for doc in documents}
+        for ev in evidences:
+            if (ev['text_refs'] is not None) and ('DOI' in ev['text_refs'].keys()):
+                ev['doc_id'] = map_doi_ids[ev['text_refs']['DOI']]
+
+
+        # Extract edge list
         edge = []
         for s in statements_processed:
             
@@ -478,10 +559,32 @@ def process_statements(statements, paths = [], model_id = None):
             edge['target_id'] = nodes_name[edge['target_name']]['id']
 
 
+        # Link evidence and doc lists to edge list
+        map_ids_statements = {str(s['matches_hash']): i for i, s in enumerate(statements_processed)}
+        map_evidences_ids = {int(ev['source_hash']): ev['id'] for ev in evidences}
+        map_evidences_doc_id = {int(ev['source_hash']): ev['doc_id'] for ev in evidences}
+        for edge in edges:
+            edge['evidence_ids'] = list(set([map_evidences_ids[ev['source_hash']] for ev in statements_processed[map_ids_statements[edge['statement_id']]]['evidence']]))
+            edge['doc_ids'] = list(set([map_evidences_doc_id[ev['source_hash']] for ev in statements_processed[map_ids_statements[edge['statement_id']]]['evidence']]))
+
+
+        # Link edge list to evidence list
+        map_statements_edge_ids = {edge['statement_id']: edge['id'] for edge in edges}
+        for ev in evidences:
+            ev['edge_ids'] = [map_statements_edge_ids[statement_id] for statement_id in ev['statement_ids'] if statement_id in map_statements_edge_ids.keys()]
+
+
+        # Delete 'source_hash' key
+        for ev in evidences:
+            ev['source_hash'] = ev['statement_id'] = None
+            del ev['source_hash'], ev['statement_id']
+
+
         # Delete unnecessary `edges` keys
         for edge in edges:
             for x in ['source_name', 'target_name', 'source_db_refs', 'target_db_refs']:
                 try:
+                    edge[x] = None
                     del edge[x]
                 except:
                     pass
@@ -489,6 +592,7 @@ def process_statements(statements, paths = [], model_id = None):
 
         # Status
         print(f"{num_statements} statements -> {num_statements_processed} processed statements.")
+        print(f"Found {num_evidences} evidences and {num_docs} documents.")
         print(f"Found {num_nodes} nodes and {num_edges} edges.")
 
 
@@ -503,6 +607,7 @@ def process_statements(statements, paths = [], model_id = None):
         for edge in edges:
             map_edges_ids[edge['statement_id']] = map_edges_ids[edge['statement_id']] + [edge['id']]
 
+
         # Map node names and statement IDs to node IDs and edge IDs
         paths_processed = [{
             'model_id': model_id, 
@@ -511,13 +616,16 @@ def process_statements(statements, paths = [], model_id = None):
             'graph_type': path['graph_type']
         } for path in paths]
 
+
         # Flatten `edge_ids` in `paths_processed`
         for path in paths_processed:
             path['edge_ids'] = [edge_id  for k in path['edge_ids'] for edge_id in k]
 
+
         # Only keep paths with non-empty node and edge lists
         paths_processed = [path for path in paths_processed if (len(path['node_ids']) > 0) & (len(path['edge_ids']) > 0)]
         num_paths_processed = len(paths_processed)
+
 
         # Update 'tested' of `edges`
         paths_edge_ids = [edge_id for path in paths_processed for edge_id in path['edge_ids']]
@@ -533,7 +641,7 @@ def process_statements(statements, paths = [], model_id = None):
         print(f"Found {num_edges_tested} tested edges.")
 
 
-    return nodes, edges, statements_processed, paths_processed
+    return nodes, edges, statements_processed, paths_processed, evidences, documents
 
 # %%
 # Generate NetworkX `MultiDiGraph` from `nodes` and `edges`
