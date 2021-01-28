@@ -6,8 +6,7 @@
 # %%[markdown]
 # Content:
 # * Load Kaggle CORD document embeddings
-# * Check overlap with EMMAA `text_refs`
-# * Explore
+# * Dimensionally reduce and plot
 
 # %%
 import sys
