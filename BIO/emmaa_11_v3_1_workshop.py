@@ -58,7 +58,7 @@ nodes_full, edges_full, statements_full_, paths_mitre_, evidences_full, document
 # time: 2 m 2 s
 
 # %%[markdown]
-# # Onto-Grounded Subgraph
+# # Grounded Subgraph
 
 nodes_grounded = [node for node in nodes_full if node['grounded']]
 
@@ -67,7 +67,7 @@ edges_grounded = [edge for edge in edges_full if (edge['source_id'] in x) | (edg
 
 print(f"{len(nodes_grounded)} nodes and {len(edges_grounded)} edges are in the onto-grounded subgraph.")
 
-# 35202 nodes and 428155 edges are in the onto-grounded subgraph.
+# 35202 nodes and 428155 edges are in the grounded subgraph.
 
 # %%[markdown]
 # # High-Belief Subgraph
@@ -278,6 +278,25 @@ ontocats_belief = emlib.extract_ontocats(nodes_belief, G_onto_JSON)
 
 # Generate a namespace list common to the model graph and the ontology
 namespaces_priority = ['FPLX', 'UPPRO', 'HGNC', 'UP', 'CHEBI', 'GO', 'MESH', 'MIRBASE', 'DOID', 'HP', 'EFO']
+namespaces, namespaces_count = emlib.generate_ordered_namespace_list(namespaces_priority, G_onto_JSON, nodes_grounded)
+
+# Reduce 'db_refs' of each model node to a single entry by namespace priority
+nodes_grounded, __ = emlib.reduce_nodes_db_refs(nodes_grounded, namespaces)
+
+# Calculate in-ontology paths
+emlib.calculate_onto_root_path(nodes_grounded, G_onto_JSON)
+
+# Extract Ontological Categories
+ontocats_grounded = emlib.extract_ontocats(nodes_grounded, G_onto_JSON)
+
+# time: 
+
+
+# %%
+%%time
+
+# Generate a namespace list common to the model graph and the ontology
+namespaces_priority = ['FPLX', 'UPPRO', 'HGNC', 'UP', 'CHEBI', 'GO', 'MESH', 'MIRBASE', 'DOID', 'HP', 'EFO']
 namespaces, namespaces_count = emlib.generate_ordered_namespace_list(namespaces_priority, G_onto_JSON, nodes_full)
 
 # Reduce 'db_refs' of each model node to a single entry by namespace priority
@@ -289,7 +308,7 @@ emlib.calculate_onto_root_path(nodes_full, G_onto_JSON)
 # Extract Ontological Categories
 ontocats_full = emlib.extract_ontocats(nodes_full, G_onto_JSON)
 
-# time: 
+# time: 3 h 1 s
 
 
 # %%
@@ -349,7 +368,7 @@ preamble = {
 # emlib.save_jsonl(ontocats_belief, './dist/v3.1/belief/ontocats.jsonl', preamble = preamble)
 # emlib.save_jsonl(ontocats_mitre, './dist/v3.1/mitre/ontocats.jsonl', preamble = preamble)
 
-emlib.save_jsonl(ontocats_full, './dist/v3.1/full/nodeAtts.jsonl', preamble = preamble)
+emlib.save_jsonl(ontocats_full, './dist/v3.1/full/ontocats.jsonl', preamble = preamble)
 
 # %%
 
