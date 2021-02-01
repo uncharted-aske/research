@@ -10,3 +10,5 @@ __pycache__/
 *.csv
 /aske_files/
 .local
+*.npy
+model_streamed_doc2vec
