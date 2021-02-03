@@ -7,9 +7,10 @@ __pycache__/
 *.pkl
 *.jsonl
 *.json
+*.bibjson
 *.csv
 *.tsv
 /aske_files/
 .local
 *.npy
-model_streamed_doc2vec
+KB/data/
