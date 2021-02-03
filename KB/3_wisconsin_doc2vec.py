@@ -7,7 +7,8 @@
 # Content:
 # * Load Wisconsin's `doc2vec` document embeddings (from `https://xdd.wisc.edu/app_output/xdd-covid-19-8Dec-doc2vec.zip`)
 # * Check overlap with EMMAA Covid-19 corpus
-# * 
+# * Reduce dimensionality and cluster
+# * Output node and edge lists
 
 
 # %%
@@ -121,6 +122,7 @@ if False:
 x = [doc['identifier'][1]['id'].upper() if len(doc['identifier']) > 1 else None for doc in docs_wisconsin]
 labels_emmaa = np.array([True if i in dois_emmaa else False for i in x])
 
+# %%
 # Plot result
 fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
 __ = emlib.plot_emb(coor = embs_wisconsin_red, labels = labels_emmaa, cmap_name = 'qual', legend_kwargs = {'loc': 'lower left'}, colorbar = False, str_title = 'Dimensionally Reduced Document Embeddings (Doc2Vec) of the Wisconsin Covid-19 Corpus', ax = ax)
@@ -137,6 +139,7 @@ doi_doc = '10.1016/j.immuni.2020.04.003'.upper()
 x = [doc['identifier'][1]['id'].upper() if len(doc['identifier']) > 1 else None for doc in docs_wisconsin]
 labels_doc = np.array([True if i == doi_doc else False for i in x])
 
+# %%
 # Plot result
 fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
 __ = emlib.plot_emb(coor = embs_wisconsin_red, labels = labels_doc, cmap_name = 'qual', legend_kwargs = {'loc': 'lower left'}, colorbar = False, str_title = 'Dimensionally Reduced Document Embeddings (Doc2Vec) of the Wisconsin Covid-19 Corpus', ax = ax)
@@ -229,6 +232,7 @@ del fig, ax, x
 model_id = 0
 x = ['doc', 'emmaa', 'clusters']
 
+# for labels, name in zip([labels_doc, labels_emmaa, labels_clusters[0]], x):
 for labels, name in zip([labels_doc, labels_emmaa, labels_clusters[0]], x):
 
     # Ensure integer type in case of boolean labels
@@ -247,7 +251,7 @@ for labels, name in zip([labels_doc, labels_emmaa, labels_clusters[0]], x):
         'edge_ids_source': '<list of int> ID of edges that have this node as a source',
         'edge_ids_target': '<list of int> ID of edges that have this node as a target',
         'out_degree': '<int> out-degree of this node',
-        'in_degree': '<int> in-degree of this node', 
+        'in_degree': '<int> in-degree of this node' 
     }
     emlib.save_jsonl(nodes, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/nodes.jsonl', preamble = preamble)
 
@@ -256,7 +260,7 @@ for labels, name in zip([labels_doc, labels_emmaa, labels_clusters[0]], x):
         'id': '<int> unique node ID that is defined in `nodes.jsonl`',
         'x': '<float> position of the node in the graph layout',
         'y': '<float> position of the node in the graph layout',
-        'z': '<float> position of the node in the graph layout',
+        'z': '<float> position of the node in the graph layout'
     }
     emlib.save_jsonl(nodeLayout, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/nodeLayout.jsonl', preamble = preamble)
 
@@ -269,7 +273,7 @@ for labels, name in zip([labels_doc, labels_emmaa, labels_clusters[0]], x):
         'ontocat_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
         'grounded_cluster': '<bool> whether this model node is grounded to any cluster', 
         'cluster_level': '<int> the level of the most fine-grained cluster at which this model node was mapped (`-1` if not mappable, `0` if root)', 
-        'cluster_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
+        'cluster_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)' 
     }
     emlib.save_jsonl(nodeAtts, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/nodeAtts.jsonl', preamble = preamble)
 
@@ -290,7 +294,7 @@ for labels, name in zip([labels_doc, labels_emmaa, labels_clusters[0]], x):
         'children_ids': None,
         'node_ids': [i for i, l in enumerate(labels) if l == cluster_id],
         'node_ids_direct': [i for i, l in enumerate(labels) if l == cluster_id],
-        'hyperedge_ids': None,
+        'hyperedge_ids': []
     } for cluster_id, cluster_size in zip(labels_unique, labels_unique_counts)]
 
 

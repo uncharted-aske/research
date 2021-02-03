@@ -1694,7 +1694,7 @@ def generate_nodelist_bibjson(model_id = -1, node_metadata = [], node_coors = []
             'edge_ids_source': [],
             'edge_ids_target': [],
             'out_degree': 0,
-            'in_degree:': 0,
+            'in_degree': 0,
         } for i in range(num_nodes)]
 
         # Add metadata if available
