@@ -63,11 +63,11 @@ nodes_full, edges_full, statements_full_, paths_mitre_, evidences_full, document
 nodes_grounded = [node for node in nodes_full if node['grounded']]
 
 x = [node['id'] for node in nodes_grounded]
-edges_grounded = [edge for edge in edges_full if (edge['source_id'] in x) | (edge['target_id'] in x)]
+edges_grounded = [edge for edge in edges_full if (edge['source_id'] in x) & (edge['target_id'] in x)]
 
 print(f"{len(nodes_grounded)} nodes and {len(edges_grounded)} edges are in the onto-grounded subgraph.")
 
-# 35202 nodes and 428155 edges are in the grounded subgraph.
+# 35202 nodes and 411850 edges are in the grounded subgraph.
 
 # %%[markdown]
 # # High-Belief Subgraph
@@ -220,11 +220,11 @@ preamble = {
     'target_id': '<int> ID of the target node (as defined in `nodes.jsonl`)',
     'tested': '<bool> whether this edge is tested'
 }
-emlib.save_jsonl(edges_full, './dist/v3.1/full/edges.jsonl', preamble = preamble)
-# emlib.save_jsonl(edges_grounded, './dist/v3.1/grounded/edges.jsonl', preamble = preamble)
+# emlib.save_jsonl(edges_full, './dist/v3.1/full/edges.jsonl', preamble = preamble)
+emlib.save_jsonl(edges_grounded, './dist/v3.1/grounded/edges.jsonl', preamble = preamble)
 # emlib.save_jsonl(edges_belief, './dist/v3.1/belief/edges.jsonl', preamble = preamble)
 # emlib.save_jsonl(edges_mitre, './dist/v3.1/mitre/edges.jsonl', preamble = preamble)
-emlib.save_jsonl(edges_doc, './dist/v3.1/doc/edges.jsonl', preamble = preamble)
+# emlib.save_jsonl(edges_doc, './dist/v3.1/doc/edges.jsonl', preamble = preamble)
 
 
 # %%[markdown]
@@ -289,7 +289,7 @@ emlib.calculate_onto_root_path(nodes_grounded, G_onto_JSON)
 # Extract Ontological Categories
 ontocats_grounded = emlib.extract_ontocats(nodes_grounded, G_onto_JSON)
 
-# time: 
+# time: 3 h 12 m
 
 
 # %%
@@ -346,8 +346,8 @@ preamble = {
 # emlib.save_jsonl(nodes_doc, './dist/v3.1/doc/nodeAtts.jsonl', preamble = preamble)
 # emlib.save_jsonl(nodes_belief, './dist/v3.1/belief/nodeAtts.jsonl', preamble = preamble)
 # emlib.save_jsonl(nodes_mitre, './dist/v3.1/mitre/nodeAtts.jsonl', preamble = preamble)
-
-emlib.save_jsonl(nodes_full, './dist/v3.1/full/nodeAtts.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_full, './dist/v3.1/full/nodeAtts.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_grounded, './dist/v3.1/grounded/nodeAtts.jsonl', preamble = preamble)
 
 
 # Save `ontocats`
@@ -367,8 +367,8 @@ preamble = {
 # emlib.save_jsonl(ontocats_doc, './dist/v3.1/doc/ontocats.jsonl', preamble = preamble)
 # emlib.save_jsonl(ontocats_belief, './dist/v3.1/belief/ontocats.jsonl', preamble = preamble)
 # emlib.save_jsonl(ontocats_mitre, './dist/v3.1/mitre/ontocats.jsonl', preamble = preamble)
-
-emlib.save_jsonl(ontocats_full, './dist/v3.1/full/ontocats.jsonl', preamble = preamble)
+# emlib.save_jsonl(ontocats_full, './dist/v3.1/full/ontocats.jsonl', preamble = preamble)
+emlib.save_jsonl(ontocats_grounded, './dist/v3.1/grounded/ontocats.jsonl', preamble = preamble)
 
 # %%
 

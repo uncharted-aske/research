@@ -1516,3 +1516,200 @@ def generate_onto_layout(nodes, ontocats, hyperedges, plot = False, ax = None):
     return G, coors, fig, ax
 
 # %%
+# Generate node, node-attribute, node-layout lists from a set of metadata, coordinates, labels
+def generate_nodelist(model_id = -1, node_metadata = [], node_coors = [], node_labels = []):
+
+    # Check types
+    if (len(node_metadata) > 0) & (not isinstance(node_metadata[0], dict)):
+        raise TypeError("'node_metadata' must be a list of dicts.")
+    if (len(node_coors) > 0) & ((not isinstance(node_coors, np.ndarray)) or (len(node_coors.shape) != 2)):
+        raise TypeError("'node_coors' must be a 2D numpy ndarray.")
+    if (len(node_labels) > 0) & (not isinstance(node_labels, np.ndarray)):
+        raise TypeError("'node_coors' must be a numpy ndarray.")
+
+    # Get number of nodes
+    if len(node_metadata) > 0:
+        num_nodes = len(node_metadata)
+    elif len(node_coors) > 0:
+        num_nodes = len(node_coors)
+    elif len(node_labels) > 0:
+        num_nodes = len(node_labels)
+    else:
+        num_nodes = 0
+
+    # Initialize
+    nodes = []
+    nodeLayout = []
+    nodeAtts = []
+
+
+    if num_nodes > 0:
+
+        # Initialize the node list
+        nodes = [{
+            'model_id': model_id,
+            'id': i,
+            'name': None,
+            'db_refs': {},
+            'grounded': False,
+            'edge_ids_source': [],
+            'edge_ids_target': [],
+            'out_degree': 0,
+            'in_degree:': 0,
+        } for i in range(num_nodes)]
+
+        # Add metadata if available
+        if len(node_metadata) > 0:
+
+            for node, metadata in zip(nodes, node_metadata):
+
+                node['grounded'] = True
+                node['name'] = metadata['title']
+
+                if 'doi' in metadata.keys(): 
+                    node['db_refs']['DOI'] = metadata['doi'].upper()
+
+                if 'pmcid' in metadata.keys():
+                    node['db_refs']['PMCID'] = metadata['pmcid'].upper()
+
+                if 'pubmed_id' in metadata.keys(): 
+                    node['db_refs']['PMID'] = metadata['pubmed_id'].upper()
+
+        # Generate node-layout list
+        nodeLayout = [{
+            'model_id': model_id,
+            'id': i,
+            'x': None,
+            'y': None,
+            'z': None,
+        } for i in range(num_nodes)]
+
+        # Get coordinate data if available
+        if len(node_coors) > 0:
+
+            # Map coordinate data
+            num_dim_coors = node_coors.shape[1]
+            c = {0: 'x', 1: 'y', 2: 'z'}
+            for i, node in enumerate(nodeLayout):
+                for j in range(3):
+                    if j < num_dim_coors:
+                        node[c[j]] = node_coors[i, j].item()
+                    else:
+                        node[c[j]] = 0.0
+
+        # Generate node-attribute list
+        nodeAtts = [{
+            'model_id': model_id,
+            'id': i,
+            "db_ref_priority": None, 
+            "grounded_onto": False, 
+            "ontocat_level": None, 
+            "ontocat_ids": None, 
+            "grounded_cluster": False, 
+            "cluster_level": None, 
+            "cluster_ids": None
+        } for i in range(num_nodes)]
+
+        # Get priority DB reference (DOI)
+        if len(node_metadata) > 0:
+            for i in range(num_nodes):
+                nodeAtts[i]['db_ref_priority'] = nodes[i]['db_refs']['DOI']
+
+        # Get cluster label data if available
+        if len(node_labels) > 0:
+
+            # Check axes
+            if len(node_labels.shape) < 2:
+                node_labels = node_labels[:, np.newaxis]
+            num_dim_labels = node_labels.shape[1]
+
+            for i, node in enumerate(nodeAtts):
+                
+                node['cluster_ids'] = [l.item() for l in node_labels[i, :]]
+
+                # Cluster level = last level at which the cluster label is not -1
+                j = np.flatnonzero(node_labels[i, :] == -1)
+                k = 0
+                if len(j) != 0:
+                    k = (j[0] - 1).item()
+                node['cluster_level'] = k
+
+                if k >= 0:
+                    node['grounded_cluster'] = True
+
+                
+    return nodes, nodeLayout, nodeAtts
+
+
+# %%
+# Generate a node list, edge list, and nearest-neighbour graph from a set of coordinates
+def generate_nn_graph(node_coors, node_metadata = [], model_id = -1):
+
+    # Define custom Minkowski distance function to enable non-integer `p`
+    @numba.njit
+    def minkowski_distance(u, v, p = 2.0):
+        return (np.abs(u - v) ** p).sum() ** (1.0 / p)
+        # return np.sum(np.abs(u - v) ** p) ** (1.0 / p)
+
+
+
+    # Find k-nearest neighbours
+    # knn = skl.neighbors.NearestNeighbors(n_neighbors = 1, metric = 'minkowski', p = 2.0 / 3.0)
+    knn = skl.neighbors.NearestNeighbors(n_neighbors = 2, metric = lambda u, v: minkowski_distance(u, v, p = 2.0 / 3.0))
+    knn.fit(node_coors)
+    knn_dist, knn_ind = knn.kneighbors(node_coors)
+
+
+    # Define edge list
+    num_coors = node_coors.shape[0]
+    edges = [{
+        'model_id': model_id,
+        'id': i,
+        'type': 'knn',
+        'belief': float(1.0 / knn_dist[i][1]),
+        'statement_id': None,
+        'source_id': i,
+        'target_id': int(knn_ind[i][1]),
+        'tested': True
+    } for i in range(num_coors)]
+
+
+    # Define NetworkX graph object
+    edge_list = [(edge['source_id'], edge['target_id'], edge) for edge in edges]
+    G = nx.MultiDiGraph()
+    G.add_edges_from(edge_list)
+
+
+    # Define node list
+    num_coors = node_coors.shape[0]
+    nodes = []
+    nodes = [{
+        'model_id': model_id,
+        'id': i,
+        'name': None,
+        'db_refs': None,
+        'grounded': False,
+        'edge_ids_source': [i],
+        'edge_ids_target': [j for j, k in G.in_edges(i)],
+        'out_degree': G.out_degree(i),
+        'in_degree:': G.in_degree(i),
+    } for i in range(num_coors)]
+
+
+    # Add metadata if available
+    if len(node_metadata) == num_coors:
+
+        for i, node in enumerate(nodes):
+            node['grounded'] = True
+            node['name'] = node_metadata[i]['title']
+            node['db_refs'] = {
+                'DOI': node_metadata[i]['doi'].upper(), 
+                'PMCID': node_metadata[i]['pmcid'].upper(), 
+                'PMID': node_metadata[i]['pubmed_id'].upper()
+            }
+
+
+    return nodes, edges, G
+
+
+
