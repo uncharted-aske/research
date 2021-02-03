@@ -49,8 +49,8 @@ dois_kaggle = set([doc['doi'] for doc in docs_kaggle])
 
 
 print(f"There are {len(dois_emmaa)} and {len(dois_kaggle)} unique docs in the EMMAA and Kaggle corpuses respectively.")
-print(f"* union (E & K): {len(dois_emmaa & dois_kaggle)}")
-print(f"* intersection (E | K): {len(dois_emmaa | dois_kaggle)}")
+print(f"* union (E | K): {len(dois_emmaa | dois_kaggle)}")
+print(f"* intersection (E & K): {len(dois_emmaa & dois_kaggle)}")
 print(f"* left difference (E - K): {len(dois_emmaa - dois_kaggle)}")
 print(f"* right difference (K - E): {len(dois_kaggle - dois_emmaa)}")
 print(f"* symmetric difference (E ^ K): {len(dois_emmaa ^ dois_kaggle)}")
@@ -60,8 +60,8 @@ print(f"{len(dois_emmaa - dois_kaggle) / len(dois_emmaa) * 100:.0f}% of the EMMA
 # %%
 
 # There are 85959 and 220839 unique docs in the EMMAA and Kaggle corpuses respectively.
-# * union (E & K): 10938
-# * intersection (E | K): 295860
+# * union (E & K): 295860
+# * intersection (E | K): 10938
 # * left difference (E - K): 75021
 # * right difference (K - E): 209901
 # * symmetric difference (E ^ K): 284922

@@ -211,7 +211,7 @@ def plot_emb(coor = np.array([]), edge_list = [], labels = [], ax = [], figsize 
         plt.setp(ax, xlabel = '$x$', ylabel = '$y$', zlabel = '$z$')
     
     # Legend
-    if (cmap_name == 'qual') & (n_uniq <= 10) & (n_uniq > 1) & (len(legend_kwargs) > 1):
+    if (cmap_name == 'qual') & (n_uniq <= 10) & (n_uniq > 1) & (len(legend_kwargs) > 0):
 
         # Custom
         legend_obj = [mpl.lines.Line2D([0], [0], marker = 'o', markersize = 2.0 ** 2, color = 'none', markeredgecolor = 'none', markerfacecolor = col[i, :3], alpha = 1.0, label = f'{labels_uniq[i]}') for i in range(n_uniq)]
@@ -1601,5 +1601,179 @@ def generate_nn_graph(node_coors, node_metadata = [], model_id = -1):
 
     return nodes, edges, G
 
+# %%
+# Generate nearest-neighbour centroid list from a set of coordinates and cluster labels
+def generate_nn_cluster_centroid_list(coors, labels = [], p = 2):
+
+    # Error handling
+    if not isinstance(coors, np.ndarray):
+        raise TypeError("'coor' must be an numpy ndarray.")
+    if not ((isinstance(labels, list) | isinstance(labels, np.ndarray)) and (len(labels) in [0, coors.shape[0]])): 
+        raise TypeError("'labels' must be either [] or a N x 1 list or numpy ndarrray.")
+
+
+    # Dimensions
+    num_coors, num_dim = coors.shape
+
+
+    # Assume no label = identically zeros
+    if len(labels) == 0:
+        labels = np.zeros((num_coors, ))
+
+    labels_unique = np.unique(labels)
+    num_unique = len(labels_unique)
+
+
+    # Calculate centroid coordinates
+    coors_centroid = np.empty((num_unique, num_dim))
+    for i in range(num_unique):
+        coors_centroid[i, :] = np.nanmedian(coors[labels == labels_unique[i], :], axis = 0)
+
+
+    # Choose kNN metric
+    if isinstance(p, int) & (p >= 1):
+        knn = skl.neighbors.NearestNeighbors(n_neighbors = 1, metric = 'minkowski', p = p)
+
+    else:
+
+        # Define custom Minkowski distance function to enable non-integer `p`
+        @numba.njit
+        def minkowski_distance(u, v, p):
+            return (np.abs(u - v) ** p).sum() ** (1.0 / p)
+
+        knn = skl.neighbors.NearestNeighbors(n_neighbors = 2, metric = lambda u, v: minkowski_distance(u, v, p = p))
+    
+    
+    # Find index of k-nearest neighbour to the cluster centroids
+    for i in range(num_unique):
+        knn.fit(coors[labels == labels_unique[i], :])
+        knn_ind = knn.kneighbors(coors_centroid, return_distance = False)
+        knn_ind = np.squeeze(knn_ind)
+
+
+    return knn_ind, labels_unique, coors_centroid
+
 
 # %%
+# Generate node, node-attribute, node-layout lists from a set of BibJSON metadata, coordinates, labels
+def generate_nodelist_bibjson(model_id = -1, node_metadata = [], node_coors = [], node_labels = []):
+
+    # Check types
+    if (len(node_metadata) > 0) & (not isinstance(node_metadata[0], dict)):
+        raise TypeError("'node_metadata' must be a list of dicts.")
+    if (len(node_coors) > 0) & ((not isinstance(node_coors, np.ndarray)) or (len(node_coors.shape) != 2)):
+        raise TypeError("'node_coors' must be a 2D numpy ndarray.")
+    if (len(node_labels) > 0) & (not isinstance(node_labels, np.ndarray)):
+        raise TypeError("'node_labels' must be a numpy ndarray.")
+
+    # Get number of nodes
+    if len(node_metadata) > 0:
+        num_nodes = len(node_metadata)
+    elif len(node_coors) > 0:
+        num_nodes = len(node_coors)
+    elif len(node_labels) > 0:
+        num_nodes = len(node_labels)
+    else:
+        num_nodes = 0
+
+    # Initialize
+    nodes = []
+    nodeLayout = []
+    nodeAtts = []
+
+
+    if num_nodes > 0:
+
+        # Initialize the node list
+        nodes = [{
+            'model_id': model_id,
+            'id': i,
+            'name': None,
+            'db_refs': {},
+            'grounded': False,
+            'edge_ids_source': [],
+            'edge_ids_target': [],
+            'out_degree': 0,
+            'in_degree:': 0,
+        } for i in range(num_nodes)]
+
+        # Add metadata if available
+        if len(node_metadata) > 0:
+
+            for node, metadata in zip(nodes, node_metadata):
+
+                node['name'] = metadata['title']
+
+                if (metadata['identifier'] != None) | ((isinstance(metadata['identifier'], list)) & (len(metadata['identifier']) > 0)):
+                    
+                    node['grounded'] = True
+                    
+                    for identifier in metadata['identifier']:
+
+                        node['db_refs'][identifier['type']] = identifier['id']
+
+        # Generate node-layout list
+        nodeLayout = [{
+            'model_id': model_id,
+            'id': i,
+            'x': None,
+            'y': None,
+            'z': None,
+        } for i in range(num_nodes)]
+
+        # Get coordinate data if available
+        if len(node_coors) > 0:
+
+            # Map coordinate data
+            num_dim_coors = node_coors.shape[1]
+            c = {0: 'x', 1: 'y', 2: 'z'}
+            for i, node in enumerate(nodeLayout):
+                for j in range(3):
+                    if j < num_dim_coors:
+                        node[c[j]] = node_coors[i, j].item()
+                    else:
+                        node[c[j]] = 0.0
+
+        # Generate node-attribute list
+        nodeAtts = [{
+            'model_id': model_id,
+            'id': i,
+            "db_ref_priority": None, 
+            "grounded_onto": False, 
+            "ontocat_level": None, 
+            "ontocat_ids": None, 
+            "grounded_cluster": False, 
+            "cluster_level": None, 
+            "cluster_ids": None
+        } for i in range(num_nodes)]
+
+
+        # Get cluster label data if available
+        if len(node_labels) > 0:
+
+            # Check axes
+            if len(node_labels.shape) < 2:
+                node_labels = node_labels[:, np.newaxis]
+            num_dim_labels = node_labels.shape[1]
+
+            # Ensure type in case of boolean labels
+            node_labels = node_labels.astype('int')
+
+
+            for i, node in enumerate(nodeAtts):
+                
+                node['cluster_ids'] = [l.item() for l in node_labels[i, :]]
+
+                # Cluster level = last level at which the cluster label is not -1
+                j = np.flatnonzero(node_labels[i, :] == -1)
+                k = 0
+                if len(j) != 0:
+                    k = (j[0] - 1).item()
+                node['cluster_level'] = k
+
+                if k >= 0:
+                    node['grounded_cluster'] = True
+
+                
+    return nodes, nodeLayout, nodeAtts
+
