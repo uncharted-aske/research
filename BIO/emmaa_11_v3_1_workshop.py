@@ -95,6 +95,7 @@ print(f"{len(nodes_mitre)} nodes and {len(edges_mitre)} edges are in the Mitre-t
 # %%[markdown]
 # # Document Subgraph
 
+# %%
 # Define document of interest
 doc_doi = '10.1016/j.immuni.2020.04.003'.upper()
 map_dois_doc_ids = {doc['DOI']: doc['id'] for doc in documents_full}
@@ -112,8 +113,55 @@ print(f"{len(nodes_doc)} nodes and {len(edges_doc)} edges are in the document su
 # 10 nodes and 8 edges are in the document subgraph.
 
 # %%
+# # Document+ Subgraph
+# 
+# Document+ = Document subgraph and its local neighbourhood
 
-x = (nodes_doc, edges_doc)
+# %%
+
+# Get the edges adjacent to the subgraph's nodes
+edge_ids = list(set([edge_id for node in nodes_doc for edge_id in (node['edge_ids_source'] + node['edge_ids_target'])]))
+
+
+# Filter edges by belief score
+b = 0.99
+map_ids_edges = {edge['id']: i for i, edge in enumerate(edges_full)}
+edge_ids_belief = list(set([edge_id for edge_id in edge_ids if edges_full[map_ids_edges[edge_id]]['belief'] >= b]))
+
+
+# Get adjacent nodes
+node_ids_belief = list(set([node_id for edge_id in edge_ids_belief for node_id in ([edges_full[map_ids_edges[edge_id]]['source_id']] + [edges_full[map_ids_edges[edge_id]]['target_id']])]))
+
+
+# Filter nodes by groundedness
+map_ids_nodes = {node['id']: i for i, node in enumerate(nodes_full)}
+node_ids_belief_grounded = list(set([node_id for node_id in node_ids_belief if nodes_full[map_ids_nodes[node_id]]['grounded'] == True]))
+
+
+# Get high-belief edges that are adjacent to these grounded nodes
+edge_ids_belief_grounded = [edge['id'] for edge in edges_full if ((edge['belief'] >= b) & (edge['source_id'] in node_ids_belief_grounded) & (edge['target_id'] in node_ids_belief_grounded))]
+
+
+# Union with the document node, edge lists
+node_ids_belief_grounded = set(node_ids_belief_grounded) | set([node['id'] for node in nodes_doc])
+edge_ids_belief_grounded = set(edge_ids_belief_grounded) | set([edge['id'] for edge in edges_doc])
+
+
+# Get node, edge objects
+nodes_docplus = [nodes_full[map_ids_nodes[node_id]] for node_id in node_ids_belief_grounded]
+edges_docplus = [edges_full[map_ids_edges[edge_id]] for edge_id in edge_ids_belief_grounded]
+
+
+print(f"{len(node_ids_belief_grounded)} nodes and {len(edge_ids_belief_grounded)} edges are in the document+ subgraph.")
+
+
+b = map_ids_edges = edge_ids_belief = node_ids_belief = map_ids_nodes = node_ids_belief_grounded = edge_ids_belief_grounded = None
+del b, map_ids_edges, edge_ids_belief, node_ids_belief, map_ids_nodes, node_ids_belief_grounded, edge_ids_belief_grounded
+
+
+# %%
+
+x = (nodes_docplus, edges_docplus)
 
 
 y = []
@@ -166,6 +214,7 @@ del node, edge, edge_ids, edge_ids_inter, edge_ids_x, x, y, z, map_node, map_edg
 # %%[markdown]
 # Save outputs
 
+# %%
 # `evidences`
 preamble = {
     'model_id': '<int> unique model ID that is present in all related distribution files',
@@ -187,7 +236,7 @@ preamble = {
 }
 emlib.save_jsonl(documents_full, './dist/v3.1/full/documents.jsonl', preamble = preamble)
 
-
+# %%
 # `nodes`
 preamble = {
     'model_id': '<int> unique model ID that is present in all related distribution files',
@@ -200,11 +249,12 @@ preamble = {
     'out_degree': '<int> out-degree of this node',
     'in_degree': '<int> in-degree of this node', 
 }
-emlib.save_jsonl(nodes_full, './dist/v3.1/full/nodes.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_full, './dist/v3.1/full/nodes.jsonl', preamble = preamble)
 # emlib.save_jsonl(nodes_grounded, './dist/v3.1/grounded/nodes.jsonl', preamble = preamble)
 # emlib.save_jsonl(nodes_belief, './dist/v3.1/belief/nodes.jsonl', preamble = preamble)
 # emlib.save_jsonl(nodes_mitre, './dist/v3.1/mitre/nodes.jsonl', preamble = preamble)
-emlib.save_jsonl(nodes_doc, './dist/v3.1/doc/nodes.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_doc, './dist/v3.1/doc/nodes.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_docplus, './dist/v3.1/doc+/nodes.jsonl', preamble = preamble)
 
 
 # `edges`
@@ -221,10 +271,11 @@ preamble = {
     'tested': '<bool> whether this edge is tested'
 }
 # emlib.save_jsonl(edges_full, './dist/v3.1/full/edges.jsonl', preamble = preamble)
-emlib.save_jsonl(edges_grounded, './dist/v3.1/grounded/edges.jsonl', preamble = preamble)
+# emlib.save_jsonl(edges_grounded, './dist/v3.1/grounded/edges.jsonl', preamble = preamble)
 # emlib.save_jsonl(edges_belief, './dist/v3.1/belief/edges.jsonl', preamble = preamble)
 # emlib.save_jsonl(edges_mitre, './dist/v3.1/mitre/edges.jsonl', preamble = preamble)
 # emlib.save_jsonl(edges_doc, './dist/v3.1/doc/edges.jsonl', preamble = preamble)
+emlib.save_jsonl(edges_docplus, './dist/v3.1/doc+/edges.jsonl', preamble = preamble)
 
 
 # %%[markdown]
@@ -254,6 +305,25 @@ emlib.calculate_onto_root_path(nodes_doc, G_onto_JSON)
 ontocats_doc = emlib.extract_ontocats(nodes_doc, G_onto_JSON)
 
 # time: 1 m 17 s
+
+
+# %%
+%%time
+
+# Generate a namespace list common to the model graph and the ontology
+namespaces_priority = ['FPLX', 'UPPRO', 'HGNC', 'UP', 'CHEBI', 'GO', 'MESH', 'MIRBASE', 'DOID', 'HP', 'EFO']
+namespaces, namespaces_count = emlib.generate_ordered_namespace_list(namespaces_priority, G_onto_JSON, nodes_docplus)
+
+# Reduce 'db_refs' of each model node to a single entry by namespace priority
+nodes_docplus, __ = emlib.reduce_nodes_db_refs(nodes_docplus, namespaces)
+
+# Calculate in-ontology paths
+emlib.calculate_onto_root_path(nodes_docplus, G_onto_JSON)
+
+# Extract Ontological Categories
+ontocats_docplus = emlib.extract_ontocats(nodes_docplus, G_onto_JSON)
+
+# time: 
 
 # %%
 %%time
@@ -344,10 +414,11 @@ preamble = {
     'cluster_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
 }
 # emlib.save_jsonl(nodes_doc, './dist/v3.1/doc/nodeAtts.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_docplus, './dist/v3.1/doc+/nodeAtts.jsonl', preamble = preamble)
 # emlib.save_jsonl(nodes_belief, './dist/v3.1/belief/nodeAtts.jsonl', preamble = preamble)
 # emlib.save_jsonl(nodes_mitre, './dist/v3.1/mitre/nodeAtts.jsonl', preamble = preamble)
 # emlib.save_jsonl(nodes_full, './dist/v3.1/full/nodeAtts.jsonl', preamble = preamble)
-emlib.save_jsonl(nodes_grounded, './dist/v3.1/grounded/nodeAtts.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_grounded, './dist/v3.1/grounded/nodeAtts.jsonl', preamble = preamble)
 
 
 # Save `ontocats`
@@ -365,10 +436,11 @@ preamble = {
     'hyperedge_ids': '<array of int> unordered list of hyperedge IDs (see `hyperedges.jsonl`) that are within this category',
 }
 # emlib.save_jsonl(ontocats_doc, './dist/v3.1/doc/ontocats.jsonl', preamble = preamble)
+emlib.save_jsonl(ontocats_docplus, './dist/v3.1/doc+/ontocats.jsonl', preamble = preamble)
 # emlib.save_jsonl(ontocats_belief, './dist/v3.1/belief/ontocats.jsonl', preamble = preamble)
 # emlib.save_jsonl(ontocats_mitre, './dist/v3.1/mitre/ontocats.jsonl', preamble = preamble)
 # emlib.save_jsonl(ontocats_full, './dist/v3.1/full/ontocats.jsonl', preamble = preamble)
-emlib.save_jsonl(ontocats_grounded, './dist/v3.1/grounded/ontocats.jsonl', preamble = preamble)
+# emlib.save_jsonl(ontocats_grounded, './dist/v3.1/grounded/ontocats.jsonl', preamble = preamble)
 
 # %%
 
