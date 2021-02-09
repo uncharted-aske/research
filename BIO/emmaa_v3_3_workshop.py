@@ -91,7 +91,7 @@ nodes_mitre, edges_mitre, __ = emlib.intersect_graph_paths(nodes_full, edges_ful
 
 print(f"{len(nodes_mitre)} nodes and {len(edges_mitre)} edges are in the Mitre-tested subgraph.")
 
-# 1687 nodes and 5034 edges are in the Mitre-tested subgraph.
+# 1768 nodes and 5521 edges are in the Mitre-tested subgraph.
 
 # %%[markdown]
 # # Document Subgraph
@@ -250,12 +250,12 @@ preamble = {
     'out_degree': '<int> out-degree of this node',
     'in_degree': '<int> in-degree of this node', 
 }
-emlib.save_jsonl(nodes_full, './dist/v3.3/full/nodes.jsonl', preamble = preamble)
-emlib.save_jsonl(nodes_grounded, './dist/v3.3/grounded/nodes.jsonl', preamble = preamble)
-emlib.save_jsonl(nodes_belief, './dist/v3.3/belief/nodes.jsonl', preamble = preamble)
-# emlib.save_jsonl(nodes_mitre, './dist/v3.3/mitre/nodes.jsonl', preamble = preamble)
-emlib.save_jsonl(nodes_doc, './dist/v3.3/doc/nodes.jsonl', preamble = preamble)
-emlib.save_jsonl(nodes_docplus, './dist/v3.3/doc+/nodes.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_full, './dist/v3.3/full/nodes.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_grounded, './dist/v3.3/grounded/nodes.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_belief, './dist/v3.3/belief/nodes.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_mitre, './dist/v3.3/mitre/nodes.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_doc, './dist/v3.3/doc/nodes.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_docplus, './dist/v3.3/doc+/nodes.jsonl', preamble = preamble)
 
 
 # `edges`
@@ -271,12 +271,12 @@ preamble = {
     'target_id': '<int> ID of the target node (as defined in `nodes.jsonl`)',
     'tested': '<bool> whether this edge is tested'
 }
-emlib.save_jsonl(edges_full, './dist/v3.3/full/edges.jsonl', preamble = preamble)
-emlib.save_jsonl(edges_grounded, './dist/v3.3/grounded/edges.jsonl', preamble = preamble)
-emlib.save_jsonl(edges_belief, './dist/v3.3/belief/edges.jsonl', preamble = preamble)
-# emlib.save_jsonl(edges_mitre, './dist/v3.3/mitre/edges.jsonl', preamble = preamble)
-emlib.save_jsonl(edges_doc, './dist/v3.3/doc/edges.jsonl', preamble = preamble)
-emlib.save_jsonl(edges_docplus, './dist/v3.3/doc+/edges.jsonl', preamble = preamble)
+# emlib.save_jsonl(edges_full, './dist/v3.3/full/edges.jsonl', preamble = preamble)
+# emlib.save_jsonl(edges_grounded, './dist/v3.3/grounded/edges.jsonl', preamble = preamble)
+# emlib.save_jsonl(edges_belief, './dist/v3.3/belief/edges.jsonl', preamble = preamble)
+emlib.save_jsonl(edges_mitre, './dist/v3.3/mitre/edges.jsonl', preamble = preamble)
+# emlib.save_jsonl(edges_doc, './dist/v3.3/doc/edges.jsonl', preamble = preamble)
+# emlib.save_jsonl(edges_docplus, './dist/v3.3/doc+/edges.jsonl', preamble = preamble)
 
 
 # %%[markdown]
@@ -414,12 +414,12 @@ preamble = {
     'cluster_level': '<int> the level of the most fine-grained cluster at which this model node was mapped (`-1` if not mappable, `0` if root)', 
     'cluster_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
 }
-emlib.save_jsonl(nodes_doc, './dist/v3.3/doc/nodeAtts.jsonl', preamble = preamble)
-emlib.save_jsonl(nodes_docplus, './dist/v3.3/doc+/nodeAtts.jsonl', preamble = preamble)
-emlib.save_jsonl(nodes_belief, './dist/v3.3/belief/nodeAtts.jsonl', preamble = preamble)
-# emlib.save_jsonl(nodes_mitre, './dist/v3.3/mitre/nodeAtts.jsonl', preamble = preamble)
-emlib.save_jsonl(nodes_full, './dist/v3.3/full/nodeAtts.jsonl', preamble = preamble)
-emlib.save_jsonl(nodes_grounded, './dist/v3.3/grounded/nodeAtts.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_doc, './dist/v3.3/doc/nodeAtts.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_docplus, './dist/v3.3/doc+/nodeAtts.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_belief, './dist/v3.3/belief/nodeAtts.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_mitre, './dist/v3.3/mitre/nodeAtts.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_full, './dist/v3.3/full/nodeAtts.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_grounded, './dist/v3.3/grounded/nodeAtts.jsonl', preamble = preamble)
 
 
 # Save `ontocats`
@@ -436,12 +436,12 @@ preamble = {
     'node_ids_direct': '<array of int> node_ids but only model nodes which were directly mapped to this category and not any of the child categories',
     'hyperedge_ids': '<array of int> unordered list of hyperedge IDs (see `hyperedges.jsonl`) that are within this category',
 }
-emlib.save_jsonl(ontocats_doc, './dist/v3.3/doc/ontocats.jsonl', preamble = preamble)
-emlib.save_jsonl(ontocats_docplus, './dist/v3.3/doc+/ontocats.jsonl', preamble = preamble)
-emlib.save_jsonl(ontocats_belief, './dist/v3.3/belief/ontocats.jsonl', preamble = preamble)
-# emlib.save_jsonl(ontocats_mitre, './dist/v3.3/mitre/ontocats.jsonl', preamble = preamble)
-emlib.save_jsonl(ontocats_full, './dist/v3.3/full/ontocats.jsonl', preamble = preamble)
-emlib.save_jsonl(ontocats_grounded, './dist/v3.3/grounded/ontocats.jsonl', preamble = preamble)
+# emlib.save_jsonl(ontocats_doc, './dist/v3.3/doc/ontocats.jsonl', preamble = preamble)
+# emlib.save_jsonl(ontocats_docplus, './dist/v3.3/doc+/ontocats.jsonl', preamble = preamble)
+# emlib.save_jsonl(ontocats_belief, './dist/v3.3/belief/ontocats.jsonl', preamble = preamble)
+emlib.save_jsonl(ontocats_mitre, './dist/v3.3/mitre/ontocats.jsonl', preamble = preamble)
+# emlib.save_jsonl(ontocats_full, './dist/v3.3/full/ontocats.jsonl', preamble = preamble)
+# emlib.save_jsonl(ontocats_grounded, './dist/v3.3/grounded/ontocats.jsonl', preamble = preamble)
 
 
 # %%
