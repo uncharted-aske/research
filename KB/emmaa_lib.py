@@ -338,6 +338,32 @@ def save_jsonl(list_dicts, full_path, preamble = None):
             
             x.write(json.dumps(obj_) + '\n')
 
+
+
+# %%
+# Load JSONL file
+def load_jsonl(full_path, remove_preamble = False):
+
+    # Check if the path points to an existing file
+    if pathlib.Path(full_path).exists() == False:
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), full_path)
+
+    list_objects = []
+    with open(f'{full_path}', 'r') as file:
+        for line in file:
+
+            # Read line by line
+            try: 
+                list_objects.append(json.loads(line))
+            except:
+                print(line)
+
+    if remove_preamble:
+        list_objects = list_objects[1:]
+
+    return list_objects
+
+
 # %%
 # Process EMMAA statements and return a node/edge list
 def process_statements(statements, paths = [], model_id = None):
