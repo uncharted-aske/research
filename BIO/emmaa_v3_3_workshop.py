@@ -5,15 +5,15 @@
 
 # %%[markdown]
 # Content: 
-# * Load full EMMAA Covid-19 model graph
-# * Define objects (`documents`, `evidences`, `paths`, `nodes`, `edges`, `G`, `ontocats`)
-# * Create subgraphs ("grounded_onto", "tested_mitre", "belief095", "doc")
-# * Generate the associated output files
+# * Same process as v3.3
+# * Latest EMMAA Covid-19 model statements (2021-02-08)
+# * Added string sanitization and Ontology v1.7
 
 # %%
 import json
 import pickle
 import time
+import datetime
 import numpy as np
 import scipy as sp
 import networkx as nx
@@ -30,16 +30,13 @@ np.random.seed(0)
 
 # %%[markdown]
 # # Load Statements of Full Model Graph
-statements_full = {}
-with open('./data/covid19/covid19-snapshot_dec8-2020/source/latest_statements_covid19.json', 'r') as x:
-    statements_full = json.load(x)
 
-x = None
-del x
+statements_full = emlib.load_jsonl(f"/home/nliu/projects/aske/research/BIO/data/models/covid19/2021-02-09/latest_statements.jsonl")
+
 
 # %%[markdown]
-# Load Mitre-Tested Paths
-paths_mitre = emlib.load_jsonl('./data/covid19/covid19-snapshot_dec8-2020/source/covid19_mitre_tests_latest_paths.jsonl')
+# Load Paths from Mitre Test
+paths_mitre = emlib.load_jsonl('/home/nliu/projects/aske/research/BIO/data/models/covid19/2021-02-09/covid19_mitre_tests_latest_paths.jsonl')
 
 
 # %%[markdown]
@@ -48,31 +45,35 @@ paths_mitre = emlib.load_jsonl('./data/covid19/covid19-snapshot_dec8-2020/source
 # %%
 %%time
 
-model_id = 0
+model_id = 2
 nodes_full, edges_full, statements_full_, paths_mitre_, evidences_full, documents_full = emlib.process_statements(statements_full, paths = paths_mitre, model_id = model_id)
 
-# 379717 statements -> 375575 processed statements.
-# Found 478598 evidences and 85959 documents.
-# Found 42198 nodes and 429976 edges.
 
-# time: 2 m 2 s
+# 395394 statements -> 391070 processed statements.
+# Found 501203 evidences and 92456 documents.
+# Found 44104 nodes and 448723 edges.
+# 4289 paths -> 4289 processed paths.
+# Found 5521 tested edges.
+
+# time: 2 m 30 s
 
 # %%[markdown]
 # # Grounded Subgraph
 
+# Filter nodes by 'groundedness'
 nodes_grounded = [node for node in nodes_full if node['grounded']]
 
 x = [node['id'] for node in nodes_grounded]
 edges_grounded = [edge for edge in edges_full if (edge['source_id'] in x) & (edge['target_id'] in x)]
 
-print(f"{len(nodes_grounded)} nodes and {len(edges_grounded)} edges are in the onto-grounded subgraph.")
+print(f"{len(nodes_grounded)} nodes and {len(edges_grounded)} edges are in the grounded subgraph.")
 
-# 35202 nodes and 411850 edges are in the grounded subgraph.
+# 36038 nodes and 427735 edges are in the grounded subgraph.
 
 # %%[markdown]
 # # High-Belief Subgraph
 
-# Filter `edges` by belief score
+# Filter edges by belief score
 edges_belief = [edge for edge in edges_full if edge['belief'] >= 0.95]
 
 # Filter `nodes` by `edges`
@@ -81,7 +82,7 @@ nodes_belief = [node for node in nodes_full if (len(set(node['edge_ids_source'])
 
 print(f"{len(nodes_belief)} nodes and {len(edges_belief)} edges are in the high-belief subgraph.")
 
-# 6289 nodes and 33380 edges are in the high-belief subgraph.
+# 7195 nodes and 34068 edges are in the high-belief subgraph.
 
 # %%[markdown]
 # # Mitre-Tested Subgraph 
@@ -110,7 +111,7 @@ nodes_doc = [node for node in nodes_full if node['id'] in x]
 
 print(f"{len(nodes_doc)} nodes and {len(edges_doc)} edges are in the document subgraph.")
 
-# 10 nodes and 8 edges are in the document subgraph.
+# 8 nodes and 7 edges are in the document subgraph.
 
 # %%
 # # Document+ Subgraph
@@ -153,7 +154,7 @@ edges_docplus = [edges_full[map_ids_edges[edge_id]] for edge_id in edge_ids_beli
 
 
 print(f"{len(node_ids_belief_grounded)} nodes and {len(edge_ids_belief_grounded)} edges are in the document+ subgraph.")
-
+# 169 nodes and 756 edges are in the document+ subgraph.
 
 b = map_ids_edges = edge_ids_belief = node_ids_belief = map_ids_nodes = node_ids_belief_grounded = edge_ids_belief_grounded = None
 del b, map_ids_edges, edge_ids_belief, node_ids_belief, map_ids_nodes, node_ids_belief_grounded, edge_ids_belief_grounded
@@ -225,7 +226,7 @@ preamble = {
     'statement_ids': '<str> ID of supported statement (from `matches_hash` in `latest_statements_covid19.jsonl`)',
     'edge_ids': '<list of int> IDs of supported edges',
 }
-emlib.save_jsonl(evidences_full, './dist/v3.1/full/evidences.jsonl', preamble = preamble)
+emlib.save_jsonl(evidences_full, './dist/v3.3/full/evidences.jsonl', preamble = preamble)
 
 
 # `documents`
@@ -234,27 +235,27 @@ preamble = {
     'id': '<int> unique document ID that is referenced by other files',
     'DOI': '<str> DOI identifier of this document (all caps)'
 }
-emlib.save_jsonl(documents_full, './dist/v3.1/full/documents.jsonl', preamble = preamble)
+emlib.save_jsonl(documents_full, './dist/v3.3/full/documents.jsonl', preamble = preamble)
 
 # %%
 # `nodes`
 preamble = {
     'model_id': '<int> unique model ID that is present in all related distribution files',
     'id': '<int> unique node ID that is referenced by other files',
-    'name': '<str> unique human-interpretable name of this node (from the `name` attribute in `latest_statements_covid19.jsonl`)',
-    'db_refs': '<dict> database references of this node (from the `db_refs` attribute in `latest_statements_covid19.jsonl`)',
+    'name': '<str> unique human-interpretable name of this node (from the `name` attribute in `latest_statements.jsonl`)',
+    'db_refs': '<dict> database references of this node (from the `db_refs` attribute in `latest_statements.jsonl`)',
     'grounded': '<bool> whether this node is grounded to any database',
     'edge_ids_source': '<list of int> ID of edges that have this node as a source',
     'edge_ids_target': '<list of int> ID of edges that have this node as a target',
     'out_degree': '<int> out-degree of this node',
     'in_degree': '<int> in-degree of this node', 
 }
-# emlib.save_jsonl(nodes_full, './dist/v3.1/full/nodes.jsonl', preamble = preamble)
-# emlib.save_jsonl(nodes_grounded, './dist/v3.1/grounded/nodes.jsonl', preamble = preamble)
-# emlib.save_jsonl(nodes_belief, './dist/v3.1/belief/nodes.jsonl', preamble = preamble)
-# emlib.save_jsonl(nodes_mitre, './dist/v3.1/mitre/nodes.jsonl', preamble = preamble)
-# emlib.save_jsonl(nodes_doc, './dist/v3.1/doc/nodes.jsonl', preamble = preamble)
-emlib.save_jsonl(nodes_docplus, './dist/v3.1/doc+/nodes.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_full, './dist/v3.3/full/nodes.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_grounded, './dist/v3.3/grounded/nodes.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_belief, './dist/v3.3/belief/nodes.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_mitre, './dist/v3.3/mitre/nodes.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_doc, './dist/v3.3/doc/nodes.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_docplus, './dist/v3.3/doc+/nodes.jsonl', preamble = preamble)
 
 
 # `edges`
@@ -262,27 +263,27 @@ preamble = {
     'model_id': '<int> unique model ID that is present in all related distribution files',
     'id': '<int> unique edge ID that is referenced by other files',
     'type': '<str> type of this edge (from `type` attribute in `latest_statements_covid19.jsonl`)',
-    'belief': '<float> belief score of this edge (from `belief` attribute in `latest_statements_covid19.jsonl`)',
-    'statement_id': '<str> unique statement id (from `matches_hash` in `latest_statements_covid19.jsonl`)', 
+    'belief': '<float> belief score of this edge (from `belief` attribute in `latest_statements.jsonl`)',
+    'statement_id': '<str> unique statement id (from `matches_hash` in `latest_statements.jsonl`)', 
     'evidence_ids': '<list of int> IDs of the supporting evidences (as defined in `evidences.jsonl`)',
     'doc_ids': '<list of int> IDs of the supporting documents (as defined in `documents.jsonl`)',
     'source_id': '<int> ID of the source node (as defined in `nodes.jsonl`)' ,
     'target_id': '<int> ID of the target node (as defined in `nodes.jsonl`)',
     'tested': '<bool> whether this edge is tested'
 }
-# emlib.save_jsonl(edges_full, './dist/v3.1/full/edges.jsonl', preamble = preamble)
-# emlib.save_jsonl(edges_grounded, './dist/v3.1/grounded/edges.jsonl', preamble = preamble)
-# emlib.save_jsonl(edges_belief, './dist/v3.1/belief/edges.jsonl', preamble = preamble)
-# emlib.save_jsonl(edges_mitre, './dist/v3.1/mitre/edges.jsonl', preamble = preamble)
-# emlib.save_jsonl(edges_doc, './dist/v3.1/doc/edges.jsonl', preamble = preamble)
-emlib.save_jsonl(edges_docplus, './dist/v3.1/doc+/edges.jsonl', preamble = preamble)
+emlib.save_jsonl(edges_full, './dist/v3.3/full/edges.jsonl', preamble = preamble)
+emlib.save_jsonl(edges_grounded, './dist/v3.3/grounded/edges.jsonl', preamble = preamble)
+emlib.save_jsonl(edges_belief, './dist/v3.3/belief/edges.jsonl', preamble = preamble)
+# emlib.save_jsonl(edges_mitre, './dist/v3.3/mitre/edges.jsonl', preamble = preamble)
+emlib.save_jsonl(edges_doc, './dist/v3.3/doc/edges.jsonl', preamble = preamble)
+emlib.save_jsonl(edges_docplus, './dist/v3.3/doc+/edges.jsonl', preamble = preamble)
 
 
 # %%[markdown]
 # # Generate Ontocats
 
 # %%
-with open('./data/bio_ontology_v1.5.json', 'r') as x:
+with open('./data/ontologies/bio_ontology_v1.7.json', 'r') as x:
     G_onto_JSON = json.load(x)
 
 # Remove 'xref' links
@@ -304,7 +305,7 @@ emlib.calculate_onto_root_path(nodes_doc, G_onto_JSON)
 # Extract Ontological Categories
 ontocats_doc = emlib.extract_ontocats(nodes_doc, G_onto_JSON)
 
-# time: 1 m 17 s
+# time: 1 m 18 s
 
 
 # %%
@@ -323,7 +324,7 @@ emlib.calculate_onto_root_path(nodes_docplus, G_onto_JSON)
 # Extract Ontological Categories
 ontocats_docplus = emlib.extract_ontocats(nodes_docplus, G_onto_JSON)
 
-# time: 
+# time: 1 m 53 s
 
 # %%
 %%time
@@ -405,7 +406,7 @@ ontocats_mitre = emlib.extract_ontocats(nodes_mitre, G_onto_JSON)
 preamble = {
     'model_id': '<int> unique model ID that is present in all related distribution files',
     'id': '<int> unique node ID that is defined in `nodes.jsonl`',
-    'db_ref_priority': '<str> database reference from `db_refs` of `nodes.jsonl`, that is used by the INDRA ontology v1.5', 
+    'db_ref_priority': '<str> database reference from `db_refs` of `nodes.jsonl`, that is used by the INDRA ontology', 
     'grounded_onto': '<bool> whether this model node is grounded to something that exists within the ontology', 
     'ontocat_level': '<int> the level of the most fine-grained ontology node/category to which this model node was mapped (`-1` if not mappable, `0` if root)', 
     'ontocat_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
@@ -413,20 +414,20 @@ preamble = {
     'cluster_level': '<int> the level of the most fine-grained cluster at which this model node was mapped (`-1` if not mappable, `0` if root)', 
     'cluster_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
 }
-# emlib.save_jsonl(nodes_doc, './dist/v3.1/doc/nodeAtts.jsonl', preamble = preamble)
-emlib.save_jsonl(nodes_docplus, './dist/v3.1/doc+/nodeAtts.jsonl', preamble = preamble)
-# emlib.save_jsonl(nodes_belief, './dist/v3.1/belief/nodeAtts.jsonl', preamble = preamble)
-# emlib.save_jsonl(nodes_mitre, './dist/v3.1/mitre/nodeAtts.jsonl', preamble = preamble)
-# emlib.save_jsonl(nodes_full, './dist/v3.1/full/nodeAtts.jsonl', preamble = preamble)
-# emlib.save_jsonl(nodes_grounded, './dist/v3.1/grounded/nodeAtts.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_doc, './dist/v3.3/doc/nodeAtts.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_docplus, './dist/v3.3/doc+/nodeAtts.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_belief, './dist/v3.3/belief/nodeAtts.jsonl', preamble = preamble)
+# emlib.save_jsonl(nodes_mitre, './dist/v3.3/mitre/nodeAtts.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_full, './dist/v3.3/full/nodeAtts.jsonl', preamble = preamble)
+emlib.save_jsonl(nodes_grounded, './dist/v3.3/grounded/nodeAtts.jsonl', preamble = preamble)
 
 
 # Save `ontocats`
 preamble = {
     'model_id': '<int> unique model ID that is present in all related distribution files',
     'id': '<int> unique ID for the ontological category that is referenced by other files',
-    'ref': '<str> unique reference ID of this category (as given by the INDRA Ontology v1.5)',
-    'name': '<str> name of this category (as given by the INDRA Ontology v1.5)',
+    'ref': '<str> unique reference ID of this category (as given by the INDRA Ontology)',
+    'name': '<str> name of this category (as given by the INDRA Ontology)',
     'size': '<int> number of model nodes that were mapped to this category and its children',
     'level': '<int> number of hops to reach the local root (`0` if root)',
     'parent_id': '<int> ID of the parent of this category in the ontology',
@@ -435,12 +436,13 @@ preamble = {
     'node_ids_direct': '<array of int> node_ids but only model nodes which were directly mapped to this category and not any of the child categories',
     'hyperedge_ids': '<array of int> unordered list of hyperedge IDs (see `hyperedges.jsonl`) that are within this category',
 }
-# emlib.save_jsonl(ontocats_doc, './dist/v3.1/doc/ontocats.jsonl', preamble = preamble)
-emlib.save_jsonl(ontocats_docplus, './dist/v3.1/doc+/ontocats.jsonl', preamble = preamble)
-# emlib.save_jsonl(ontocats_belief, './dist/v3.1/belief/ontocats.jsonl', preamble = preamble)
-# emlib.save_jsonl(ontocats_mitre, './dist/v3.1/mitre/ontocats.jsonl', preamble = preamble)
-# emlib.save_jsonl(ontocats_full, './dist/v3.1/full/ontocats.jsonl', preamble = preamble)
-# emlib.save_jsonl(ontocats_grounded, './dist/v3.1/grounded/ontocats.jsonl', preamble = preamble)
+emlib.save_jsonl(ontocats_doc, './dist/v3.3/doc/ontocats.jsonl', preamble = preamble)
+emlib.save_jsonl(ontocats_docplus, './dist/v3.3/doc+/ontocats.jsonl', preamble = preamble)
+emlib.save_jsonl(ontocats_belief, './dist/v3.3/belief/ontocats.jsonl', preamble = preamble)
+# emlib.save_jsonl(ontocats_mitre, './dist/v3.3/mitre/ontocats.jsonl', preamble = preamble)
+emlib.save_jsonl(ontocats_full, './dist/v3.3/full/ontocats.jsonl', preamble = preamble)
+emlib.save_jsonl(ontocats_grounded, './dist/v3.3/grounded/ontocats.jsonl', preamble = preamble)
+
 
 # %%
 
