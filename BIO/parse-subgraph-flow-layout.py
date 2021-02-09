@@ -7,10 +7,10 @@ def formatGraph(nodes, edges):
     formattedEdges = []
 
     for index in range(1, len(nodes)):
-        formattedNodes.append({ 'id': str(nodes[index]['id']), 'label':nodes[index]['name'] })
+        formattedNodes.append({ 'id': str(nodes[index]['id']), 'label':nodes[index]['name'], 'nodeType': 'ontological grounding' })
 
     for index in range(1, len(edges) -1):
-        formattedEdges.append({ 'id': str(edges[index]['id']), 'source': str(edges[index]['source_id']), 'target':str(edges[index]['target_id']) })
+        formattedEdges.append({ 'id': str(edges[index]['id']), 'source': str(edges[index]['source_id']), 'target':str(edges[index]['target_id']), 'edgeType': edges[index]['type']  })
     
     return  { 'nodes': formattedNodes,'edges': formattedEdges }
 
