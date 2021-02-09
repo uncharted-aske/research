@@ -26,9 +26,10 @@ import matplotlib.pyplot as plt
 import umap
 import hdbscan
 import importlib
+import pathlib
 import emmaa_lib as emlib
 
-import gensim as gs
+# import gensim as gs
 
 # %%
 np.random.seed(0)
@@ -38,7 +39,7 @@ np.random.seed(0)
 
 # %%
 # Embeddings
-embs_wisconsin = np.load('/home/nliu/projects/aske/research/KB/data/wisconsin/xdd-covid-19-8Dec-doc2vec/model_streamed_doc2vec.docvecs.vectors_docs.npy')
+# embs_wisconsin = np.load('/home/nliu/projects/aske/research/KB/data/wisconsin/xdd-covid-19-8Dec-doc2vec/model_streamed_doc2vec.docvecs.vectors_docs.npy')
 
 # Doc metadata
 with open('/home/nliu/projects/aske/research/KB/data/wisconsin/xdd-covid-19-8Dec-doc2vec/xdd-covid-19-8Dec.bibjson', 'r') as f:
@@ -150,6 +151,24 @@ fig.savefig('./figures/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_2d_doc.png
 fig = ax = x = None
 del fig, ax, x
 
+# %%
+
+
+
+
+# DOI: 10.1101/2020.07.06.20147868
+# Endpoint: https://xdd.wisc.edu/sets/xdd-covid-19/doc2vec/api/similar?doi=10.1101/2020.07.06.20147868
+
+
+
+
+
+
+
+
+
+
+
 
 # %%[markdown]
 # # Apply Hierarchical Clustering
@@ -205,6 +224,7 @@ if False:
 
 # %%[markdown]
 # Generate centroid list from cluster labels
+
 knn_ind = [emlib.generate_nn_cluster_centroid_list(coors = embs_wisconsin_red, labels = l, p = 2)[0] for l in labels_clusters]
 
 # %%[markdown]
@@ -214,7 +234,7 @@ fig, ax = plt.subplots(nrows = 2, ncols = 2, figsize = (12, 12))
 
 for i, x in enumerate(fig.axes):
     __ = emlib.plot_emb(coor = embs_wisconsin_red, labels = labels_clusters[i], cmap_name = 'qual', legend_kwargs = {}, colorbar = False, str_title = f"Cluster Epsilon = {i:.2f}", ax = x)
-    __ = x.scatter(embs_wisconsin_red[knn_ind[i], :], marker = '+', color = 'k')
+    __ = x.scatter(embs_wisconsin_red[knn_ind[i], 0], embs_wisconsin_red[knn_ind[i], 1], marker = '+', color = 'k')
     __ = plt.setp(x, xlabel = 'x', ylabel = 'y')
 
 fig.savefig('./figures/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_2d_clusters.png', dpi = 150)
@@ -229,7 +249,7 @@ del fig, ax, x
 # %%
 %%time
 
-model_id = 0
+model_id = -1
 x = ['doc', 'emmaa', 'clusters']
 
 # for labels, name in zip([labels_doc, labels_emmaa, labels_clusters[0]], x):
@@ -298,12 +318,14 @@ for labels, name in zip([labels_doc, labels_emmaa, labels_clusters[0]], x):
     } for cluster_id, cluster_size in zip(labels_unique, labels_unique_counts)]
 
 
+    # Get centroids
+    knn_ind, __, coors_centroid = emlib.generate_nn_cluster_centroid_list(coors = embs_wisconsin_red, labels = labels, p = 2)
+
     # Get centroid name
-    knn_ind = emlib.generate_nn_cluster_centroid_list(coors = embs_wisconsin_red, labels = labels, p = 2)[0]
     for i, __  in enumerate(labels_unique):
         clusters[i]['name'] = nodes[knn_ind[i]]['name']
 
-
+    # Save cluster metadata
     preamble = {
         'model_id': '<int> unique model ID that is present in all related distribution files',
         'id': '<int> unique ID for this cluster that is referenced by other files',
@@ -320,9 +342,30 @@ for labels, name in zip([labels_doc, labels_emmaa, labels_clusters[0]], x):
     emlib.save_jsonl(clusters, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/clusters.jsonl', preamble = preamble)
 
 
+    # Generate cluster layout
+    clusterLayout = [{
+        'model_id': model_id,
+        'id': int(cluster_id),
+        'x': coors_centroid[k, 0],
+        'y': coors_centroid[k, 1],
+        'z': 0.0,
 
-i = x = node = nodeLayout = nodeAtts = name = labels = labels_unique = clusters = knn_ind = None
-del i, x, node, nodeLayout, nodeAtts, name, labels, labels_unique, clusters, knn_ind
+    } for k, cluster_id in enumerate(labels_unique)]
+
+    # Save cluster layout
+    preamble = {
+        "model_id": "<int> unique model ID that is present in all related distribution files", 
+        "id": "<int> unique node ID that is defined in `nodes.jsonl`", 
+        "x": "<float> position of the node in the graph layout", 
+        "y": "<float> position of the node in the graph layout", 
+        "z": "<float> position of the node in the graph layout"
+    }
+    emlib.save_jsonl(clusterLayout, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/clusterLayout.jsonl', preamble = preamble)
+
+
+
+i = x = node = nodeLayout = nodeAtts = name = labels = labels_unique = clusters = clusterLayout = knn_ind = None
+del i, x, node, nodeLayout, nodeAtts, name, labels, labels_unique, clusters, clusterLayout, knn_ind
 
 
 # time: 1 m 36 s

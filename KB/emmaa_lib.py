@@ -6,8 +6,10 @@
 # %% [markdown]
 # ## Import required modules.
 
-# import sys
+import sys
+import os
 # from time import time
+import pathlib
 from networkx.algorithms.centrality.degree_alg import out_degree_centrality
 from networkx.utils.decorators import nodes_or_number
 import numpy as np
@@ -1698,10 +1700,15 @@ def generate_nn_cluster_centroid_list(coors, labels = [], p = 2):
     
     
     # Find index of k-nearest neighbour to the cluster centroids
+    knn_ind = np.empty((num_unique, ), dtype = np.int)
     for i in range(num_unique):
+
         knn.fit(coors[labels == labels_unique[i], :])
-        knn_ind = knn.kneighbors(coors_centroid, return_distance = False)
-        knn_ind = np.squeeze(knn_ind)
+        k = knn.kneighbors(coors_centroid[i, :].reshape(1, -1), return_distance = False)
+        k = k.item()
+
+        # Convert to global index
+        knn_ind[i] = np.flatnonzero(labels == labels_unique[i])[k].astype('int')
 
 
     return knn_ind, labels_unique, coors_centroid
