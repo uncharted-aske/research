@@ -283,39 +283,60 @@ def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
 
 
 # %%
-# Save list of objects as a JSONL file
-def save_jsonl(list_objects, full_path, preamble = {}):
+# Recursively sanitize the strings of a nested object
+def sanitize_strings(obj):
 
+    # Regex pattern for invalid JSON characters
+    # * control characters (U+0000 to U+001F)
+    # * reverse solidus/backslash (U+005C)
+    # * double quotes (U+0022)
+    pattern = re.compile(r"[\u0000-\u001F]|(\u005C)|(\u0022)")
+
+    if isinstance(obj, str):
+
+        # Sanitize
+        obj = re.sub(pattern, '', obj)
+
+
+    if isinstance(obj, list) | isinstance(obj, tuple) | isinstance(obj, set):
+
+        # Sanitize the items
+        for obj_item in obj:
+            sanitize_strings(obj_item)
+
+    if isinstance(obj, dict):
+
+        # Sanitize the keys and values
+        for key, value in obj.items():
+            sanitize_strings(key)
+            sanitize_strings(value)
+
+
+# %%
+# Save list of objects as a JSONL file
+# (using `json.dumps` to ensure preservation of escape characters)
+def save_jsonl(list_dicts, full_path, preamble = None):
+
+    # Make directory if non-existent
+    pathlib.Path(pathlib.PurePath(full_path).parents[0]).mkdir(parents = True, exist_ok = True)
+
+    # Write file
     with open(f'{full_path}', 'w') as x:
 
         # Preamble
-        if len(preamble) > 0:
-            json.dump(preamble, x)
-            x.write('\n')
+        if preamble != None:
+            x.write(json.dumps(preamble) + '\n')
 
         # Data
-        for obj in list_objects:
+        for obj in list_dicts:
             
             obj_ = obj
-            if len(preamble) > 0:
-                obj_ = {k: obj[k] if k in obj.keys() else None for k in preamble.keys() }
+
+            if preamble != None:
+
+                obj_ = {k: obj[k] if k in obj.keys() else None for k in preamble.keys()}
             
-            json.dump(obj_, x)
-            x.write('\n')
-
-# %%
-# Load JSONL file
-def load_jsonl(full_path, remove_preamble = False):
-
-    list_objects = []
-    with open(f'{full_path}', 'r') as x:
-        for i in x:
-            list_objects.append(json.loads(i))
-
-    if remove_preamble:
-        list_objects = list_objects[1:]
-
-    return list_objects
+            x.write(json.dumps(obj_) + '\n')
 
 # %%
 # Process EMMAA statements and return a node/edge list
@@ -532,6 +553,12 @@ def process_statements(statements, paths = [], model_id = None):
 
 
     return nodes, edges, statements_processed, paths_processed
+
+
+
+
+
+
 
 # %%
 # Generate NetworkX `MultiDiGraph` from `nodes` and `edges`
