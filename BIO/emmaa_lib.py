@@ -19,6 +19,9 @@ import re
 import numba
 import networkx as nx
 import tqdm
+import pathlib
+import errno
+import os
 # import sklearn as skl
 # import hdbscan
 
@@ -281,38 +284,79 @@ def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
 
 
 
+# %%
+# Recursively sanitize the strings of a nested object
+def sanitize_strings(obj):
 
+    # Regex pattern for invalid JSON characters
+    # * control characters (U+0000 to U+001F)
+    # * reverse solidus/backslash (U+005C)
+    # * double quotes (U+0022)
+    pattern = re.compile(r"[\u0000-\u001F]|(\u005C)|(\u0022)")
+
+    if isinstance(obj, str):
+
+        # Sanitize
+        obj = re.sub(pattern, '', obj)
+
+
+    if isinstance(obj, list) | isinstance(obj, tuple) | isinstance(obj, set):
+
+        # Sanitize the items
+        for obj_item in obj:
+            sanitize_strings(obj_item)
+
+    if isinstance(obj, dict):
+
+        # Sanitize the keys and values
+        for key, value in obj.items():
+            sanitize_strings(key)
+            sanitize_strings(value)
 
 
 # %%
 # Save list of objects as a JSONL file
-def save_jsonl(list_objects, full_path, preamble = {}):
+# (using `json.dumps` to ensure preservation of escape characters)
+def save_jsonl(list_dicts, full_path, preamble = None):
 
+    # Make directory if non-existent
+    pathlib.Path(pathlib.PurePath(full_path).parents[0]).mkdir(parents = True, exist_ok = True)
+
+    # Write file
     with open(f'{full_path}', 'w') as x:
 
         # Preamble
-        if len(preamble) > 0:
-            json.dump(preamble, x)
-            x.write('\n')
+        if preamble != None:
+            x.write(json.dumps(preamble) + '\n')
 
         # Data
-        for obj in list_objects:
+        for obj in list_dicts:
             
             obj_ = obj
-            if len(preamble) > 0:
-                obj_ = {k: obj[k] if k in obj.keys() else None for k in preamble.keys() }
+
+            if preamble != None:
+
+                obj_ = {k: obj[k] if k in obj.keys() else None for k in preamble.keys()}
             
-            json.dump(obj_, x)
-            x.write('\n')
+            x.write(json.dumps(obj_) + '\n')
 
 # %%
 # Load JSONL file
 def load_jsonl(full_path, remove_preamble = False):
 
+    # Check if the path points to an existing file
+    if pathlib.Path(full_path).exists() == False:
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), full_path)
+
     list_objects = []
-    with open(f'{full_path}', 'r') as x:
-        for i in x:
-            list_objects.append(json.loads(i))
+    with open(f'{full_path}', 'r') as file:
+        for line in file:
+
+            # Read line by line
+            try: 
+                list_objects.append(json.loads(line))
+            except:
+                print(line)
 
     if remove_preamble:
         list_objects = list_objects[1:]
@@ -347,7 +391,7 @@ def process_statements(statements, paths = [], model_id = None):
 
             evidence = []
 
-            if ('evidence' in s.keys()) & (len(s['evidence']) > 0):
+            if 'evidence' in s.keys():
 
                 for ev in s['evidence']:
 
@@ -564,8 +608,11 @@ def process_statements(statements, paths = [], model_id = None):
         map_evidences_ids = {int(ev['source_hash']): ev['id'] for ev in evidences}
         map_evidences_doc_id = {int(ev['source_hash']): ev['doc_id'] for ev in evidences}
         for edge in edges:
-            edge['evidence_ids'] = list(set([map_evidences_ids[ev['source_hash']] for ev in statements_processed[map_ids_statements[edge['statement_id']]]['evidence']]))
-            edge['doc_ids'] = list(set([map_evidences_doc_id[ev['source_hash']] for ev in statements_processed[map_ids_statements[edge['statement_id']]]['evidence']]))
+
+            if 'evidence' in statements_processed[map_ids_statements[edge['statement_id']]]:
+
+                edge['evidence_ids'] = list(set([map_evidences_ids[ev['source_hash']] for ev in statements_processed[map_ids_statements[edge['statement_id']]]['evidence']]))
+                edge['doc_ids'] = list(set([map_evidences_doc_id[ev['source_hash']] for ev in statements_processed[map_ids_statements[edge['statement_id']]]['evidence']]))
 
 
         # Link edge list to evidence list
@@ -612,7 +659,7 @@ def process_statements(statements, paths = [], model_id = None):
         paths_processed = [{
             'model_id': model_id, 
             'node_ids': [map_nodes_ids[node_name] for node_name in path['nodes'] if node_name in map_nodes_ids],
-            'edge_ids': [map_edges_ids[str(statement_id)] for k in path['edges'] for statement_id in k if str(statement_id) in map_edges_ids],
+            'edge_ids': [map_edges_ids[s['hashes']] for s in path['edges'] if str(s['hashes'][0]) in map_edges_ids],
             'graph_type': path['graph_type']
         } for path in paths]
 
