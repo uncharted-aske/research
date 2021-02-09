@@ -659,7 +659,7 @@ def process_statements(statements, paths = [], model_id = None):
         paths_processed = [{
             'model_id': model_id, 
             'node_ids': [map_nodes_ids[node_name] for node_name in path['nodes'] if node_name in map_nodes_ids],
-            'edge_ids': [map_edges_ids[s['hashes']] for s in path['edges'] if str(s['hashes'][0]) in map_edges_ids],
+            'edge_ids': [map_edges_ids[str(h)] for edge in path['edges'] if 'hashes' in edge.keys() for h in edge['hashes'] if str(h) in map_edges_ids],
             'graph_type': path['graph_type']
         } for path in paths]
 
