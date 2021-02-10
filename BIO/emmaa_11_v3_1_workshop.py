@@ -31,7 +31,7 @@ np.random.seed(0)
 # %%[markdown]
 # # Load Statements of Full Model Graph
 statements_full = {}
-with open('./data/covid19/covid19-snapshot_dec8-2020/source/latest_statements_covid19.json', 'r') as x:
+with open('./data/models/covid19/covid19-snapshot_dec8-2020/source/latest_statements_covid19.json', 'r') as x:
     statements_full = json.load(x)
 
 x = None
@@ -39,7 +39,7 @@ del x
 
 # %%[markdown]
 # Load Mitre-Tested Paths
-paths_mitre = emlib.load_jsonl('./data/covid19/covid19-snapshot_dec8-2020/source/covid19_mitre_tests_latest_paths.jsonl')
+paths_mitre = emlib.load_jsonl('./data/models/covid19/covid19-snapshot_dec8-2020/source/covid19_mitre_tests_latest_paths.jsonl')
 
 
 # %%[markdown]

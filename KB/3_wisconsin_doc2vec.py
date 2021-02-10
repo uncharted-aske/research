@@ -250,8 +250,8 @@ knn_ind = [emlib.generate_nn_cluster_centroid_list(coors = embs_wisconsin_red, l
 fig, ax = plt.subplots(nrows = 2, ncols = 2, figsize = (12, 12))
 
 for i, x in enumerate(fig.axes):
-    __ = emlib.plot_emb(coor = embs_wisconsin_red, labels = labels_clusters[i], cmap_name = 'qual', legend_kwargs = {}, colorbar = False, str_title = f"Cluster Epsilon = {i:.2f}", ax = x)
-    __ = x.scatter(embs_wisconsin_red[knn_ind[i], 0], embs_wisconsin_red[knn_ind[i], 1], marker = '+', color = 'k')
+    __ = emlib.plot_emb(coor = embs_wisconsin_red, labels = labels_clusters[i], cmap_name = 'qual', legend_kwargs = {}, colorbar = False, str_title = f"Cluster Epsilon = {i:.2f}", marker_alpha = 0.05, ax = x)
+    __ = x.scatter(embs_wisconsin_red[knn_ind[i], 0], embs_wisconsin_red[knn_ind[i], 1], marker = '+', alpha = 0.5, color = 'k', zorder = 101)
     __ = plt.setp(x, xlabel = 'x', ylabel = 'y')
 
 fig.savefig('./figures/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_2d_clusters.png', dpi = 150)
@@ -386,6 +386,28 @@ del i, x, node, nodeLayout, nodeAtts, name, labels, labels_unique, clusters, clu
 
 
 # time: 1 m 36 s
+
+
+# %%
+# Sanity check
+#
+# Check if every cluster name is a name of a member node
+
+map_ids_nodes = {node['id']: i for i, node in enumerate(nodes)}
+
+x = [None for cluster in clusters]
+
+for i, cluster in enumerate(clusters):
+
+    x[i] = cluster['name'] in [nodes[map_ids_nodes[id]]['name'] for id in cluster['node_ids']]
+
+
+
+
+
+
+
+
 
 
 # %%
