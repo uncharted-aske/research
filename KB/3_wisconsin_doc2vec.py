@@ -27,6 +27,8 @@ import umap
 import hdbscan
 import importlib
 import pathlib
+import requests
+
 import emmaa_lib as emlib
 
 # import gensim as gs
@@ -152,22 +154,37 @@ fig = ax = x = None
 del fig, ax, x
 
 # %%
+# Label by overlap with EPI doc and its neighbourhood
 
 
+doi_epi = '10.1101/2020.07.06.20147868'.upper()
+
+response = requests.get(f"https://xdd.wisc.edu/sets/xdd-covid-19/doc2vec/api/similar?doi={doi_epi}").json()
+dois_epi = [id['id'].upper() for doc in response['data'] for id in doc['bibjson']['identifier'] if id['type'] == 'doi']
+
+print(f"{len(dois_epi)} documents found by Cosmos to be in the neighbourhood of {doi_epi}.")
+# 10 documents found by Cosmos to be in the neighbourhood of 10.1101/2020.07.06.20147868.
+
+x = [[id['id'].upper() for id in doc['identifier'] if id['type'] == 'doi'] for doc in docs_wisconsin]
+dois_wisconsin = [l[0] if len(l) > 0 else None for l in x]
+
+labels_epi = np.array([1 if doi in set(dois_epi) else 2 if doi == doi_epi else 0 for doi in dois_wisconsin])
 
 
-# DOI: 10.1101/2020.07.06.20147868
-# Endpoint: https://xdd.wisc.edu/sets/xdd-covid-19/doc2vec/api/similar?doi=10.1101/2020.07.06.20147868
+response = x = None
+del response, x
+
+# %%
+# Plot results
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
+__ = emlib.plot_emb(coor = embs_wisconsin_red, labels = labels_epi, cmap_name = 'qual', legend_kwargs = {'loc': 'lower left'}, colorbar = False, str_title = 'Dimensionally Reduced Document Embeddings (Doc2Vec) of the Wisconsin Covid-19 Corpus', ax = ax)
+__ = plt.setp(ax, xlabel = 'x', ylabel = 'y')
+
+fig.savefig('./figures/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_2d_epi.png', dpi = 150)
 
 
-
-
-
-
-
-
-
-
+fig = ax = x = None
+del fig, ax, x
 
 
 # %%[markdown]
@@ -250,10 +267,10 @@ del fig, ax, x
 %%time
 
 model_id = -1
-x = ['doc', 'emmaa', 'clusters']
+x = ['doc', 'epi', 'emmaa', 'clusters']
 
 # for labels, name in zip([labels_doc, labels_emmaa, labels_clusters[0]], x):
-for labels, name in zip([labels_doc, labels_emmaa, labels_clusters[0]], x):
+for labels, name in zip([labels_doc, labels_epi, labels_emmaa, labels_clusters[0]], x):
 
     # Ensure integer type in case of boolean labels
     labels = labels.astype('int')
