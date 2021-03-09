@@ -18,7 +18,7 @@ import json
 import re
 import numba
 import networkx as nx
-import tqdm
+from tqdm import tqdm
 import pathlib
 import errno
 import os
@@ -1031,7 +1031,7 @@ def calculate_onto_root_path(nodes, G_onto_JSON):
 
 
     # Calculate shortest path to local root
-    for i, j in zip(node_indices, ontoSub_indices):
+    for i, j in tqdm(zip(node_indices, ontoSub_indices), total = len(node_indices)):
 
         source = nodes[i]['db_ref_priority']
 
