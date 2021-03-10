@@ -284,6 +284,35 @@ def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
 
 
 
+
+
+# %%
+# Interconvert a number from dotted to decimal notation
+# 
+# convert_dotted_decimal([4, 28], id_dotted = f'{2**4 - 1}.{2**28 - 1}')
+def convert_dotted_decimal(num_bits, id_dotted = None, id_decimal = None):
+
+    # Error handling
+    if not (isinstance(num_bits, list) | isinstance(num_bits, np.ndarray)):
+        raise TypeError("'num_bits' must be either a list or array.")
+    if not (isinstance(id_dotted, type(None)) | isinstance(id_dotted, str)):
+        raise TypeError("'id_dotted' must be either None or a string.")
+    if not (isinstance(id_decimal, type(None)) | isinstance(id_decimal, int)):
+        raise TypeError("'id_dotted' must be either None or an int.")
+
+
+    # Dotted -> Decimal
+    if (id_dotted != None) & (id_decimal == None):
+        id_decimal = int(''.join([bin(int(id_decimal_local)).lstrip('0b').zfill(num_bits[i]) for i, id_decimal_local in enumerate(re.split(r"[.]", id_dotted))]), 2)
+
+    # Decimal -> Dotted
+    if (id_dotted == None) & (id_decimal != None):
+        id_dotted = '.'.join([int(bin(id_decimal).lstrip('0b')[sum(num_bits[:i]):(sum(num_bits[:i]) + num_bits_local)], 2) for i, num_bits_local in enumerate(num_bits)])
+
+
+    return id_dotted, id_decimal
+
+
 # %%
 # Recursively sanitize the strings of a nested object
 def sanitize_strings(obj):

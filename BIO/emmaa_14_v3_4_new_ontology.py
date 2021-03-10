@@ -190,7 +190,3 @@ preamble = {
 }
 emlib.save_jsonl(ontocats_full, './dist/v3.4/ontocats.jsonl', preamble = preamble)
 
-
-# %%
-
-
