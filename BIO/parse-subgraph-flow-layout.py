@@ -32,9 +32,3 @@ if __name__ == '__main__':
 
     with open(args.output, 'w') as f:
         json.dump(graph, f)
-
-
-
-
-
-         
