@@ -32,17 +32,17 @@ np.random.seed(0)
 # %%[markdown]
 # # Load Ontology
 
-# %%
-with open('./data/ontologies/bio_ontology_v1.7_export_v3.json', 'r') as x:
-    G_onto_JSON = json.load(x)
+i = '/home/nliu/projects/aske/research/BIO/data'
+with open(f"{i}/ontologies/bio_ontology_v1.8_export_v1.json", "r") as f:
+    G_onto_JSON = json.load(f)
 
+# %%
 # Remove 'xref' links
 G_onto_JSON['links'] = [link for link in G_onto_JSON['links'] if link['type'] != 'xref']
 
 
 # Load the ontology graph as a `networkx` object
 # G_onto = nx.readwrite.json_graph.node_link_graph(G_onto_JSON)
-
 
 # %%[markdown]
 # # Generate `nodes`
