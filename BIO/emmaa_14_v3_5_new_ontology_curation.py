@@ -80,6 +80,7 @@ for node in G_onto_JSON['nodes']:
     if node['id'] in ['HP:HP:0000001', 'CHEBI:CHEBI:24431', 'CHEBI:CHEBI:50906']:
         node['name'] = node['name'][node['id']]
 
+
 # %%
 with open(f"/home/nliu/projects/aske/research/BIO/data/ontologies/bio_ontology_v1.8_export_v1.json", 'w') as f:
     json.dump(G_onto_JSON, f)
@@ -195,7 +196,7 @@ preamble = {
     'source_id': '<int> ID of the source node (as defined in `nodes.jsonl`)' ,
     'target_id': '<int> ID of the target node (as defined in `nodes.jsonl`)',
     'tested': '<bool> whether the underlying statement of this edge is pass the Mitre test',
-    'curated': '<int> curation status of the underlying statement of this edge (`incorrect` = 0, `correct` = 1, `partial` = 2, `uncurated` = 3)'
+    'curated': '<int> curation status of the underlying statement of this edge (`incorrect` = `0`, `correct` = `1`, `partial` = `2`, `uncurated` = `3`)'
 }
 emlib.save_jsonl(edges, './dist/v3.5/edges.jsonl', preamble = preamble)
 
@@ -206,15 +207,6 @@ emlib.save_jsonl(edges, './dist/v3.5/edges.jsonl', preamble = preamble)
 # %%
 # Remove 'xref' links
 G_onto_JSON['links'] = [link for link in G_onto_JSON['links'] if link['type'] != 'xref']
-
-# %%
-# Patch naming error
-
-
-
-
-
-
 
 # %%
 %%time
@@ -240,21 +232,20 @@ ontocats = emlib.extract_ontocats(nodes, G_onto_JSON)
 # Define 'node type' as the name of the ancestor ontocat/group of the node in the ontology
 
 # %%
-
-
+# Fill in missing names
+for ontocat in ontocats:
+    if (ontocat['name'] == '') | (ontocat['name'] == None):
+        ontocat['name'] = ontocat['ref']
 
 # %%
+map_ids_ontocats = {ontocat['id']: i for i, ontocat in enumerate(ontocats)}
+
 for node in nodes:
-
     if node['grounded_onto'] == True:
-        node['type'] = 
-
-
-
-
-
-
-
+        i = map_ids_ontocats[node['ontocat_ids'][0]]
+        node['type'] = ontocats[i]['name']
+    else:
+        node['type'] = None
 
 
 # %%
@@ -263,6 +254,7 @@ for node in nodes:
 preamble = {
     'model_id': '<int> unique model ID that is present in all related distribution files',
     'id': '<int> unique node ID that is defined in `nodes.jsonl`',
+    'type': '<str> node type (currently set to the `name` of the ancestor ontocat, `None` if ungrounded)',
     'db_ref_priority': '<str> database reference from `db_refs` of `nodes.jsonl`, that is used by the INDRA ontology', 
     'grounded_onto': '<bool> whether this model node is grounded to something that exists within the ontology', 
     'ontocat_level': '<int> the level of the most fine-grained ontology node/category to which this model node was mapped (`-1` if not mappable, `0` if root)', 
