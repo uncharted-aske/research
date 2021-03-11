@@ -359,15 +359,22 @@ def save_jsonl(list_dicts, full_path, preamble = None):
             x.write(json.dumps(preamble) + '\n')
 
         # Data
-        for obj in list_dicts:
+        if isinstance(list_dicts, list):
             
-            obj_ = obj
+            for obj in list_dicts:
+                
+                obj_ = obj
 
-            if preamble != None:
+                if preamble != None:
 
-                obj_ = {k: obj[k] if k in obj.keys() else None for k in preamble.keys()}
-            
-            x.write(json.dumps(obj_) + '\n')
+                    obj_ = {k: obj[k] if k in obj.keys() else None for k in preamble.keys()}
+                
+                x.write(json.dumps(obj_) + '\n')
+        
+        elif isinstance(list_dicts, dict):
+
+            x.write(json.dumps(list_dicts))
+
 
 # %%
 # Load JSONL file
