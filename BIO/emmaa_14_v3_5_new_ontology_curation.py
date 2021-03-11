@@ -284,3 +284,5 @@ if False:
     nodes = [{**node, **att} for node, att in zip(emlib.load_jsonl('./dist/v3.5/nodes.jsonl', remove_preamble = True), emlib.load_jsonl('./dist/v3.5/nodeAtts.jsonl', remove_preamble = True))]
     edges = emlib.load_jsonl('./dist/v3.5/edges.jsonl', remove_preamble = True)
     ontocats = emlib.load_jsonl('./dist/v3.5/ontocats.jsonl', remove_preamble = True)
+
+# %%
