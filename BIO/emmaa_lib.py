@@ -1029,6 +1029,143 @@ def match_arrays(A, B):
     return index
 
 # %%
+# Generate an unconnected model that has one node for every category in the given ontology
+def generate_onto_model(G_onto_JSON):
+
+    # Remove 'xref' links
+    G_onto_JSON['links'] = [link for link in G_onto_JSON['links'] if link['type'] != 'xref']
+
+    # Load the ontology graph as a `networkx` object
+    G_onto = nx.readwrite.json_graph.node_link_graph(G_onto_JSON)
+    num_nodes = len(G_onto.nodes)
+
+
+    # Initialize model edges
+    edges = []
+
+
+    # Generate model nodes
+    map_nodes_ids = {node: i for i, node in enumerate(G_onto.nodes)}
+    nodes = [{
+        'model_id': -1, 
+        'id': map_nodes_ids[node], 
+        'name': f"{node if 'name' not in G_onto.nodes[node].keys() else node if G_onto.nodes[node]['name'] == None else node if len(G_onto.nodes[node]['name']) == 0 else G_onto.nodes[node]['name']}",
+        'db_refs': None,
+        'db_ref_priority': node,
+        'grounded': True,
+        'edge_ids_source': [],
+        'edge_ids_target': [],
+        'out_degree': 0,
+        'in_degree': 0,
+        'grounded_onto': False,
+        'ontocat_level': 0,
+        'ontocat_refs': [node]
+    } for node in tqdm(G_onto.nodes)]
+
+
+    # Extract onto subgraphs, sorted by size
+    ontoSubs = sorted(nx.weakly_connected_components(G_onto), key = len, reverse = True)
+    num_ontoSubs = len(ontoSubs)
+
+    # Find the root nodes of each nontrivial onto subgraph (out-degree = 0)
+    ontoSubs_nontrivial_root = {i: [node for node in ontoSub if G_onto.out_degree(node) == 0][0] for i, ontoSub in tqdm(enumerate(ontoSubs), total = num_ontoSubs) if len(ontoSub) > 1}
+    num_ontoSubs_nontrivial = len(ontoSubs_nontrivial_root)
+
+    # Trivial nodes and root nodes
+    nodes_trivial = set().union(*ontoSubs[num_ontoSubs_nontrivial:])
+    nodes_root = {node for node in G_onto.nodes if G_onto.out_degree(node) == 0}
+    for node in (nodes_trivial | nodes_root):
+        i = map_nodes_ids[node]
+        nodes[i]['grounded_onto'] = True
+
+    # Map model nodes to onto-subgraph
+    # (only nontrivial nodes, nontrivial onto subgraphs)
+    map_nodes_ontoSubs = {node: [i for i, ontoSub in enumerate(ontoSubs[:num_ontoSubs_nontrivial]) if node in ontoSub][0] for node in tqdm(G_onto.nodes, total = num_nodes) if node not in nodes_trivial}
+    
+    # Map model nodes to onto-subgraph root
+    # (only nontrivial nodes, nontrivial onto subgraphs)
+    map_nodes_ontoSubRoots = {node: ontoSubs_nontrivial_root[map_nodes_ontoSubs[node]] for node in tqdm(G_onto.nodes, total = num_nodes) if node not in nodes_trivial}
+
+
+    # Calculate shortest path between each model node and its onto-subgraph root 
+    # (only nontrivial nodes, nontrivial onto subgraphs)
+    for node in tqdm(map_nodes_ontoSubRoots):
+
+        i = map_nodes_ids[node]
+
+        if nodes[i]['grounded_onto'] == False:
+
+            source = node
+            target = map_nodes_ontoSubRoots[node]
+            index = map_nodes_ontoSubs[node]
+
+            # Calculate path
+            path = nx.algorithms.shortest_paths.generic.shortest_path(G_onto.subgraph(ontoSubs[index]), source = source, target = target)
+
+            # Change path order to target-to-source 
+            path = path[::-1]
+
+            # Store path for each node in path
+            for j, node in enumerate(path):
+                
+                node_id = map_nodes_ids[node]
+
+                if nodes[node_id]['grounded_onto'] == False:
+                    
+                    nodes[node_id]['grounded_onto'] = True
+                    nodes[node_id]['ontocat_level'] = len(path[:(j + 1)]) - 1
+                    nodes[node_id]['ontocat_refs'] = path[:(j + 1)]
+
+
+    # Max length of onto paths
+    max_path_length = max([len(node['ontocat_refs']) for node in nodes])
+
+    # Ensure that identical onto nodes share the same lineage (path to their ancestor) for hierarchical uniqueness
+    for l in tqdm(range(1, max_path_length), total = max_path_length - 1):
+
+        map_ontocats_indices = {node['ontocat_refs'][l]: i for i, node in enumerate(nodes) if len(node['ontocat_refs']) > l}
+        for node in nodes:
+
+            if len(node['ontocat_refs']) > l:
+                index = map_ontocats_indices[node['ontocat_refs'][l]]
+                node['ontocat_refs'][:l] = nodes[index]['ontocat_refs'][:l]
+
+    # Map onto-paths to IDs
+    for node in tqdm(nodes, total = num_nodes):
+        node['ontocat_refs'] = [map_nodes_ids[node_path] for node_path in node['ontocat_refs']]
+
+
+    # Ontocat attributes
+    x, y = np.unique([ontocat for node in nodes for ontocat in node['ontocat_refs']], return_counts = True)
+    onto = {}
+    onto['sizes'] = {k: v for k, v in zip(x, y)}
+    onto['levels'] = {node['id']: len(node['ontocat_refs']) - 1 for node in nodes}
+    onto['parent_ids'] = {node['id']: node['ontocat_refs'][-2] if len(node['ontocat_refs']) > 1 else None for node in nodes}
+    onto['children_ids'] = {node['id']: set() for node in nodes}
+    for node in tqdm(nodes):
+        for i, node_ in enumerate(node['ontocat_refs'][:-1]):
+            onto['children_ids'][node_] = onto['children_ids'][node_] | set(node['ontocat_refs'][(i + 1):])
+
+
+    # Generate ontocats
+    ontocats = [{
+        'model_id': -1,
+        'id': map_nodes_ids[node], 
+        'ref': node,
+        'name': f"{node if 'name' not in G_onto.nodes[node].keys() else node if G_onto.nodes[node]['name'] == None else node if len(G_onto.nodes[node]['name']) == 0 else G_onto.nodes[node]['name']}",
+        'size': onto['sizes'][map_nodes_ids[node]],
+        'level': onto['levels'][map_nodes_ids[node]],
+        'parent_id': onto['parent_ids'][map_nodes_ids[node]],
+        'children_ids': list(onto['children_ids'][map_nodes_ids[node]]),
+        'node_ids': list(onto['children_ids'][map_nodes_ids[node]]),
+        'node_ids_direct': [map_nodes_ids[node]]
+    } for node in tqdm(G_onto.nodes)]
+
+
+    return nodes, edges, ontocats, G_onto
+
+
+# %%
 # Calculate the shortest root-to-leaf paths of model nodes that have been grounded to a given ontological graph
 def calculate_onto_root_path(nodes, G_onto_JSON):
 
@@ -1181,14 +1318,6 @@ def extract_ontocats(nodes, G_onto_JSON):
 
     # Switch to row-wise structure
     ontocats = [{k: ontocats_[k][i] for k in ontocats_.keys()} for i in range(num_ontocats)]
-
-
-    # # Placeholder for layout coordinates
-    # # (use median of the membership)
-    # x = {node['id']: i for i, node in enumerate(nodes)}
-    # for ontocat in ontocats:
-    #     for i in ['x', 'y', 'z']:
-    #         ontocat[i] = float(np.median([nodes[x[j]][i] for j in ontocat['node_ids']]))
 
 
     return ontocats
