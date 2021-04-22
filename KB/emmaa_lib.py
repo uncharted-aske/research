@@ -337,6 +337,25 @@ def save_jsonl(list_dicts, full_path, preamble = None):
             if preamble != None:
 
                 obj_ = {k: obj[k] if k in obj.keys() else None for k in preamble.keys()}
+
+                # Check types
+                for k in obj_.keys():
+                    
+                    if isinstance(obj_[k], np.int64):
+                        obj_[k] = int(obj_[k])
+
+                    if isinstance(obj_[k], np.float32):
+                        obj_[k] = float(obj_[k])
+
+                    if isinstance(obj_[k], np.ndarray):
+                        if isinstance(obj_[k][0], np.int64):
+                            obj_[k] = [int(x) for x in obj_[k]]
+                        elif isinstance(obj_[k][0], np.float32):
+                            obj_[k] = [float(x) for x in obj_[k]]
+                        else:
+                            obj_[k] = list(obj_[k])
+
+
             
             x.write(json.dumps(obj_) + '\n')
 
