@@ -18,7 +18,10 @@ import json
 import re
 import numba
 import networkx as nx
-
+from tqdm import tqdm
+import pathlib
+import errno
+import os
 # import sklearn as skl
 # import hdbscan
 
@@ -30,7 +33,7 @@ import matplotlib.pyplot as plt
 # %%
 
 # Scatter plot of (un)labeled data points
-def plot_emb(coor = np.array([]), edge_list = {}, labels = [], ax = [], figsize = (12, 12), marker_size = 2.0, marker_alpha = 0.5,  cmap_name = 'qual', colorbar = True, str_title = '', xlim = (), ylim = (), zlim = (), vlim = (), hull = []):
+def plot_emb(coor = np.array([]), edge_list = {}, labels = [], ax = [], figsize = (12, 12), marker_size = 2.0, marker_alpha = 0.5,  cmap_name = 'qual', legend_kwargs = {'loc': 'lower left', 'ncol': 1}, colorbar = True, str_title = '', xlim = (), ylim = (), zlim = (), vlim = (), hull = []):
 
     # Error handling
     if not isinstance(coor, np.ndarray):
@@ -213,11 +216,13 @@ def plot_emb(coor = np.array([]), edge_list = {}, labels = [], ax = [], figsize 
         plt.setp(ax, xlabel = '$x$', ylabel = '$y$', zlabel = '$z$')
     
     # Legend
-    if (cmap_name == 'qual') & (n_uniq <= 10) & (n_uniq > 1):
+    if (cmap_name == 'qual') & (n_uniq <= 10) & (n_uniq > 1) & (len(legend_kwargs) > 1):
 
         # Custom
         legend_obj = [mpl.lines.Line2D([0], [0], marker = 'o', markersize = 2.0 ** 2, color = 'none', markeredgecolor = 'none', markerfacecolor = col[i, :3], alpha = 1.0, label = f'{labels_uniq[i]}') for i in range(n_uniq)]
-        ax.legend(handles = legend_obj, loc = 'lower left')
+        
+        # ax.legend(handles = legend_obj, loc = 'lower left')
+        ax.legend(handles = legend_obj, **legend_kwargs)
 
     # Axis title
     if str_title == ' ':
@@ -281,36 +286,113 @@ def getTextNodeEdgeIndices(nodes, edges, texts, numHops = 1):
 
 
 
+# %%
+# Interconvert a number from dotted to decimal notation
+# 
+# convert_dotted_decimal([4, 28], id_dotted = f'{2**4 - 1}.{2**28 - 1}')
+def convert_dotted_decimal(num_bits, id_dotted = None, id_decimal = None):
+
+    # Error handling
+    if not (isinstance(num_bits, list) | isinstance(num_bits, np.ndarray)):
+        raise TypeError("'num_bits' must be either a list or array.")
+    if not (isinstance(id_dotted, type(None)) | isinstance(id_dotted, str)):
+        raise TypeError("'id_dotted' must be either None or a string.")
+    if not (isinstance(id_decimal, type(None)) | isinstance(id_decimal, int)):
+        raise TypeError("'id_dotted' must be either None or an int.")
+
+
+    # Dotted -> Decimal
+    if (id_dotted != None) & (id_decimal == None):
+        id_decimal = int(''.join([bin(int(id_decimal_local)).lstrip('0b').zfill(num_bits[i]) for i, id_decimal_local in enumerate(re.split(r"[.]", id_dotted))]), 2)
+
+    # Decimal -> Dotted
+    if (id_dotted == None) & (id_decimal != None):
+        id_dotted = '.'.join([int(bin(id_decimal).lstrip('0b')[sum(num_bits[:i]):(sum(num_bits[:i]) + num_bits_local)], 2) for i, num_bits_local in enumerate(num_bits)])
+
+
+    return id_dotted, id_decimal
+
+
+# %%
+# Recursively sanitize the strings of a nested object
+def sanitize_strings(obj):
+
+    # Regex pattern for invalid JSON characters
+    # * control characters (U+0000 to U+001F)
+    # * reverse solidus/backslash (U+005C)
+    # * double quotes (U+0022)
+    pattern = re.compile(r"[\u0000-\u001F]|(\u005C)|(\u0022)")
+
+    if isinstance(obj, str):
+
+        # Sanitize
+        obj = re.sub(pattern, '', obj)
+
+
+    if isinstance(obj, list) | isinstance(obj, tuple) | isinstance(obj, set):
+
+        # Sanitize the items
+        for obj_item in obj:
+            sanitize_strings(obj_item)
+
+    if isinstance(obj, dict):
+
+        # Sanitize the keys and values
+        for key, value in obj.items():
+            sanitize_strings(key)
+            sanitize_strings(value)
+
 
 # %%
 # Save list of objects as a JSONL file
-def save_jsonl(list_objects, full_path, preamble = {}):
+# (using `json.dumps` to ensure preservation of escape characters)
+def save_jsonl(list_dicts, full_path, preamble = None):
 
+    # Make directory if non-existent
+    pathlib.Path(pathlib.PurePath(full_path).parents[0]).mkdir(parents = True, exist_ok = True)
+
+    # Write file
     with open(f'{full_path}', 'w') as x:
 
         # Preamble
-        if len(preamble) > 0:
-            json.dump(preamble, x)
-            x.write('\n')
+        if preamble != None:
+            x.write(json.dumps(preamble) + '\n')
 
         # Data
-        for obj in list_objects:
+        if isinstance(list_dicts, list):
             
-            obj_ = obj
-            if len(preamble) > 0:
-                obj_ = {k: obj[k] if k in obj.keys() else None for k in preamble.keys() }
-            
-            json.dump(obj_, x)
-            x.write('\n')
+            for obj in list_dicts:
+                
+                obj_ = obj
+
+                if preamble != None:
+
+                    obj_ = {k: obj[k] if k in obj.keys() else None for k in preamble.keys()}
+                
+                x.write(json.dumps(obj_) + '\n')
+        
+        elif isinstance(list_dicts, dict):
+
+            x.write(json.dumps(list_dicts))
+
 
 # %%
 # Load JSONL file
 def load_jsonl(full_path, remove_preamble = False):
 
+    # Check if the path points to an existing file
+    if pathlib.Path(full_path).exists() == False:
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), full_path)
+
     list_objects = []
-    with open(f'{full_path}', 'r') as x:
-        for i in x:
-            list_objects.append(json.loads(i))
+    with open(f'{full_path}', 'r') as file:
+        for line in file:
+
+            # Read line by line
+            try: 
+                list_objects.append(json.loads(line))
+            except:
+                print(line)
 
     if remove_preamble:
         list_objects = list_objects[1:]
@@ -324,6 +406,8 @@ def process_statements(statements, paths = [], model_id = None):
     statements_processed = []
     nodes = []
     edges = []
+    evidences = []
+    documents = []
     num_statements = len(statements)
     if num_statements > 0:
 
@@ -337,7 +421,86 @@ def process_statements(statements, paths = [], model_id = None):
         del statements
 
 
-        # Extracted edge list
+        # Extract evidence list
+        evidences_all = []
+        for s in statements_processed:
+
+            evidence = []
+
+            if 'evidence' in s.keys():
+
+                for ev in s['evidence']:
+
+                    evidence = {
+                        'model_id': model_id,
+                        'id': None,
+                        'text': None,
+                        'text_refs': None, 
+                        'doc_id': None,
+                        'statement_id': s['matches_hash'], 
+                        'statement_ids': None,
+                        'edge_ids': None,
+                        'source_hash': str(ev['source_hash']),
+                    }
+
+                    if 'text' in ev.keys():
+                        evidence['text'] = ev['text']
+
+                    if 'text_refs' in ev.keys():
+                        evidence['text_refs'] = ev['text_refs']
+
+                    evidences_all.append(evidence)
+
+
+        # De-duplicate evidence list
+        evidences_hash = {ev['source_hash']: ev for ev in evidences_all}
+        evidences = list(evidences_hash.values())
+
+
+        # Link statement list to evidence list
+        map_evidences_statement_ids = {ev['source_hash']: set() for ev in evidences}
+        for ev in evidences_all:
+            map_evidences_statement_ids[ev['source_hash']] = map_evidences_statement_ids[ev['source_hash']] | {ev['statement_id']}
+
+        for ev in evidences:
+            ev['statement_ids'] = list(map_evidences_statement_ids[ev['source_hash']])
+
+        evidences_all = evidences_hash = map_evidences_statement_ids = None
+        del evidences_all, evidences_hash, map_evidences_statement_ids
+
+
+        # Generate evidence IDs
+        num_evidences = len(evidences)
+        for i, ev in enumerate(evidences):
+            ev['id'] = i
+
+
+        # Hash the document DOIs in `evidences`
+        documents_hash = {ev['text_refs']['DOI']: None for ev in evidences if (ev['text_refs'] is not None) and ('DOI' in ev['text_refs'].keys())}
+
+
+        # Extract document list
+        documents = [{
+            'model_id': model_id,
+            'id': i,
+            'DOI': doi,
+            # 'evidence_ids': [ev['id'] for ev in evidences if (ev['text_refs'] is not None) and ('DOI' in ev['text_refs'].keys()) and ev['text_refs']['DOI'] == doi],
+            # 'statement_ids': [ev['statement_id'] for ev in evidences if (ev['text_refs'] is not None) and ('DOI' in ev['text_refs'].keys()) and ev['text_refs']['DOI'] == doi]
+        } for i, doi in enumerate(documents_hash.keys())]
+        num_docs = len(documents)
+
+        documents_hash = None
+        del documents_hash
+
+
+        # Link document list to evidence list
+        map_doi_ids = {doc['DOI']: doc['id'] for doc in documents}
+        for ev in evidences:
+            if (ev['text_refs'] is not None) and ('DOI' in ev['text_refs'].keys()):
+                ev['doc_id'] = map_doi_ids[ev['text_refs']['DOI']]
+
+
+        # Extract edge list
         edge = []
         for s in statements_processed:
             
@@ -476,10 +639,35 @@ def process_statements(statements, paths = [], model_id = None):
             edge['target_id'] = nodes_name[edge['target_name']]['id']
 
 
+        # Link evidence and doc lists to edge list
+        map_ids_statements = {str(s['matches_hash']): i for i, s in enumerate(statements_processed)}
+        map_evidences_ids = {int(ev['source_hash']): ev['id'] for ev in evidences}
+        map_evidences_doc_id = {int(ev['source_hash']): ev['doc_id'] for ev in evidences}
+        for edge in edges:
+
+            if 'evidence' in statements_processed[map_ids_statements[edge['statement_id']]]:
+
+                edge['evidence_ids'] = list(set([map_evidences_ids[ev['source_hash']] for ev in statements_processed[map_ids_statements[edge['statement_id']]]['evidence']]))
+                edge['doc_ids'] = list(set([map_evidences_doc_id[ev['source_hash']] for ev in statements_processed[map_ids_statements[edge['statement_id']]]['evidence']]))
+
+
+        # Link edge list to evidence list
+        map_statements_edge_ids = {edge['statement_id']: edge['id'] for edge in edges}
+        for ev in evidences:
+            ev['edge_ids'] = [map_statements_edge_ids[statement_id] for statement_id in ev['statement_ids'] if statement_id in map_statements_edge_ids.keys()]
+
+
+        # Delete 'source_hash' key
+        for ev in evidences:
+            ev['source_hash'] = ev['statement_id'] = None
+            del ev['source_hash'], ev['statement_id']
+
+
         # Delete unnecessary `edges` keys
         for edge in edges:
             for x in ['source_name', 'target_name', 'source_db_refs', 'target_db_refs']:
                 try:
+                    edge[x] = None
                     del edge[x]
                 except:
                     pass
@@ -487,6 +675,7 @@ def process_statements(statements, paths = [], model_id = None):
 
         # Status
         print(f"{num_statements} statements -> {num_statements_processed} processed statements.")
+        print(f"Found {num_evidences} evidences and {num_docs} documents.")
         print(f"Found {num_nodes} nodes and {num_edges} edges.")
 
 
@@ -501,21 +690,25 @@ def process_statements(statements, paths = [], model_id = None):
         for edge in edges:
             map_edges_ids[edge['statement_id']] = map_edges_ids[edge['statement_id']] + [edge['id']]
 
+
         # Map node names and statement IDs to node IDs and edge IDs
         paths_processed = [{
             'model_id': model_id, 
             'node_ids': [map_nodes_ids[node_name] for node_name in path['nodes'] if node_name in map_nodes_ids],
-            'edge_ids': [map_edges_ids[str(statement_id)] for k in path['edges'] for statement_id in k if str(statement_id) in map_edges_ids],
+            'edge_ids': [map_edges_ids[str(h)] for edge in path['edges'] if 'hashes' in edge.keys() for h in edge['hashes'] if str(h) in map_edges_ids],
             'graph_type': path['graph_type']
         } for path in paths]
+
 
         # Flatten `edge_ids` in `paths_processed`
         for path in paths_processed:
             path['edge_ids'] = [edge_id  for k in path['edge_ids'] for edge_id in k]
 
+
         # Only keep paths with non-empty node and edge lists
         paths_processed = [path for path in paths_processed if (len(path['node_ids']) > 0) & (len(path['edge_ids']) > 0)]
         num_paths_processed = len(paths_processed)
+
 
         # Update 'tested' of `edges`
         paths_edge_ids = [edge_id for path in paths_processed for edge_id in path['edge_ids']]
@@ -531,7 +724,7 @@ def process_statements(statements, paths = [], model_id = None):
         print(f"Found {num_edges_tested} tested edges.")
 
 
-    return nodes, edges, statements_processed, paths_processed
+    return nodes, edges, statements_processed, paths_processed, evidences, documents
 
 # %%
 # Generate NetworkX `MultiDiGraph` from `nodes` and `edges`
@@ -795,7 +988,7 @@ def generate_nx_layout(G = None, nodes = None, edges = None, node_list = None, e
 
         # print(plt.style.available)
         # plt.style.use('fast')
-        plt.style.use('dark_background')
+        # plt.style.use('dark_background')
 
         plot_atts_default = {
             'ax': ax,
@@ -806,8 +999,8 @@ def generate_nx_layout(G = None, nodes = None, edges = None, node_list = None, e
             'width': 0.05,
             'alpha': 0.8,
             'cmap': 'cividis',
-            'edge_color': 'w',
-            'font_color': 'w'
+            'edge_color': 'k',
+            'font_color': 'k'
         }
 
         nx.draw_networkx(G, pos = coors, **{**plot_atts_default, **plot_atts})
@@ -834,6 +1027,143 @@ def match_arrays(A, B):
             pass
 
     return index
+
+# %%
+# Generate an unconnected model that has one node for every category in the given ontology
+def generate_onto_model(G_onto_JSON):
+
+    # Remove 'xref' links
+    G_onto_JSON['links'] = [link for link in G_onto_JSON['links'] if link['type'] != 'xref']
+
+    # Load the ontology graph as a `networkx` object
+    G_onto = nx.readwrite.json_graph.node_link_graph(G_onto_JSON)
+    num_nodes = len(G_onto.nodes)
+
+
+    # Initialize model edges
+    edges = []
+
+
+    # Generate model nodes
+    map_nodes_ids = {node: i for i, node in enumerate(G_onto.nodes)}
+    nodes = [{
+        'model_id': -1, 
+        'id': map_nodes_ids[node], 
+        'name': f"{node if 'name' not in G_onto.nodes[node].keys() else node if G_onto.nodes[node]['name'] == None else node if len(G_onto.nodes[node]['name']) == 0 else G_onto.nodes[node]['name']}",
+        'db_refs': None,
+        'db_ref_priority': node,
+        'grounded': True,
+        'edge_ids_source': [],
+        'edge_ids_target': [],
+        'out_degree': 0,
+        'in_degree': 0,
+        'grounded_onto': False,
+        'ontocat_level': 0,
+        'ontocat_refs': [node]
+    } for node in tqdm(G_onto.nodes)]
+
+
+    # Extract onto subgraphs, sorted by size
+    ontoSubs = sorted(nx.weakly_connected_components(G_onto), key = len, reverse = True)
+    num_ontoSubs = len(ontoSubs)
+
+    # Find the root nodes of each nontrivial onto subgraph (out-degree = 0)
+    ontoSubs_nontrivial_root = {i: [node for node in ontoSub if G_onto.out_degree(node) == 0][0] for i, ontoSub in tqdm(enumerate(ontoSubs), total = num_ontoSubs) if len(ontoSub) > 1}
+    num_ontoSubs_nontrivial = len(ontoSubs_nontrivial_root)
+
+    # Trivial nodes and root nodes
+    nodes_trivial = set().union(*ontoSubs[num_ontoSubs_nontrivial:])
+    nodes_root = {node for node in G_onto.nodes if G_onto.out_degree(node) == 0}
+    for node in (nodes_trivial | nodes_root):
+        i = map_nodes_ids[node]
+        nodes[i]['grounded_onto'] = True
+
+    # Map model nodes to onto-subgraph
+    # (only nontrivial nodes, nontrivial onto subgraphs)
+    map_nodes_ontoSubs = {node: [i for i, ontoSub in enumerate(ontoSubs[:num_ontoSubs_nontrivial]) if node in ontoSub][0] for node in tqdm(G_onto.nodes, total = num_nodes) if node not in nodes_trivial}
+    
+    # Map model nodes to onto-subgraph root
+    # (only nontrivial nodes, nontrivial onto subgraphs)
+    map_nodes_ontoSubRoots = {node: ontoSubs_nontrivial_root[map_nodes_ontoSubs[node]] for node in tqdm(G_onto.nodes, total = num_nodes) if node not in nodes_trivial}
+
+
+    # Calculate shortest path between each model node and its onto-subgraph root 
+    # (only nontrivial nodes, nontrivial onto subgraphs)
+    for node in tqdm(map_nodes_ontoSubRoots):
+
+        i = map_nodes_ids[node]
+
+        if nodes[i]['grounded_onto'] == False:
+
+            source = node
+            target = map_nodes_ontoSubRoots[node]
+            index = map_nodes_ontoSubs[node]
+
+            # Calculate path
+            path = nx.algorithms.shortest_paths.generic.shortest_path(G_onto.subgraph(ontoSubs[index]), source = source, target = target)
+
+            # Change path order to target-to-source 
+            path = path[::-1]
+
+            # Store path for each node in path
+            for j, node in enumerate(path):
+                
+                node_id = map_nodes_ids[node]
+
+                if nodes[node_id]['grounded_onto'] == False:
+                    
+                    nodes[node_id]['grounded_onto'] = True
+                    nodes[node_id]['ontocat_level'] = len(path[:(j + 1)]) - 1
+                    nodes[node_id]['ontocat_refs'] = path[:(j + 1)]
+
+
+    # Max length of onto paths
+    max_path_length = max([len(node['ontocat_refs']) for node in nodes])
+
+    # Ensure that identical onto nodes share the same lineage (path to their ancestor) for hierarchical uniqueness
+    for l in tqdm(range(1, max_path_length), total = max_path_length - 1):
+
+        map_ontocats_indices = {node['ontocat_refs'][l]: i for i, node in enumerate(nodes) if len(node['ontocat_refs']) > l}
+        for node in nodes:
+
+            if len(node['ontocat_refs']) > l:
+                index = map_ontocats_indices[node['ontocat_refs'][l]]
+                node['ontocat_refs'][:l] = nodes[index]['ontocat_refs'][:l]
+
+    # Map onto-paths to IDs
+    for node in tqdm(nodes, total = num_nodes):
+        node['ontocat_refs'] = [map_nodes_ids[node_path] for node_path in node['ontocat_refs']]
+
+
+    # Ontocat attributes
+    x, y = np.unique([ontocat for node in nodes for ontocat in node['ontocat_refs']], return_counts = True)
+    onto = {}
+    onto['sizes'] = {k: v for k, v in zip(x, y)}
+    onto['levels'] = {node['id']: len(node['ontocat_refs']) - 1 for node in nodes}
+    onto['parent_ids'] = {node['id']: node['ontocat_refs'][-2] if len(node['ontocat_refs']) > 1 else None for node in nodes}
+    onto['children_ids'] = {node['id']: set() for node in nodes}
+    for node in tqdm(nodes):
+        for i, node_ in enumerate(node['ontocat_refs'][:-1]):
+            onto['children_ids'][node_] = onto['children_ids'][node_] | set(node['ontocat_refs'][(i + 1):])
+
+
+    # Generate ontocats
+    ontocats = [{
+        'model_id': -1,
+        'id': map_nodes_ids[node], 
+        'ref': node,
+        'name': f"{node if 'name' not in G_onto.nodes[node].keys() else node if G_onto.nodes[node]['name'] == None else node if len(G_onto.nodes[node]['name']) == 0 else G_onto.nodes[node]['name']}",
+        'size': onto['sizes'][map_nodes_ids[node]],
+        'level': onto['levels'][map_nodes_ids[node]],
+        'parent_id': onto['parent_ids'][map_nodes_ids[node]],
+        'children_ids': list(onto['children_ids'][map_nodes_ids[node]]),
+        'node_ids': list(onto['children_ids'][map_nodes_ids[node]]),
+        'node_ids_direct': [map_nodes_ids[node]]
+    } for node in tqdm(G_onto.nodes)]
+
+
+    return nodes, edges, ontocats, G_onto
+
 
 # %%
 # Calculate the shortest root-to-leaf paths of model nodes that have been grounded to a given ontological graph
@@ -874,7 +1204,7 @@ def calculate_onto_root_path(nodes, G_onto_JSON):
 
 
     # Calculate shortest path to local root
-    for i, j in zip(node_indices, ontoSub_indices):
+    for i, j in tqdm(zip(node_indices, ontoSub_indices), total = len(node_indices)):
 
         source = nodes[i]['db_ref_priority']
 
@@ -988,14 +1318,6 @@ def extract_ontocats(nodes, G_onto_JSON):
 
     # Switch to row-wise structure
     ontocats = [{k: ontocats_[k][i] for k in ontocats_.keys()} for i in range(num_ontocats)]
-
-
-    # # Placeholder for layout coordinates
-    # # (use median of the membership)
-    # x = {node['id']: i for i, node in enumerate(nodes)}
-    # for ontocat in ontocats:
-    #     for i in ['x', 'y', 'z']:
-    #         ontocat[i] = float(np.median([nodes[x[j]][i] for j in ontocat['node_ids']]))
 
 
     return ontocats
@@ -1208,7 +1530,7 @@ def generate_hyperedges(nodes, edges, ontocats):
 
     #####################################################
 
-    # Add  `ontocats`
+    # Add child list to `ontocats`
     for ontocat in ontocats:
         ontocat['children_ids'] = ontocats_children_ontocat_ids[ontocat['id']]
         ontocat['node_ids_direct'] = ontocats_children_node_ids[ontocat['id']]
@@ -1219,9 +1541,12 @@ def generate_hyperedges(nodes, edges, ontocats):
     map_ids_nodes = {node['id']: i for i, node in enumerate(nodes)}
     x = {ontocat['id']: [] for ontocat in ontocats}
     for hyperedge in hyperedges:
-        if (hyperedge['source_type'] == 'ontocat') & (ontocats[hyperedge['source_id']]['parent_id'] != None):
-            x[ontocats[hyperedge['source_id']]['parent_id']] = x[ontocats[hyperedge['source_id']]['parent_id']] + [hyperedge['id']]
-        elif hyperedge['source_type'] == 'node':
+
+        if (hyperedge['source_type'] == 'ontocat'):
+            if (ontocats[hyperedge['source_id']]['parent_id'] != None):
+                x[ontocats[hyperedge['source_id']]['parent_id']] = x[ontocats[hyperedge['source_id']]['parent_id']] + [hyperedge['id']]
+        
+        if hyperedge['source_type'] == 'node':
             x[nodes[map_ids_nodes[hyperedge['source_id']]]['ontocat_ids'][-1]] = x[nodes[map_ids_nodes[hyperedge['source_id']]]['ontocat_ids'][-1]] + [hyperedge['id']]
 
 
@@ -1403,5 +1728,200 @@ def generate_onto_layout(nodes, ontocats, hyperedges, plot = False, ax = None):
     return G, coors, fig, ax
 
 # %%
+# Generate node, node-attribute, node-layout lists from a set of metadata, coordinates, labels
+def generate_nodelist(model_id = -1, node_metadata = [], node_coors = [], node_labels = []):
+
+    # Check types
+    if (len(node_metadata) > 0) & (not isinstance(node_metadata[0], dict)):
+        raise TypeError("'node_metadata' must be a list of dicts.")
+    if (len(node_coors) > 0) & ((not isinstance(node_coors, np.ndarray)) or (len(node_coors.shape) != 2)):
+        raise TypeError("'node_coors' must be a 2D numpy ndarray.")
+    if (len(node_labels) > 0) & (not isinstance(node_labels, np.ndarray)):
+        raise TypeError("'node_coors' must be a numpy ndarray.")
+
+    # Get number of nodes
+    if len(node_metadata) > 0:
+        num_nodes = len(node_metadata)
+    elif len(node_coors) > 0:
+        num_nodes = len(node_coors)
+    elif len(node_labels) > 0:
+        num_nodes = len(node_labels)
+    else:
+        num_nodes = 0
+
+    # Initialize
+    nodes = []
+    nodeLayout = []
+    nodeAtts = []
+
+
+    if num_nodes > 0:
+
+        # Initialize the node list
+        nodes = [{
+            'model_id': model_id,
+            'id': i,
+            'name': None,
+            'db_refs': {},
+            'grounded': False,
+            'edge_ids_source': [],
+            'edge_ids_target': [],
+            'out_degree': 0,
+            'in_degree:': 0,
+        } for i in range(num_nodes)]
+
+        # Add metadata if available
+        if len(node_metadata) > 0:
+
+            for node, metadata in zip(nodes, node_metadata):
+
+                node['grounded'] = True
+                node['name'] = metadata['title']
+
+                if 'doi' in metadata.keys(): 
+                    node['db_refs']['DOI'] = metadata['doi'].upper()
+
+                if 'pmcid' in metadata.keys():
+                    node['db_refs']['PMCID'] = metadata['pmcid'].upper()
+
+                if 'pubmed_id' in metadata.keys(): 
+                    node['db_refs']['PMID'] = metadata['pubmed_id'].upper()
+
+        # Generate node-layout list
+        nodeLayout = [{
+            'model_id': model_id,
+            'id': i,
+            'x': None,
+            'y': None,
+            'z': None,
+        } for i in range(num_nodes)]
+
+        # Get coordinate data if available
+        if len(node_coors) > 0:
+
+            # Map coordinate data
+            num_dim_coors = node_coors.shape[1]
+            c = {0: 'x', 1: 'y', 2: 'z'}
+            for i, node in enumerate(nodeLayout):
+                for j in range(3):
+                    if j < num_dim_coors:
+                        node[c[j]] = node_coors[i, j].item()
+                    else:
+                        node[c[j]] = 0.0
+
+        # Generate node-attribute list
+        nodeAtts = [{
+            'model_id': model_id,
+            'id': i,
+            "db_ref_priority": None, 
+            "grounded_onto": False, 
+            "ontocat_level": None, 
+            "ontocat_ids": None, 
+            "grounded_cluster": False, 
+            "cluster_level": None, 
+            "cluster_ids": None
+        } for i in range(num_nodes)]
+
+        # Get priority DB reference (DOI)
+        if len(node_metadata) > 0:
+            for i in range(num_nodes):
+                nodeAtts[i]['db_ref_priority'] = nodes[i]['db_refs']['DOI']
+
+        # Get cluster label data if available
+        if len(node_labels) > 0:
+
+            # Check axes
+            if len(node_labels.shape) < 2:
+                node_labels = node_labels[:, np.newaxis]
+            num_dim_labels = node_labels.shape[1]
+
+            for i, node in enumerate(nodeAtts):
+                
+                node['cluster_ids'] = [l.item() for l in node_labels[i, :]]
+
+                # Cluster level = last level at which the cluster label is not -1
+                j = np.flatnonzero(node_labels[i, :] == -1)
+                k = 0
+                if len(j) != 0:
+                    k = (j[0] - 1).item()
+                node['cluster_level'] = k
+
+                if k >= 0:
+                    node['grounded_cluster'] = True
+
+                
+    return nodes, nodeLayout, nodeAtts
+
 
 # %%
+# Generate a node list, edge list, and nearest-neighbour graph from a set of coordinates
+def generate_nn_graph(node_coors, node_metadata = [], model_id = -1):
+
+    # Define custom Minkowski distance function to enable non-integer `p`
+    @numba.njit
+    def minkowski_distance(u, v, p = 2.0):
+        return (np.abs(u - v) ** p).sum() ** (1.0 / p)
+        # return np.sum(np.abs(u - v) ** p) ** (1.0 / p)
+
+
+
+    # Find k-nearest neighbours
+    # knn = skl.neighbors.NearestNeighbors(n_neighbors = 1, metric = 'minkowski', p = 2.0 / 3.0)
+    knn = skl.neighbors.NearestNeighbors(n_neighbors = 2, metric = lambda u, v: minkowski_distance(u, v, p = 2.0 / 3.0))
+    knn.fit(node_coors)
+    knn_dist, knn_ind = knn.kneighbors(node_coors)
+
+
+    # Define edge list
+    num_coors = node_coors.shape[0]
+    edges = [{
+        'model_id': model_id,
+        'id': i,
+        'type': 'knn',
+        'belief': float(1.0 / knn_dist[i][1]),
+        'statement_id': None,
+        'source_id': i,
+        'target_id': int(knn_ind[i][1]),
+        'tested': True
+    } for i in range(num_coors)]
+
+
+    # Define NetworkX graph object
+    edge_list = [(edge['source_id'], edge['target_id'], edge) for edge in edges]
+    G = nx.MultiDiGraph()
+    G.add_edges_from(edge_list)
+
+
+    # Define node list
+    num_coors = node_coors.shape[0]
+    nodes = []
+    nodes = [{
+        'model_id': model_id,
+        'id': i,
+        'name': None,
+        'db_refs': None,
+        'grounded': False,
+        'edge_ids_source': [i],
+        'edge_ids_target': [j for j, k in G.in_edges(i)],
+        'out_degree': G.out_degree(i),
+        'in_degree:': G.in_degree(i),
+    } for i in range(num_coors)]
+
+
+    # Add metadata if available
+    if len(node_metadata) == num_coors:
+
+        for i, node in enumerate(nodes):
+            node['grounded'] = True
+            node['name'] = node_metadata[i]['title']
+            node['db_refs'] = {
+                'DOI': node_metadata[i]['doi'].upper(), 
+                'PMCID': node_metadata[i]['pmcid'].upper(), 
+                'PMID': node_metadata[i]['pubmed_id'].upper()
+            }
+
+
+    return nodes, edges, G
+
+
+

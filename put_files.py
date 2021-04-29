@@ -1,3 +1,5 @@
+# Usage: python put_files.py <path_of_source_directory> <path_of_target_directory>
+# Example: python put_files.py ./BIO/dist/v3.1/full/ aske/research/BIO/dist/3.1/full/
 import os 
 import sys
 from argparse import ArgumentParser
@@ -14,11 +16,12 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--secure', action = "store_true", help = 'set the Minio server connection to be secure')
     args = parser.parse_args()
 
+    print(f"\n")
+
     # File paths
     source_path = args.source
     bucket_name, target_path = args.target.split('/', 1)
     __, __, source_filenames = next(os.walk(source_path))
-
 
     with open('.local', 'rt') as f:
 
@@ -30,14 +33,14 @@ if __name__ == '__main__':
             print(f"Could not find a bucket called '{bucket_name}'.")
             sys.exit(1)
 
-
         # Get list of files at target
         target_files = [obj for obj in minio_client.list_objects(bucket_name, prefix = target_path, recursive = True)]
-
-        # Check if same before overwrite?
+        target_filenames = [os.path.basename(f.object_name) for f in target_files]
 
         # Upload files
         for filename in tqdm(source_filenames):
+
+            # if filename in target_filenames:
 
             source = os.path.join(source_path, filename)
             target = os.path.join(target_path, filename)
