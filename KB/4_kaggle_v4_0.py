@@ -34,6 +34,10 @@ import emmaa_lib as emlib
 
 from typing import Dict, List, Tuple, Set, Union, Optional, NoReturn, Any
 
+from io import StringIO
+import boto3
+from botocore.client import Config
+
 
 # %%
 np.random.seed(0)
@@ -803,7 +807,7 @@ def generate_kaggle_nodelist(docs: List, embs: Any, labels: Any, model_id: int =
 
         # Generate group list
         groups = [{
-            'id': group_id,
+            'id': int(group_id),
             'id_onto': None,
             'name': None,
             'level': (lambda x: int(x) if x != None else None)(map_groups_levels[group_id]),
@@ -844,6 +848,86 @@ def generate_kaggle_nodelist(docs: List, embs: Any, labels: Any, model_id: int =
 
 
     return nodes, nodeLayout, nodeAtts, groups
+
+
+# Load object to S3 bucket
+def load_obj_to_s3(obj: Union[List, Dict], s3_url: str, s3_bucket: str, s3_path: str, preamble: Optional[Dict] = None, obj_key: Optional[str] = None, print_opt: bool = False) -> NoReturn:
+
+
+    # Pick out sub-object by key
+    if isinstance(obj, dict) & (obj_key != None):
+        obj = obj[obj_key]
+
+
+    # Serialize `obj`
+    with StringIO() as fp:
+
+        # `obj` is type `dict`
+        if isinstance(obj, dict):
+
+            # Only include keys specified by preamble
+            if preamble != None:
+                # obj_ = {k: v for k, v in obj.items() if k in preamble.keys()}
+                obj_ = {k: obj[k] if k in obj.keys() else None for k in preamble.keys() if k in preamble.keys()}
+
+            else:
+                obj_ = obj
+
+
+            json.dump(obj_, fp)
+
+
+        # `obj` is type `list` of `dict`
+        if isinstance(obj, list):
+
+            # Include preamble if available
+            if preamble != None:
+                json.dump(preamble, fp)
+                fp.write('\n')
+
+
+            # Do for each 
+            for item in obj:
+
+                # Only include keys specified by preamble
+                if preamble != None:
+                    # item_ = {k: v for k, v in item.items() if k in preamble.keys()}
+                    item_ = {k: item[k] if k in item.keys() else None for k in preamble.keys()}
+
+                else:
+                    item_ = item
+
+
+                json.dump(item_, fp)
+                fp.write('\n')
+
+
+        # Load file onto S3 bucket
+        try:
+
+            # Define S3 interface
+            s3_resource = boto3.resource(
+                's3', 
+                endpoint_url = s3_url, 
+                config = Config(signature_version = 's3v4'), 
+                region_name = 'us-east-1',
+                aws_access_key_id = 'foobar',
+                aws_secret_access_key = 'foobarbaz',
+            )
+            # aws_access_key_id = Secret('AWS_CREDENTIALS').get()['ACCESS_KEY']
+            # aws_secret_access_key = Secret('AWS_CREDENTIALS').get()['SECRET_ACCESS_KEY']
+
+
+            s3_resource.Object(s3_bucket, s3_path).put(Body = fp.getvalue())
+
+
+            if print_opt == True:
+                print(f'S3 request: {s3_url}/{s3_bucket}/{s3_path}')
+
+        except:
+
+            if print_opt == True:
+                print(f'S3 request error: {s3_url}/{s3_bucket}/{s3_path}')
 
 
 # %%
@@ -907,4 +991,27 @@ for x, y in zip(('nodes', 'nodeLayout', 'nodeAtts', 'groups'), (nodes, nodeLayou
 
 # %%
 
+data = {
+    'nodes': nodes,
+    'nodeLayout': nodeLayout,
+    'nodeAtts': nodeAtts,
+    'groups': groups
+}
 
+s3_url = 'http://10.64.18.171:9000'
+s3_bucket = 'aske'
+s3_path = 'research/KB/dist/kaggle/test'
+
+for x, y in zip(('nodes', 'nodeLayout', 'nodeAtts', 'groups'), (nodes, nodeLayout, nodeAtts, groups)):
+
+    load_obj_to_s3(
+        obj = data, 
+        s3_url = s3_url, 
+        s3_bucket = s3_bucket, 
+        s3_path = f"{s3_path}/{x}.jsonl", 
+        preamble = get_obj_preamble(obj_type = x),
+        obj_key = x
+    )
+
+
+# %%
