@@ -107,7 +107,7 @@ if False:
 # %%
 %%time
 
-model_umap = umap.UMAP(n_components = 2, n_neighbors = 15, min_dist = 0.1, metric = 'minkowski', metric_kwds = {'p': 2.0/3.0}, random_state = 0)
+model_umap = umap.UMAP(n_components = 2, n_neighbors = 7, min_dist = 0.5, metric = 'minkowski', metric_kwds = {'p': 2.0/3.0}, random_state = 0)
 
 embs_red = model_umap.fit_transform(embs)
 embs_red = embs_red - np.mean(embs_red, axis = 0)
@@ -126,7 +126,7 @@ if False:
 # %%
 # Plot result
 
-i = np.random.randint(0, high = embs.shape[0], size = 100000)
+i = np.random.randint(0, high = embs.shape[0], size = 10000)
 
 fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
 # __ = emlib.plot_emb(coor = embs_red[i, :], cmap_name = 'qual', legend_kwargs = {}, colorbar = False, str_title = 'Dimensionally Reduced SPECTER Embeddings of the Kaggle CORD-19 Dataset', ax = ax)
@@ -139,12 +139,15 @@ fig.savefig('./figures/kaggle/embeddings_umap.png', dpi = 150)
 # # Apply Hierarchical Clustering
 
 # %%
-epsilons = np.arange(0.01, 0.041, 0.01)
+
+# epsilons = np.arange(0.01, 0.041, 0.01)
+epsilons = np.array([0.03, 0.04, 0.05])
+
 labels = []
 for eps in tqdm(epsilons):
 
     # Generate cluster labels
-    kwargs = {'metric': 'euclidean', 'min_cluster_size': 2, 'min_samples': 3, 'cluster_selection_epsilon': float(eps)}
+    kwargs = {'metric': 'euclidean', 'min_cluster_size': 50, 'min_samples': 3, 'cluster_selection_epsilon': float(eps)}
     clusterer = hdbscan.HDBSCAN(**kwargs)
     clusterer.fit(embs_red)
     l = clusterer.labels_
@@ -181,63 +184,92 @@ if False:
     with open('./dist/kaggle/embeddings_umap_hdbscan.pkl', 'rb') as f:
         labels = pickle.load(f)
 
-    epsilons = np.arange(0.01, 0.041, 0.01)[::-1]
+    # epsilons = np.arange(0.01, 0.041, 0.01)[::-1]
+    epsilons = np.array([0.03, 0.04, 0.05])[::-1]
 
 # %%[markdown]
 # Plot cluster distribution
 
-fig, ax = plt.subplots(nrows = 2, ncols = 1, figsize = (12, 12))
+# fig, ax = plt.subplots(nrows = 2, ncols = 1, figsize = (12, 12))
 
-# Number of clusters/groups as a function of epsilon
-c = 'tab:blue'
-x = [np.unique(l, return_counts = True) for l in labels.T]
-__ = ax[0].plot(epsilons, [len(i[0]) for i in x], marker = 'o', color = c)
-__ = ax[0].set_ylabel('Number of Groups', color = c)
-__ = ax[0].tick_params(axis = 'y', labelcolor = c)
-# __ = ax[0].tick_params(axis = 'x', labelbottom = False)
-__ = plt.setp(ax[0], yscale = 'linear')
-
-
-# Size of clusters/groups as a function of epsilon
-c = 'tab:blue'
-y = [i[1] for i in x]
-h = ax[1].violinplot(dataset = y, positions = epsilons, widths = 0.005)
-__ = plt.setp(ax[1], xlabel = 'Epsilon, \u03B5', yscale = 'log')
-__ = ax[1].set_ylabel('Size of Groups', color = c)
-__ = ax[1].tick_params(axis = 'y', labelcolor = c)
-for i in h['bodies']:
-    i.set_facecolor(c)
-
-# Number of noise points
-c = 'tab:red'
-ax_ = ax[1].twinx()
-z = [sum(labels[:, i] == -1) for i in range(labels.shape[1])]
-__ = ax_.plot(epsilons, z, marker = 'o', color = c)
-__ = plt.setp(ax_, yscale = 'log')
-__ = ax_.set_ylabel('Number of Noise Points', color = c)
-__ = ax_.tick_params(axis = 'y', labelcolor = c)
-
-__ = plt.setp(ax_, ylim = plt.getp(ax[1], 'ylim'))
-__ = plt.setp(ax[0], xlim = plt.getp(ax[1], 'xlim'))
+# # Number of clusters/groups as a function of epsilon
+# c = 'tab:blue'
+# x = [np.unique(l, return_counts = True) for l in labels.T]
+# __ = ax[0].plot(epsilons, [len(i[0]) for i in x], marker = 'o', color = c)
+# __ = ax[0].set_ylabel('Number of Groups', color = c)
+# __ = ax[0].tick_params(axis = 'y', labelcolor = c)
+# # __ = ax[0].tick_params(axis = 'x', labelbottom = False)
+# __ = plt.setp(ax[0], yscale = 'linear')
 
 
-fig.savefig('./figures/kaggle/embeddings_umap_hdbscan_distribution.png', dpi = 150)
+# # Size of clusters/groups as a function of epsilon
+# c = 'tab:blue'
+# y = [i[1] for i in x]
+# h = ax[1].violinplot(dataset = y, positions = epsilons, widths = 0.005)
+# __ = plt.setp(ax[1], xlabel = 'Epsilon, \u03B5', yscale = 'log')
+# __ = ax[1].set_ylabel('Size of Groups', color = c)
+# __ = ax[1].tick_params(axis = 'y', labelcolor = c)
+# for i in h['bodies']:
+#     i.set_facecolor(c)
 
-fig = ax = x = y = z = h = None
-del fig, ax, x, y, z, h
+# # Number of noise points
+# c = 'tab:red'
+# ax_ = ax[1].twinx()
+# z = [sum(labels[:, i] == -1) for i in range(labels.shape[1])]
+# __ = ax_.plot(epsilons, z, marker = 'o', color = c)
+# __ = plt.setp(ax_, yscale = 'log')
+# __ = ax_.set_ylabel('Number of Noise Points', color = c)
+# __ = ax_.tick_params(axis = 'y', labelcolor = c)
+
+# __ = plt.setp(ax_, ylim = plt.getp(ax[1], 'ylim'))
+# __ = plt.setp(ax[0], xlim = plt.getp(ax[1], 'xlim'))
+
+
+# fig.savefig('./figures/kaggle/embeddings_umap_hdbscan_distribution.png', dpi = 150)
+
+# fig = ax = x = y = z = h = None
+# del fig, ax, x, y, z, h
+
+
+# %%
+# X% quantile of cluster size
+n = 0.98
+labels_ = []
+
+for i in range(len(epsilons)):
+
+    x, y = np.unique(labels[:, i], return_counts = True)
+    j = np.argsort(y)[::-1]
+    x = x[j]
+    y = y[j]
+
+    m = np.quantile(y, n)
+    p = sum(y >= m)
+
+    print(f"eps = {epsilons[i]}: {n}-quantile cluster size = {m}, top {p} clusters")
+    
+    labels_.append([l if l in x[:p] else -1 for l in labels[:, i]])
+    
+labels_ = np.array(labels_).T
+
+# eps = 0.05: 0.98-quantile cluster size = 52.0, top 66 clusters
+# eps = 0.04: 0.98-quantile cluster size = 59.0, top 118 clusters
+# eps = 0.03: 0.98-quantile cluster size = 54.0, top 317 clusters
 
 
 # %%[markdown]
 # Plot result
 
-j = np.random.randint(0, high = embs_red.shape[0], size = 100000)
+%%time
+
+j = np.random.randint(0, high = embs_red.shape[0], size = 50000)
 
 fig, ax = plt.subplots(nrows = 2, ncols = 2, figsize = (15, 15))
 
 for i, x in enumerate(fig.axes):
 
     if i < labels.shape[1]:
-        __ = emlib.plot_emb(coor = embs_red[j, :], labels = labels[j, i], cmap_name = 'qual', marker_size = 0.5, marker_alpha = 0.05, legend_kwargs = {}, colorbar = False, str_title = f'\u03B5 = {epsilons[i]:.2f}', ax = x)
+        __ = emlib.plot_emb(coor = embs_red[j, :], labels = labels_[j, i], cmap_name = 'qual', marker_size = 1.0, marker_alpha = 0.1, legend_kwargs = {}, colorbar = False, str_title = f'\u03B5 = {epsilons[i]:.3f}', ax = x)
         __ = plt.setp(x, xlabel = '', ylabel = '')
         __ = x.tick_params(axis = 'both', bottom = False, left = False, labelbottom = False, labelleft = False)
     
@@ -784,9 +816,14 @@ def generate_kaggle_nodelist(docs: List, embs: Any, labels: Any, model_id: int =
         } for group_id in sorted(map_groups_nodes.keys())]
 
 
-        # Node IDs of children groups
-        for group in groups:
-            group['node_ids_all'] = [int(i) for group_id in group['children_ids'] if group_id != -1 for i in sorted(map_groups_nodes[group_id])]
+        # # Node IDs of children groups
+        # for group in groups:
+
+        #     # group['node_ids_all'] = [int(i) for group_id in group['children_ids'] if group_id != -1 for i in sorted(map_groups_nodes[group_id])]
+
+        #     group['node_ids_all'] = [int(i) for i in sorted(map_groups_nodes[group_id])]
+
+        #     group['node_ids_all'].extend([int(i) for group_id in group['children_ids'] if group_id != -1 for i in map_groups_nodes[group_id]])
 
 
         # Calculate kNN median centroid of each group
@@ -843,7 +880,7 @@ ax.scatter(coors_centroid[:, 0], coors_centroid[:, 1], marker = '+')
 
 # %%
 # Generate lists
-nodes, nodeLayout, nodeAtts, groups = generate_kaggle_nodelist(docs = docs, embs = embs_red, labels = labels, model_id = None)
+nodes, nodeLayout, nodeAtts, groups = generate_kaggle_nodelist(docs = docs, embs = embs_red, labels = labels_, model_id = None)
 
 # %%
 
