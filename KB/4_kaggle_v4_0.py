@@ -766,7 +766,7 @@ def generate_kaggle_nodelist(docs: List, embs: Any, labels: Any, model_id: int =
         labels_ids = np.array([[transform_obj_ids(int(i), obj_type = 'groups') if i != -1 else -1 for i in l] for l in labels_])
 
 
-        for i, node in enumerate(nodeAtts):
+        for i, node in tqdm(enumerate(nodeAtts), total = num_nodes):
 
             j = np.argwhere(labels[i, :] != -1).flatten()
 
@@ -784,11 +784,12 @@ def generate_kaggle_nodelist(docs: List, embs: Any, labels: Any, model_id: int =
         # Generate group membership list
         map_nodes_ids = {i: node['id'] for i, node in enumerate(nodes)}
         map_groups_nodes = {group_id: [] for row in labels_ids for group_id in row if group_id != -1}
-        for i in range(num_nodes):
+        for i in tqdm(range(num_nodes)):
             for j in range(num_eps):
                 group_id = labels_ids[i, j]
                 if group_id != -1:
                     map_groups_nodes[group_id].append(map_nodes_ids[i])
+                    # map_groups_nodes[group_id] = map_groups_nodes[group_id] | set([map_nodes_ids[i]])
 
 
         # Generatet group-level list
@@ -797,12 +798,13 @@ def generate_kaggle_nodelist(docs: List, embs: Any, labels: Any, model_id: int =
 
         # Generate group-parent list
         map_groups_parent = {group_id: row[j - 1] if j > 0 else None for row in labels_ids for j, group_id in enumerate(row) if group_id != -1}
-        map_groups_children = {group_id: [] for row in labels_ids for j, group_id in enumerate(row) if group_id != -1}
-        for i in range(num_nodes):
+        map_groups_children = {group_id: [] for row in labels_ids for group_id in row if group_id != -1}
+        for i in tqdm(range(num_nodes)):
             for j in range(num_eps - 1):
                 group_id = labels_ids[i, j]
                 if group_id != -1:
                     map_groups_children[group_id].extend(labels_ids[i, (j + 1):])
+                    # map_groups_children[group_id] = map_groups_children[group_id] | set(labels_ids[i, (j + 1):])
 
 
         # Generate group list
@@ -814,13 +816,14 @@ def generate_kaggle_nodelist(docs: List, embs: Any, labels: Any, model_id: int =
             'parent_id': (lambda x: int(x) if x != None else None)(map_groups_parent[group_id]),
             'children_ids': [int(i) for i in sorted(list(set(map_groups_children[group_id]))) if i != -1],
             'model_id': model_id,
-            'node_ids_all': None,
-            'node_ids_direct': [int(i) for i in sorted(map_groups_nodes[group_id])],
+            'node_ids_all': [int(i) for i in sorted(list(set(map_groups_nodes[group_id])))],
+            # 'node_ids_direct': [int(i) for i in sorted(list(map_groups_nodes[group_id]))],
+            'node_ids_direct': None,
             'node_id_centroid': None
         } for group_id in sorted(map_groups_nodes.keys())]
 
 
-        # # Node IDs of children groups
+        # # Node IDs of children groups (redundant since nodes are assigned to multiple groups)
         # for group in groups:
 
         #     # group['node_ids_all'] = [int(i) for group_id in group['children_ids'] if group_id != -1 for i in sorted(map_groups_nodes[group_id])]
@@ -832,14 +835,14 @@ def generate_kaggle_nodelist(docs: List, embs: Any, labels: Any, model_id: int =
 
         # Calculate kNN median centroid of each group
         map_ids_nodes = {node['id']: i for i, node in enumerate(nodes)}
-        for group in groups:
+        for group in tqdm(groups):
             
-            coors = embs[np.array([map_ids_nodes[i] for i in group['node_ids_direct']]), :]
+            coors = embs[np.array([map_ids_nodes[i] for i in group['node_ids_all']]), :]
 
             i, __, __ = generate_nn_cluster_centroid_list(coors = coors, labels = [])
 
-            group['node_id_centroid'] = group['node_ids_direct'][i.item()]
-            group['name'] = nodes[map_ids_nodes[group['node_ids_direct'][i.item()]]]['name']
+            group['node_id_centroid'] = group['node_ids_all'][i.item()]
+            group['name'] = nodes[map_ids_nodes[group['node_ids_all'][i.item()]]]['name']
 
     
     if print_opt == True:
@@ -933,33 +936,32 @@ def load_obj_to_s3(obj: Union[List, Dict], s3_url: str, s3_bucket: str, s3_path:
 # %%
 # Calculate kNN median centroid list for each epsilon
 
-i = 0
-j = np.random.randint(0, high = embs_red.shape[0], size = 5000)
-knn_ind, l_unique, coors_centroid = generate_nn_cluster_centroid_list(coors = embs_red, labels = labels[:, i])
+# i = 0
+# j = np.random.randint(0, high = embs_red.shape[0], size = 5000)
+# knn_ind, l_unique, coors_centroid = generate_nn_cluster_centroid_list(coors = embs_red, labels = labels[:, i])
 
 
-fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (15, 15))
-__ = emlib.plot_emb(coor = embs_red[j, :], labels = labels[j, i], cmap_name = 'qual', marker_size = 0.5, marker_alpha = 0.1, legend_kwargs = {}, colorbar = False, str_title = f'\u03B5 = {epsilons[i]:.2f}', ax = ax)
-ax.scatter(coors_centroid[:, 0], coors_centroid[:, 1], marker = '+')
+# fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (15, 15))
+# __ = emlib.plot_emb(coor = embs_red[j, :], labels = labels[j, i], cmap_name = 'qual', marker_size = 0.5, marker_alpha = 0.1, legend_kwargs = {}, colorbar = False, str_title = f'\u03B5 = {epsilons[i]:.2f}', ax = ax)
+# ax.scatter(coors_centroid[:, 0], coors_centroid[:, 1], marker = '+')
 
 
 # %%
 
+# i, j = np.unique(labels[:, 0], return_counts = True)
+# k = np.argsort(j)
+# l = i[k][-5]
 
-i, j = np.unique(labels[:, 0], return_counts = True)
-k = np.argsort(j)
-l = i[k][-5]
+# i = 0
+# j = labels[:, i] == l
+# knn_ind, l_unique, coors_centroid = generate_nn_cluster_centroid_list(coors = embs_red[j, :], labels = [])
 
-i = 0
-j = labels[:, i] == l
-knn_ind, l_unique, coors_centroid = generate_nn_cluster_centroid_list(coors = embs_red[j, :], labels = [])
-
-d, m = calc_mstree_dist(X = embs_red[j, :], labels = [], plot_opt = False, plot_opt_hist = False)
+# d, m = calc_mstree_dist(X = embs_red[j, :], labels = [], plot_opt = False, plot_opt_hist = False)
 
 
-fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (15, 15))
-__ = emlib.plot_emb(coor = embs_red[j, :], labels = labels[j, i], cmap_name = 'qual', marker_size = 0.5, marker_alpha = 0.1, legend_kwargs = {}, colorbar = False, str_title = f'\u03B5 = {epsilons[i]:.2f}', ax = ax)
-ax.scatter(coors_centroid[:, 0], coors_centroid[:, 1], marker = '+')
+# fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (15, 15))
+# __ = emlib.plot_emb(coor = embs_red[j, :], labels = labels[j, i], cmap_name = 'qual', marker_size = 0.5, marker_alpha = 0.1, legend_kwargs = {}, colorbar = False, str_title = f'\u03B5 = {epsilons[i]:.2f}', ax = ax)
+# ax.scatter(coors_centroid[:, 0], coors_centroid[:, 1], marker = '+')
 
 
 # %%
@@ -968,18 +970,52 @@ nodes, nodeLayout, nodeAtts, groups = generate_kaggle_nodelist(docs = docs, embs
 
 # %%
 
-s = [len(group['node_ids_direct']) for group in groups]
-i = np.argsort(s)[-3]
+# m = {l[i, j]: labels_[i, j] for i in range(labels_.shape[0]) for j in range(labels_.shape[1])}
+# m2 = {labels_[i, j]: l[i, j] for i in range(labels_.shape[0]) for j in range(labels_.shape[1])}
+
+
+s = [len(group['node_ids_all']) for group in groups]
+
 x = [node['coors'] for node in nodeLayout]
 y = {node['id']: i for i, node in enumerate(nodes)}
-z = np.array([x[y[k]] for k in groups[i]['node_ids_direct']])
+# x[y[groups[i]['node_id_centroid']]]
 
-x[y[groups[i]['node_id_centroid']]]
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
+ax.scatter(np.array(x)[:, 0], np.array(x)[:, 1], marker = '.', alpha = 0.01)
 
+i = np.argsort(s)[-1]
+z = np.array([x[y[k]] for k in groups[i]['node_ids_all']])
+ax.scatter(z[:, 0], z[:, 1], marker = '.', alpha = 0.01)
+ax.scatter(x[y[groups[i]['node_id_centroid']]][0], x[y[groups[i]['node_id_centroid']]][1], marker = '+', color = 'r')
 
-plt.scatter(z[:, 0], z[:, 1])
-plt.scatter(x[y[groups[i]['node_id_centroid']]][0], x[y[groups[i]['node_id_centroid']]][1], color = 'r')
+i = np.argsort(s)[-2]
+z = np.array([x[y[k]] for k in groups[i]['node_ids_all']])
+ax.scatter(z[:, 0], z[:, 1], marker = '.', alpha = 0.01)
+ax.scatter(x[y[groups[i]['node_id_centroid']]][0], x[y[groups[i]['node_id_centroid']]][1], marker = '+', color = 'r')
 
+i = np.argsort(s)[-3]
+z = np.array([x[y[k]] for k in groups[i]['node_ids_all']])
+ax.scatter(z[:, 0], z[:, 1], marker = '.', alpha = 0.01)
+ax.scatter(x[y[groups[i]['node_id_centroid']]][0], x[y[groups[i]['node_id_centroid']]][1], marker = '+', color = 'r')
+
+# %%
+
+# Test that parent group's node_ids_all are a superset of its child groups's node_ids_all
+
+map_ids_groups = {group['id']: i for i, group in enumerate(groups)}
+i = {}
+for k, group in enumerate(groups):
+
+    j = 0
+    if len(group['children_ids']) > 0:
+        for child in group['children_ids']:
+            if set(group['node_ids_all']) >= set(groups[map_ids_groups[child]]['node_ids_all']):
+                j = 1
+    else:
+        j = 1
+        
+    i[k] = j
+        
 
 # %%
 # Export data
