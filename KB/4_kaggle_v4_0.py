@@ -26,9 +26,17 @@ import matplotlib.pyplot as plt
 import umap
 import hdbscan
 import importlib
+
+import numba
+import sklearn as skl
+
 import emmaa_lib as emlib
 
 from typing import Dict, List, Tuple, Set, Union, Optional, NoReturn, Any
+
+from io import StringIO
+import boto3
+from botocore.client import Config
 
 
 # %%
@@ -88,14 +96,22 @@ __ = [print(f"\t{k}") for k in list(docs[0].keys())]
 # 	url
 # 	s2_id
 
+# %%
+with open('./dist/kaggle/embeddings.pkl', 'wb') as f:
+    pickle.dump(embs, f)
+
+# %%
+if False:
+    with open('./dist/kaggle/embeddings.pkl', 'rb') as f:
+        embs = pickle.load(f)
+
 # %%[markdown]
 # # Apply Dimensional Reduction
 
 # %%
 %%time
 
-num_dims_red = 2
-model_umap = umap.UMAP(n_components = num_dims_red, n_neighbors = 10, min_dist = 0.05, metric = 'minkowski', metric_kwds = {'p': 2.0/3.0}, random_state = 0)
+model_umap = umap.UMAP(n_components = 2, n_neighbors = 7, min_dist = 0.5, metric = 'minkowski', metric_kwds = {'p': 2.0/3.0}, random_state = 0)
 
 embs_red = model_umap.fit_transform(embs)
 embs_red = embs_red - np.mean(embs_red, axis = 0)
@@ -114,9 +130,12 @@ if False:
 # %%
 # Plot result
 
+i = np.random.randint(0, high = embs.shape[0], size = 10000)
+
 fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
-__ = emlib.plot_emb(coor = embs_red, cmap_name = 'qual', legend_kwargs = {}, colorbar = False, str_title = 'Dimensionally Reduced Document Embeddings (SPECTER) of the Kaggle Covid-19 Dateset', ax = ax)
-__ = plt.setp(ax, xlabel = 'x', ylabel = 'y')
+# __ = emlib.plot_emb(coor = embs_red[i, :], cmap_name = 'qual', legend_kwargs = {}, colorbar = False, str_title = 'Dimensionally Reduced SPECTER Embeddings of the Kaggle CORD-19 Dataset', ax = ax)
+__ = emlib.plot_emb(coor = embs_red, cmap_name = 'qual', marker_size = 0.5, marker_alpha = 0.01, legend_kwargs = {}, colorbar = False, str_title = 'Dimensionally Reduced SPECTER Embeddings of the Kaggle CORD-19 Dataset', ax = ax)
+__ = plt.setp(ax, xlabel = 'x', ylabel = 'y', )
 
 fig.savefig('./figures/kaggle/embeddings_umap.png', dpi = 150)
 
@@ -124,12 +143,15 @@ fig.savefig('./figures/kaggle/embeddings_umap.png', dpi = 150)
 # # Apply Hierarchical Clustering
 
 # %%
-epsilons = np.arange(0.05, 0.6, 0.1)
+
+# epsilons = np.arange(0.01, 0.041, 0.01)
+epsilons = np.array([0.03, 0.04, 0.05])
+
 labels = []
 for eps in tqdm(epsilons):
 
     # Generate cluster labels
-    kwargs = {'metric': 'euclidean', 'min_cluster_size': 2, 'min_samples': 3, 'cluster_selection_epsilon': float(eps)}
+    kwargs = {'metric': 'euclidean', 'min_cluster_size': 50, 'min_samples': 3, 'cluster_selection_epsilon': float(eps)}
     clusterer = hdbscan.HDBSCAN(**kwargs)
     clusterer.fit(embs_red)
     l = clusterer.labels_
@@ -139,22 +161,26 @@ for eps in tqdm(epsilons):
     # outlier_scores = clusterer.outlier_scores_
     # cluster_persist = clusterer.cluster_persistence_
 
+
 # Transpose to align with `embs` and reverse order to bring up ancestor group labels
 labels = np.array(labels).transpose()[:, ::-1]
-
-for l in labels.T:
-    print(f'\nNumber of clusters: {len(np.unique(l)):d}')
-    print(f'Number of unclustered points: {sum(l == -1):d} (of {len(l):d})')
+epsilons = epsilons[::-1]
 
 
-eps = l = kwargs = clusterer = None
-del eps, l, kwargs, clusterer
+for i, l in enumerate(labels.T):
+    print(f'\nEpsilon: {float(epsilons[i]): .2f}')
+    print(f'Number of clusters: {len(np.unique(l)):d}')
+    print(f'Unclustered Fraction: {sum(l == -1) / len(l) * 100:.2f} %')
+
+
+eps = i = l = kwargs = clusterer = None
+del eps, i, l, kwargs, clusterer
 
 # Time: 1 m 10 s
 
 
 # %%
-with open('./dist/kaggle/embeddings_umap_hdscan.pkl', 'wb') as f:
+with open('./dist/kaggle/embeddings_umap_hdbscan.pkl', 'wb') as f:
     pickle.dump(labels, f)
 
 # %%
@@ -162,25 +188,104 @@ if False:
     with open('./dist/kaggle/embeddings_umap_hdbscan.pkl', 'rb') as f:
         labels = pickle.load(f)
 
+    # epsilons = np.arange(0.01, 0.041, 0.01)[::-1]
+    epsilons = np.array([0.03, 0.04, 0.05])[::-1]
+
+# %%[markdown]
+# Plot cluster distribution
+
+# fig, ax = plt.subplots(nrows = 2, ncols = 1, figsize = (12, 12))
+
+# # Number of clusters/groups as a function of epsilon
+# c = 'tab:blue'
+# x = [np.unique(l, return_counts = True) for l in labels.T]
+# __ = ax[0].plot(epsilons, [len(i[0]) for i in x], marker = 'o', color = c)
+# __ = ax[0].set_ylabel('Number of Groups', color = c)
+# __ = ax[0].tick_params(axis = 'y', labelcolor = c)
+# # __ = ax[0].tick_params(axis = 'x', labelbottom = False)
+# __ = plt.setp(ax[0], yscale = 'linear')
+
+
+# # Size of clusters/groups as a function of epsilon
+# c = 'tab:blue'
+# y = [i[1] for i in x]
+# h = ax[1].violinplot(dataset = y, positions = epsilons, widths = 0.005)
+# __ = plt.setp(ax[1], xlabel = 'Epsilon, \u03B5', yscale = 'log')
+# __ = ax[1].set_ylabel('Size of Groups', color = c)
+# __ = ax[1].tick_params(axis = 'y', labelcolor = c)
+# for i in h['bodies']:
+#     i.set_facecolor(c)
+
+# # Number of noise points
+# c = 'tab:red'
+# ax_ = ax[1].twinx()
+# z = [sum(labels[:, i] == -1) for i in range(labels.shape[1])]
+# __ = ax_.plot(epsilons, z, marker = 'o', color = c)
+# __ = plt.setp(ax_, yscale = 'log')
+# __ = ax_.set_ylabel('Number of Noise Points', color = c)
+# __ = ax_.tick_params(axis = 'y', labelcolor = c)
+
+# __ = plt.setp(ax_, ylim = plt.getp(ax[1], 'ylim'))
+# __ = plt.setp(ax[0], xlim = plt.getp(ax[1], 'xlim'))
+
+
+# fig.savefig('./figures/kaggle/embeddings_umap_hdbscan_distribution.png', dpi = 150)
+
+# fig = ax = x = y = z = h = None
+# del fig, ax, x, y, z, h
+
+
+# %%
+# X% quantile of cluster size
+n = 0.98
+labels_ = []
+
+for i in range(len(epsilons)):
+
+    x, y = np.unique(labels[:, i], return_counts = True)
+    j = np.argsort(y)[::-1]
+    x = x[j]
+    y = y[j]
+
+    m = np.quantile(y, n)
+    p = sum(y >= m)
+
+    print(f"eps = {epsilons[i]}: {n}-quantile cluster size = {m}, top {p} clusters")
+    
+    labels_.append([l if l in x[:p] else -1 for l in labels[:, i]])
+    
+labels_ = np.array(labels_).T
+
+# eps = 0.05: 0.98-quantile cluster size = 52.0, top 66 clusters
+# eps = 0.04: 0.98-quantile cluster size = 59.0, top 118 clusters
+# eps = 0.03: 0.98-quantile cluster size = 54.0, top 317 clusters
+
 
 # %%[markdown]
 # Plot result
 
-fig, ax = plt.subplots(nrows = 2, ncols = 3, figsize = (15, 10))
+%%time
+
+j = np.random.randint(0, high = embs_red.shape[0], size = 50000)
+
+fig, ax = plt.subplots(nrows = 2, ncols = 2, figsize = (15, 15))
 
 for i, x in enumerate(fig.axes):
 
-    if i < len(labels):
-        __ = emlib.plot_emb(coor = embs_red[:5000], labels = labels[:, i], cmap_name = 'qual', legend_kwargs = {}, colorbar = False, str_title = f'\u03B5 = {epsilons[i]:.2f}', ax = x)
+    if i < labels.shape[1]:
+        __ = emlib.plot_emb(coor = embs_red[j, :], labels = labels_[j, i], cmap_name = 'qual', marker_size = 1.0, marker_alpha = 0.1, legend_kwargs = {}, colorbar = False, str_title = f'\u03B5 = {epsilons[i]:.3f}', ax = x)
         __ = plt.setp(x, xlabel = '', ylabel = '')
+        __ = x.tick_params(axis = 'both', bottom = False, left = False, labelbottom = False, labelleft = False)
     
     else:
         plt.axis('off')
 
+
 fig.savefig('./figures/kaggle/embeddings_umap_hdbscan.png', dpi = 150)
 
-fig = ax = x = i = None
-del fig, ax, x, i
+
+fig = ax = x = i = j = None
+del fig, ax, x, i, j
 
 
 # %%
@@ -239,158 +344,6 @@ def transform_obj_ids(obj: Union[Dict, int], obj_type: str, obj_id_key: str = 'i
 
 
     return obj
-
-
-# Generate node, node-attribute, node-layout lists from a set of metadata, coordinates, labels
-def generate_kaggle_nodelist(docs: List, embs: Any, labels: Any, model_id: int = 0, print_opt: bool = False) -> Tuple:
-
-    # Check sizes
-    if (not isinstance(embs, np.ndarray)) | (not isinstance(labels, np.ndarray)):
-        raise TypeError("'embs' and 'labels' must be numpy ndarrays.")
-
-    if (len(docs) != embs.shape[0]) | (len(docs) != labels.shape[0]):
-        raise ValueError("'docs', 'embs', and 'labels' must have the same number of elements.")
-
-
-    # Get number of nodes and epsilon values
-    num_nodes = len(docs)
-    num_eps = labels.shape[1]
-
-
-    if num_nodes == 0:
-
-        nodes = []
-        nodeLayout = []
-        nodeAtts = []
-        groups = []
-
-
-    else:
-
-        # Initialize the node list
-        nodes = [{
-            'id': i,
-            'model_id': model_id,
-            'name': doc['title'],
-            'grounded_db': True,
-            'db_ids': [
-                {k: doc[k]}
-            for k in ('cord_uid', 'doi', 'pmcid', 'pubmed_id', 'mag_id', 'who_covidence_id', 'arxiv_id') if k in doc.keys() if doc[k] != ''],
-            'edge_ids_source': [],
-            'edge_ids_target': [],
-            'out_degree': 0,
-            'in_degree:': 0
-        } for i, doc in enumerate(docs)]
-
-
-        # Create global node IDs
-        nodes = [transform_obj_ids(node, obj_type = 'nodes') for node in nodes]
-
-
-        # Generate node-layout list
-        nodeLayout = [{
-            'node_id': node['id'],
-            'coor_sys_name': 'cartesian',
-            'coors': [float(x) for x in embs[i, :3]]
-        } for i, node in enumerate(nodes)]
-
-
-        # Generate node-attribute list
-        nodeAtts = [{
-            'node_id': node['id'],
-            'grounded_group': None,
-            'type': None,
-            'group_ids': None,
-            'node_group_level': None,
-            'extras': {}
-        } for __, node in enumerate(nodes)]
-
-
-        # Get node bibjson data
-        for node, atts, doc in zip(nodes, nodeAtts, docs):
-
-            atts['extras']['bibjson'] = {
-                'title': doc['title'],
-                'author': [{'name': name} for name in doc['authors'].split(';')],
-                'type': 'article',
-                'year': doc['publish_time'].split('-')[0],
-                # 'month': doc['publish_time'].split('-')[1],
-                # 'day': doc['publish_time'].split('-')[2],
-                'journal': doc['journal'],
-                'link': [{'url': doc['url']}],
-                'identifier': [{'type': k, 'id': v} for d in node['db_ids'] for k, v in d.items()],
-                'abstract': doc['abstract']
-            }
-
-
-        # Create global group IDs from labels
-        m = np.cumsum(np.insert(np.max(labels, axis = 0)[:-1], 0, 0))
-        labels_ = labels + m
-        labels_[labels == -1] = -1
-        labels_ids = np.array([[transform_obj_ids(int(i), obj_type = 'groups') if i != -1 else -1 for i in l] for l in labels_])
-        
-
-        for i, node in enumerate(nodeAtts):
-
-            j = np.argwhere(labels[i, :] != -1).flatten()
-
-            if len(j) > 0:
-                node['grounded_group'] = True
-                node['group_ids'] = [int(l) for l in labels_ids[i, labels_ids[i, :] != -1]]
-                node['node_group_level'] = int(j[-1] + 1)
-      
-            else:
-                node['grounded_group'] = False
-                node['groupd_ids'] = None
-                node['node_group_level'] = None
-
-
-        # Generate group membership list
-        map_nodes_ids = {i: node['id'] for i, node in enumerate(nodes)}
-        map_groups_nodes = {group_id: [] for row in labels_ids for group_id in row if group_id != -1}
-        for i in range(num_nodes):
-            for j in range(num_eps):
-                group_id = labels_ids[i, j]
-                if group_id != -1:
-                    map_groups_nodes[group_id].append(map_nodes_ids[i])
-
-
-        # Generatet group-level list
-        map_groups_levels = {group_id: j for row in labels_ids for j, group_id in enumerate(row) if group_id != -1}
-
-
-        # Generate group-parent list
-        map_groups_parent = {group_id: row[j - 1] if j > 0 else None for row in labels_ids for j, group_id in enumerate(row) if group_id != -1}
-        map_groups_children = {group_id: [] for row in labels_ids for j, group_id in enumerate(row) if group_id != -1}
-        for i in range(num_nodes):
-            for j in range(num_eps - 1):
-                group_id = labels_ids[i, j]
-                if group_id != -1:
-                    map_groups_children[group_id].extend(labels_ids[i, (j + 1):])
-
-
-
-        # Generate group list
-        groups = [{
-            'id': group_id,
-            'id_onto': None,
-            'name': None,
-            'level': (lambda x: int(x) if x != None else None)(map_groups_levels[group_id]),
-            'parent_id': (lambda x: int(x) if x != None else None)(map_groups_parent[group_id]),
-            'children_ids': [int(i) for i in sorted(list(set(map_groups_children[group_id])))],
-            'model_id': model_id,
-            'node_ids_all': [int(i) for i in sorted(map_groups_nodes[group_id])],
-            'node_ids_direct': [int(i) for i in sorted(map_groups_nodes[group_id])]
-
-        } for group_id in sorted(map_groups_nodes.keys())]
-
-    
-    if print_opt == True:
-
-        print(f"{len(nodes)} nodes and {len(groups)} groups.")
-
-
-    return nodes, nodeLayout, nodeAtts, groups
 
 
 # Get the preamble of a given object type
@@ -535,7 +488,8 @@ def get_obj_preamble(obj_type: str) -> Dict:
             'children_ids': '<list of ints> List of IDs of other groups in the ontology that are the immediate children of this group',
             'model_id': '<int> ID of the associated model',
             'node_ids_all': '<list of ints> List of IDs of the model nodes that are grounded to this group and all its children',
-            'node_ids_direct': '<list of ints> List of IDs of the model nodes that are directly grounded to this group (i.e. excluding its children)'
+            'node_ids_direct': '<list of ints> List of IDs of the model nodes that are directly grounded to this group (i.e. excluding its children)',
+            'node_id_centroid': '<int> ID of the model node that is nearest to the median-centroid of this group'
         }
 
 
@@ -551,10 +505,517 @@ def get_obj_preamble(obj_type: str) -> Dict:
     return preamble
 
 
+# Generate nearest-neighbour median-centroid list from a set of coordinates and cluster labels
+def generate_nn_cluster_centroid_list(coors: Any, labels: Any, p: Union[int, float] = 2) -> Tuple:
+
+    # Error handling
+    if not isinstance(coors, np.ndarray):
+        raise TypeError("'coors' must be an numpy ndarray.")
+
+    # if (not isinstance(labels, np.ndarray)) | (len(labels) not in [0, coors.shape[0]]): 
+    #     raise TypeError("'labels' must be a N x 1 numpy ndarrray.")
+
+
+    # Dimensions
+    num_coors, num_dim = coors.shape
+
+
+    # Assume no label = identically zeros
+    if len(labels) == 0:
+        labels = np.zeros((num_coors, ))
+
+    labels_unique = np.unique(labels)
+    num_unique = len(labels_unique)
+
+
+    # Calculate centroid coordinates
+    coors_centroid = np.empty((num_unique, num_dim))
+    for i in range(num_unique):
+        coors_centroid[i, :] = np.nanmedian(coors[labels == labels_unique[i], :], axis = 0)
+
+
+    # Choose kNN metric
+    if isinstance(p, int) & (p >= 1):
+        knn = skl.neighbors.NearestNeighbors(n_neighbors = 1, metric = 'minkowski', p = p)
+
+    else:
+
+        # Define custom Minkowski distance function to enable non-integer `p`
+        @numba.njit
+        def minkowski_distance(u, v, p):
+            return (np.abs(u - v) ** p).sum() ** (1.0 / p)
+
+        knn = skl.neighbors.NearestNeighbors(n_neighbors = 2, metric = lambda u, v: minkowski_distance(u, v, p = p))
+    
+    
+    # Find index of k-nearest neighbour to the cluster centroids
+    knn_ind = np.empty((num_unique, ), dtype = np.int)
+    for i in range(num_unique):
+
+        knn.fit(coors[labels == labels_unique[i], :])
+        k = knn.kneighbors(coors_centroid[i, :].reshape(1, -1), return_distance = False)
+        k = k.item()
+
+        # Convert to global index
+        knn_ind[i] = np.flatnonzero(labels == labels_unique[i])[k].astype('int')
+
+
+    return (knn_ind, labels_unique, coors_centroid)
+
+
+# Calculate minimum spanning tree and distances from given clusters
+def calc_mstree_dist(X: Any, labels: Any = [], metric: str = 'euclidean', plot_opt: bool = False, plot_opt_hist: bool = False, ax: Any = []) -> Any:
+
+    # Error handling
+    if not isinstance(X, np.ndarray):
+        raise TypeError("'coor' must be an numpy ndarray.")
+    # if (len(labels) > 1) and (not isinstance(labels, np.ndarray)):
+    #     raise TypeError("'labels' must be an numpy ndarrray.")
+    
+    # Label clusters if not given
+    if len(labels) < 1:
+        labels = np.zeros((X.shape[0], ), dtype = np.int8)
+    
+
+    # Unique cluster labels
+    labels_uniq = np.unique(labels)
+    n_labels_uniq = labels_uniq.size
+
+
+    # If boolean labels, only keep `True` labels
+    if isinstance(labels_uniq[0], np.bool_):
+        labels_uniq = np.array([True])
+        n_labels_uniq = 1
+
+
+    # Get pairwise distances from cluster-specific minimum spanning tree
+    mstree = []
+    mstree_dist_uniq = []
+    for i, l in enumerate(labels_uniq):
+
+        # Filter by cluster
+        ind = (labels == l)
+
+        # Run HDBSCAN to generate the minimum spanning tree
+        mstree.append(hdbscan.HDBSCAN(metric = metric, gen_min_span_tree = True).fit(X[ind, :]).minimum_spanning_tree_.to_numpy())
+
+        # Get the pairwise distances
+        mstree_dist_uniq.append(mstree[i][:, 2])
+
+
+    # Plot for debugging
+    if plot_opt == True:
+
+        # Colormap
+        col = np.asarray([plt.cm.get_cmap('tab10')(i) for i in range(10)])
+        col[:, 3] = 1.0
+
+        # Plot figure
+        if type(ax).__name__ != 'AxesSubplot':
+            if plot_opt_hist == True:
+                fig, ax = plt.subplots(figsize = (12, 6), nrows = 1, ncols = 2)
+                ax_ = ax[0]
+            else:
+                fig, ax = plt.subplots(figsize = (6, 6), nrows = 1, ncols = 1)
+                ax_ = ax
+        else:
+            fig = plt.getp(ax, 'figure')
+        
+
+        # Plot mstree for each labelled set of vertices
+        for i, l in enumerate(labels_uniq):
+
+            # Filter by cluster
+            ind = (labels == l)
+
+            for j, k, __ in mstree[i]:
+
+                x = [X[ind, :][int(j), 0], X[ind, :][int(k), 0]]
+                y = [X[ind, :][int(j), 1], X[ind, :][int(k), 1]]
+
+                __ = ax_.plot(x, y, color = col[i % 10, :3])
+                    
+        plt.setp(ax_, title = 'Minimum Spanning Tree', xlabel = '$x$', ylabel = '$y$', aspect = 1.0)
+
+        # Square axes
+        xlim = plt.getp(ax_, 'xlim')
+        ylim = plt.getp(ax_, 'ylim')
+        dx = 0.5 * (xlim[1] - xlim[0])
+        dy = 0.5 * (ylim[1] - ylim[0])
+        if dy > dx:
+            xlim = tuple(np.mean(xlim) + (-dy, dy))
+            plt.setp(ax_, xlim = xlim)
+        elif dx > dy:
+            ylim = tuple(np.mean(ylim) + (-dx, dx))
+            plt.setp(ax_, ylim = ylim)
+
+
+        # Plot histogram
+        if plot_opt_hist == True:
+            
+            m = max([max(l) for l in mstree_dist_uniq])
+            z = np.linspace(0, m, 101)
+
+            for i, l in enumerate(mstree_dist_uniq):
+                
+                # Calculate and plot histogram
+                y = np.histogram(l, bins = z, density = True)[0] * (z[1] - z[0])
+                h = ax[1].plot(z[:-1], y, color = col[i % 10, :3], label = f'{labels_uniq[i]}')
+
+                # min, median, max
+                min_dist = min(l)
+                median_dist = np.median(l)
+                max_dist = max(l)
+                n = 0.5 * max(y)
+                __ = ax[1].plot([min_dist, median_dist, max_dist], [n, n, n], color = plt.getp(h[0], 'color'), marker = 'o', markerfacecolor = 'w')
+
+            __ = plt.setp(ax[1], xlabel = 'Pairwise Distance', ylabel = 'PMF', title = f'Histogram of Pairwise Distances')
+
+            if n_labels_uniq > 1:
+                __ = ax[1].legend()
+
+    return mstree_dist_uniq, mstree
+
+
+# Generate node, node-attribute, node-layout lists from a set of metadata, coordinates, labels
+def generate_kaggle_nodelist(docs: List, embs: Any, labels: Any, model_id: int = 0, print_opt: bool = False) -> Tuple:
+
+    # Check sizes
+    if (not isinstance(embs, np.ndarray)) | (not isinstance(labels, np.ndarray)):
+        raise TypeError("'embs' and 'labels' must be numpy ndarrays.")
+
+    if (len(docs) != embs.shape[0]) | (len(docs) != labels.shape[0]):
+        raise ValueError("'docs', 'embs', and 'labels' must have the same number of elements.")
+
+
+    # Get number of nodes and epsilon values
+    num_nodes = len(docs)
+    num_eps = labels.shape[1]
+
+
+    if num_nodes == 0:
+
+        nodes = []
+        nodeLayout = []
+        nodeAtts = []
+        groups = []
+
+
+    else:
+
+        # Initialize the node list
+        nodes = [{
+            'id': i,
+            'model_id': model_id,
+            'name': doc['title'],
+            'grounded_db': True,
+            'db_ids': [
+                {k: doc[k]}
+            for k in ('cord_uid', 'doi', 'pmcid', 'pubmed_id', 'mag_id', 'who_covidence_id', 'arxiv_id') if k in doc.keys() if doc[k] != ''],
+            'edge_ids_source': [],
+            'edge_ids_target': [],
+            'out_degree': 0,
+            'in_degree:': 0
+        } for i, doc in enumerate(docs)]
+
+
+        # Create global node IDs
+        nodes = [transform_obj_ids(node, obj_type = 'nodes') for node in nodes]
+
+
+        # Generate node-layout list
+        nodeLayout = [{
+            'node_id': node['id'],
+            'coor_sys_name': 'cartesian',
+            'coors': [float(x) for x in embs[i, :3]]
+        } for i, node in enumerate(nodes)]
+
+
+        # Generate node-attribute list
+        nodeAtts = [{
+            'node_id': node['id'],
+            'grounded_group': None,
+            'type': None,
+            'group_ids': None,
+            'node_group_level': None,
+            'extras': {}
+        } for __, node in enumerate(nodes)]
+
+
+        # Get node bibjson data
+        for node, atts, doc in zip(nodes, nodeAtts, docs):
+
+            atts['extras']['bibjson'] = {
+                'title': doc['title'],
+                'author': [{'name': name} for name in doc['authors'].split(';')],
+                'type': 'article',
+                'year': doc['publish_time'].split('-')[0],
+                # 'month': doc['publish_time'].split('-')[1],
+                # 'day': doc['publish_time'].split('-')[2],
+                'journal': doc['journal'],
+                'link': [{'url': doc['url']}],
+                'identifier': [{'type': k, 'id': v} for d in node['db_ids'] for k, v in d.items()],
+                'abstract': doc['abstract']
+            }
+
+
+        # Create global group IDs from labels
+        m = np.cumsum(np.insert(np.max(labels, axis = 0)[:-1], 0, 0))
+        labels_ = labels + m
+        labels_[labels == -1] = -1
+        labels_ids = np.array([[transform_obj_ids(int(i), obj_type = 'groups') if i != -1 else -1 for i in l] for l in labels_])
+
+
+        for i, node in tqdm(enumerate(nodeAtts), total = num_nodes):
+
+            j = np.argwhere(labels[i, :] != -1).flatten()
+
+            if len(j) > 0:
+                node['grounded_group'] = True
+                node['group_ids'] = [int(l) for l in labels_ids[i, labels_ids[i, :] != -1]]
+                node['node_group_level'] = int(j[-1] + 1)
+      
+            else:
+                node['grounded_group'] = False
+                node['groupd_ids'] = None
+                node['node_group_level'] = None
+
+
+        # Generate group membership list
+        map_nodes_ids = {i: node['id'] for i, node in enumerate(nodes)}
+        map_groups_nodes = {group_id: [] for row in labels_ids for group_id in row if group_id != -1}
+        for i in tqdm(range(num_nodes)):
+            for j in range(num_eps):
+                group_id = labels_ids[i, j]
+                if group_id != -1:
+                    map_groups_nodes[group_id].append(map_nodes_ids[i])
+                    # map_groups_nodes[group_id] = map_groups_nodes[group_id] | set([map_nodes_ids[i]])
+
+
+        # Generatet group-level list
+        map_groups_levels = {group_id: j for row in labels_ids for j, group_id in enumerate(row) if group_id != -1}
+
+
+        # Generate group-parent list
+        map_groups_parent = {group_id: row[j - 1] if j > 0 else None for row in labels_ids for j, group_id in enumerate(row) if group_id != -1}
+        map_groups_children = {group_id: [] for row in labels_ids for group_id in row if group_id != -1}
+        for i in tqdm(range(num_nodes)):
+            for j in range(num_eps - 1):
+                group_id = labels_ids[i, j]
+                if group_id != -1:
+                    map_groups_children[group_id].extend(labels_ids[i, (j + 1):])
+                    # map_groups_children[group_id] = map_groups_children[group_id] | set(labels_ids[i, (j + 1):])
+
+
+        # Generate group list
+        groups = [{
+            'id': int(group_id),
+            'id_onto': None,
+            'name': None,
+            'level': (lambda x: int(x) if x != None else None)(map_groups_levels[group_id]),
+            'parent_id': (lambda x: int(x) if x != None else None)(map_groups_parent[group_id]),
+            'children_ids': [int(i) for i in sorted(list(set(map_groups_children[group_id]))) if i != -1],
+            'model_id': model_id,
+            'node_ids_all': [int(i) for i in sorted(list(set(map_groups_nodes[group_id])))],
+            # 'node_ids_direct': [int(i) for i in sorted(list(map_groups_nodes[group_id]))],
+            'node_ids_direct': None,
+            'node_id_centroid': None
+        } for group_id in sorted(map_groups_nodes.keys())]
+
+
+        # # Node IDs of children groups (redundant since nodes are assigned to multiple groups)
+        # for group in groups:
+
+        #     # group['node_ids_all'] = [int(i) for group_id in group['children_ids'] if group_id != -1 for i in sorted(map_groups_nodes[group_id])]
+
+        #     group['node_ids_all'] = [int(i) for i in sorted(map_groups_nodes[group_id])]
+
+        #     group['node_ids_all'].extend([int(i) for group_id in group['children_ids'] if group_id != -1 for i in map_groups_nodes[group_id]])
+
+
+        # Calculate kNN median centroid of each group
+        map_ids_nodes = {node['id']: i for i, node in enumerate(nodes)}
+        for group in tqdm(groups):
+            
+            coors = embs[np.array([map_ids_nodes[i] for i in group['node_ids_all']]), :]
+
+            i, __, __ = generate_nn_cluster_centroid_list(coors = coors, labels = [])
+
+            group['node_id_centroid'] = group['node_ids_all'][i.item()]
+            group['name'] = nodes[map_ids_nodes[group['node_ids_all'][i.item()]]]['name']
+
+    
+    if print_opt == True:
+
+        print(f"{len(nodes)} nodes and {len(groups)} groups.")
+
+
+    return nodes, nodeLayout, nodeAtts, groups
+
+
+# Load object to S3 bucket
+def load_obj_to_s3(obj: Union[List, Dict], s3_url: str, s3_bucket: str, s3_path: str, preamble: Optional[Dict] = None, obj_key: Optional[str] = None, print_opt: bool = False) -> NoReturn:
+
+
+    # Pick out sub-object by key
+    if isinstance(obj, dict) & (obj_key != None):
+        obj = obj[obj_key]
+
+
+    # Serialize `obj`
+    with StringIO() as fp:
+
+        # `obj` is type `dict`
+        if isinstance(obj, dict):
+
+            # Only include keys specified by preamble
+            if preamble != None:
+                # obj_ = {k: v for k, v in obj.items() if k in preamble.keys()}
+                obj_ = {k: obj[k] if k in obj.keys() else None for k in preamble.keys() if k in preamble.keys()}
+
+            else:
+                obj_ = obj
+
+
+            json.dump(obj_, fp)
+
+
+        # `obj` is type `list` of `dict`
+        if isinstance(obj, list):
+
+            # Include preamble if available
+            if preamble != None:
+                json.dump(preamble, fp)
+                fp.write('\n')
+
+
+            # Do for each 
+            for item in obj:
+
+                # Only include keys specified by preamble
+                if preamble != None:
+                    # item_ = {k: v for k, v in item.items() if k in preamble.keys()}
+                    item_ = {k: item[k] if k in item.keys() else None for k in preamble.keys()}
+
+                else:
+                    item_ = item
+
+
+                json.dump(item_, fp)
+                fp.write('\n')
+
+
+        # Load file onto S3 bucket
+        try:
+
+            # Define S3 interface
+            s3_resource = boto3.resource(
+                's3', 
+                endpoint_url = s3_url, 
+                config = Config(signature_version = 's3v4'), 
+                region_name = 'us-east-1',
+                aws_access_key_id = 'foobar',
+                aws_secret_access_key = 'foobarbaz',
+            )
+            # aws_access_key_id = Secret('AWS_CREDENTIALS').get()['ACCESS_KEY']
+            # aws_secret_access_key = Secret('AWS_CREDENTIALS').get()['SECRET_ACCESS_KEY']
+
+
+            s3_resource.Object(s3_bucket, s3_path).put(Body = fp.getvalue())
+
+
+            if print_opt == True:
+                print(f'S3 request: {s3_url}/{s3_bucket}/{s3_path}')
+
+        except:
+
+            if print_opt == True:
+                print(f'S3 request error: {s3_url}/{s3_bucket}/{s3_path}')
+
+
+# %%
+# Calculate kNN median centroid list for each epsilon
+
+# i = 0
+# j = np.random.randint(0, high = embs_red.shape[0], size = 5000)
+# knn_ind, l_unique, coors_centroid = generate_nn_cluster_centroid_list(coors = embs_red, labels = labels[:, i])
+
+
+# fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (15, 15))
+# __ = emlib.plot_emb(coor = embs_red[j, :], labels = labels[j, i], cmap_name = 'qual', marker_size = 0.5, marker_alpha = 0.1, legend_kwargs = {}, colorbar = False, str_title = f'\u03B5 = {epsilons[i]:.2f}', ax = ax)
+# ax.scatter(coors_centroid[:, 0], coors_centroid[:, 1], marker = '+')
+
+
+# %%
+
+# i, j = np.unique(labels[:, 0], return_counts = True)
+# k = np.argsort(j)
+# l = i[k][-5]
+
+# i = 0
+# j = labels[:, i] == l
+# knn_ind, l_unique, coors_centroid = generate_nn_cluster_centroid_list(coors = embs_red[j, :], labels = [])
+
+# d, m = calc_mstree_dist(X = embs_red[j, :], labels = [], plot_opt = False, plot_opt_hist = False)
+
+
+# fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (15, 15))
+# __ = emlib.plot_emb(coor = embs_red[j, :], labels = labels[j, i], cmap_name = 'qual', marker_size = 0.5, marker_alpha = 0.1, legend_kwargs = {}, colorbar = False, str_title = f'\u03B5 = {epsilons[i]:.2f}', ax = ax)
+# ax.scatter(coors_centroid[:, 0], coors_centroid[:, 1], marker = '+')
+
+
 # %%
 # Generate lists
-nodes, nodeLayout, nodeAtts, groups = generate_kaggle_nodelist(docs = docs, embs = embs_red, labels = labels, model_id = None)
+nodes, nodeLayout, nodeAtts, groups = generate_kaggle_nodelist(docs = docs, embs = embs_red, labels = labels_, model_id = None)
 
+# %%
+
+# m = {l[i, j]: labels_[i, j] for i in range(labels_.shape[0]) for j in range(labels_.shape[1])}
+# m2 = {labels_[i, j]: l[i, j] for i in range(labels_.shape[0]) for j in range(labels_.shape[1])}
+
+
+s = [len(group['node_ids_all']) for group in groups]
+
+x = [node['coors'] for node in nodeLayout]
+y = {node['id']: i for i, node in enumerate(nodes)}
+# x[y[groups[i]['node_id_centroid']]]
+
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
+ax.scatter(np.array(x)[:, 0], np.array(x)[:, 1], marker = '.', alpha = 0.01)
+
+i = np.argsort(s)[-1]
+z = np.array([x[y[k]] for k in groups[i]['node_ids_all']])
+ax.scatter(z[:, 0], z[:, 1], marker = '.', alpha = 0.01)
+ax.scatter(x[y[groups[i]['node_id_centroid']]][0], x[y[groups[i]['node_id_centroid']]][1], marker = '+', color = 'r')
+
+i = np.argsort(s)[-2]
+z = np.array([x[y[k]] for k in groups[i]['node_ids_all']])
+ax.scatter(z[:, 0], z[:, 1], marker = '.', alpha = 0.01)
+ax.scatter(x[y[groups[i]['node_id_centroid']]][0], x[y[groups[i]['node_id_centroid']]][1], marker = '+', color = 'r')
+
+i = np.argsort(s)[-3]
+z = np.array([x[y[k]] for k in groups[i]['node_ids_all']])
+ax.scatter(z[:, 0], z[:, 1], marker = '.', alpha = 0.01)
+ax.scatter(x[y[groups[i]['node_id_centroid']]][0], x[y[groups[i]['node_id_centroid']]][1], marker = '+', color = 'r')
+
+# %%
+
+# Test that parent group's node_ids_all are a superset of its child groups's node_ids_all
+
+map_ids_groups = {group['id']: i for i, group in enumerate(groups)}
+i = {}
+for k, group in enumerate(groups):
+
+    j = 0
+    if len(group['children_ids']) > 0:
+        for child in group['children_ids']:
+            if set(group['node_ids_all']) >= set(groups[map_ids_groups[child]]['node_ids_all']):
+                j = 1
+    else:
+        j = 1
+        
+    i[k] = j
+        
 
 # %%
 # Export data
@@ -566,3 +1027,27 @@ for x, y in zip(('nodes', 'nodeLayout', 'nodeAtts', 'groups'), (nodes, nodeLayou
 
 # %%
 
+data = {
+    'nodes': nodes,
+    'nodeLayout': nodeLayout,
+    'nodeAtts': nodeAtts,
+    'groups': groups
+}
+
+s3_url = 'http://10.64.18.171:9000'
+s3_bucket = 'aske'
+s3_path = 'research/KB/dist/kaggle/test'
+
+for x, y in zip(('nodes', 'nodeLayout', 'nodeAtts', 'groups'), (nodes, nodeLayout, nodeAtts, groups)):
+
+    load_obj_to_s3(
+        obj = data, 
+        s3_url = s3_url, 
+        s3_bucket = s3_bucket, 
+        s3_path = f"{s3_path}/{x}.jsonl", 
+        preamble = get_obj_preamble(obj_type = x),
+        obj_key = x
+    )
+
+
+# %%
