@@ -16,6 +16,9 @@ import requests
 # %%[markdown]
 # # Get Latest GroMEt scripts
 
+# %%
+# ## From AutoMATES
+
 url_repo = "https://github.com/ml4ai/automates/raw/claytonm/gromet/scripts/gromet"
 
 filenames = [
@@ -27,8 +30,7 @@ filenames = [
     "example_emmaaSBML_PetriNetClassic.py",
     "example_call_ex1.py",
     "example_cond_ex1.py",
-    "example_toy1.py",
-    # "examples_misc_small.py"
+    "example_toy1.py"
 ]
 
 local_dir = "../data/ml4ai_repo"
@@ -51,12 +53,12 @@ for filename in filenames:
 url = url_repo = r = None
 del url, url_repo, r
 
+
 # %%[markdown]
 # ## Generate GroMEt files 
 
 # %%
 # %run -i "../data/ml4ai_repo/example_SimpleSIR_Bilayer.py"
-
 
 for filename in filenames:
 
@@ -79,9 +81,32 @@ filename = f = None
 del filename, f
 
 # %%[markdown]
+# ## From EMMAA
+
+# %%
+
+url = "https://github.com/indralab/emmaa/raw/master/models/marm_model/gromet_2021-06-07-17-20-49.json"
+filename = url.split("/")[-1]
+
+with requests.get(url, stream = True) as r:
+
+    r.raise_for_status()
+
+    with open(local_dir + "/" + filename, "wb") as f:
+        
+        for chunk in r.iter_content(chunk_size = 1024):
+
+            f.write(chunk)
+
+url = r = None
+del url, r
+
+
+# %%[markdown]
 # ## Read GroMEt Files
 
 gromets = [json.load(open(local_dir + "/" + filename)) for filename in next(os.walk(local_dir))[2] if filename.split(".")[1] == "json"]
+
 
 # %%[markdown]
 # # Validate GroMEt Object
@@ -104,7 +129,7 @@ for gromet in gromets:
     for i, wire in objects["wires"].items():
         for k in ('src', 'tgt'):
             if wire[k] not in objects["nodes"]:
-                print(f"Error: Wire '{i}' of GroMEt '{gromet['uid']}'' missing its {k} node.")
+                print(f"Error: Wire '{i}' of GroMEt '{gromet['uid']}'' is missing its {k} node.")
 
 
     # PNC-specific test: wires cannot connect state/rate junctions to state/rate junctions
@@ -149,3 +174,7 @@ b = i = k = box = port = wire = gromet = None
 del b, i, k, box, port, wire, gromet
 
 # %%
+# Error: boxes of box 'B:sir' of GroMEt 'SimpleSIR_PrTNet' are missing from the list of boxes.
+# Error: Wire 'W:c1_c1exp.y' of GroMEt 'cond_ex1'' missing its tgt node.
+# Error: States of variable 'var3' of GroMEt 'toy1' are missing from the list of ports and junctions.
+
