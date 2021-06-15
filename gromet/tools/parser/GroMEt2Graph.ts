@@ -1,0 +1,352 @@
+/// <reference path="../GroMEt.d.ts" />
+/// <reference path="../graph.d.ts" />
+
+import GrometElm = GroMEt.GrometElm;
+import Box = GroMEt.Box;
+import HasContents = GroMEt.HasContents;
+import Port = GroMEt.Port;
+import Wire = GroMEt.Wire;
+import Expression = GroMEt.Expression;
+import Expr = GroMEt.Expr;
+import Literal = GroMEt.Literal;
+import BoxCall = GroMEt.BoxCall;
+import PortCall = GroMEt.PortCall;
+import Relation = GroMEt.Relation;
+import Junction = GroMEt.Junction;
+import Gromet = GroMEt.Gromet;
+import {GroMEtMap} from "./GroMEtMap.ts";
+
+export class GroMEt2Graph extends GroMEtMap {
+    private idStack: number[] = [];
+    private idMap: Map<string, number> = new Map();
+    private uniqueID: number = 0;
+
+    public static parseGromet(gromet: Gromet): GraphSpec {
+        const inst = new GroMEt2Graph(gromet);
+        return inst.toGraph();
+    }
+
+    private toGraph(): GraphSpec {
+        const graph = {
+            nodes: [],
+            edges: [],
+            metadata: [],
+        };
+
+        if (!this.gromet.root) {
+            throw 'GroMEts without a root box are not supported!';
+        }
+
+        this.parseElement(this.getElement(this.gromet.root, this.boxes), null, graph);
+
+        return graph;
+    }
+
+    private getElement<T>(id: string, map: Map<string, T> | null): T {
+        if (!map) {
+            throw `Trying to get element [${id}] from a GroMEt without elements of that type defined`;
+        }
+        const element = map.get(id);
+        if (!element) {
+            throw `Could not find element ${id}`;
+        }
+        return element;
+    }
+
+    private getID(...IDs: Array<string | number>): string {
+        return `${this.idStack.join('::')}${IDs.length ? `::${IDs.join('::')}`: ''}`;
+    }
+
+    private registerUID(uid: string): number {
+        if (!this.idMap.has(uid)) {
+            this.idMap.set(uid, this.idMap.size);
+            // console.log(`${uid} => ${this.idMap.get(uid)}`);
+        }
+        return this.idMap.get(uid) as number;
+    }
+
+    private parseBox(box: Box, parent: string | null, graph: GraphSpec): void {
+        const node: NodeSpec = {
+            id: this.getID(),
+            concept: box.syntax,
+            label: box.name || box.uid,
+            nodeType: 'Box',
+            dataType: box.type || box.syntax,
+            parent: parent,
+            nodeSubType: [ box.syntax ],
+            metadata: null, // box,
+        };
+        graph.nodes.push(node);
+
+        // parse ports
+        if (box.ports) {
+            for (const portID of box.ports) {
+                this.parseElement(this.getElement(portID, this.ports), node.id, graph);
+            }
+        }
+    }
+
+    private parseHasContents(hc: HasContents, parent: string | null, graph: GraphSpec): void {
+        const id = this.getID();
+        if (hc.wires) {
+            for (const wireID of hc.wires) {
+                this.parseElement(this.getElement(wireID, this.wires), id, graph);
+            }
+        }
+
+        if (hc.boxes) {
+            for (const boxID of hc.boxes) {
+                this.parseElement(this.getElement(boxID, this.boxes), id, graph);
+            }
+        }
+
+        if (hc.junctions) {
+            for (const junctionID of hc.junctions) {
+                this.parseElement(this.getElement(junctionID, this.junctions), id, graph);
+            }
+        }
+    }
+
+    private parseFunction(fn: GroMEt.Function, parent: string | null, graph: GraphSpec): void {
+        this.parseBox(fn, parent, graph);
+        this.parseHasContents(fn, parent, graph);
+    }
+
+    private parsePort(port: Port, parent: string | null, graph: GraphSpec): void {
+        const node: NodeSpec = {
+            id: this.getID(),
+            concept: port.syntax,
+            label: port.name || port.uid,
+            nodeType: 'Port',
+            dataType: port.value_type || port.type || port.syntax,
+            parent: parent,
+            nodeSubType: [ port.type || port.syntax ],
+            metadata: null, // port,
+        };
+        graph.nodes.push(node);
+    }
+
+    private getWireNodeID(nodeID: string): string {
+        const graphID = this.registerUID(nodeID);
+        // if the node is a port, check the parent ID
+        try {
+            const port = this.getElement(nodeID, this.ports);
+            const parentID = this.registerUID(port.box);
+
+            if (this.idStack[this.idStack.length - 1] !== parentID) {
+                return this.getID(parentID, graphID);
+            }
+        } catch {}
+        return this.getID(graphID);
+    }
+
+    private parseWire(wire: Wire, parent: string | null, graph: GraphSpec): void {
+        if (!wire.src || !wire.tgt) {
+            throw `Wires with unspecified source or target are not supported: (${wire.uid}) ${wire.src} => ${wire.tgt}`;
+        }
+
+        const edge: EdgeSpec = {
+            source: this.getWireNodeID(wire.src),
+            target: this.getWireNodeID(wire.tgt),
+        };
+        graph.edges.push(edge);
+    }
+
+    private parseExpression(exp: Expression, parent: string | null, graph: GraphSpec): void {
+        this.parseBox(exp, parent, graph);
+
+        if (!exp.ports) {
+            throw `Expression types must have at least an output port! [${exp.uid}]`;
+        }
+
+        let outPort = null;
+        for (const portID of exp.ports) {
+            const port = this.getElement(portID, this.ports);
+            if (port.type && port.type.indexOf('PortOutput') !== -1) {
+                if (!outPort) {
+                    outPort = port;
+                } else {
+                    throw `Multiple port outputs found for expression [${exp.uid}]`;
+                }
+            }
+        }
+
+        if (!outPort) {
+            throw `Expressions must contain at least one output port! [${exp.uid}]`;
+        }
+
+        const outID = this.registerUID(outPort.uid);
+        this.parseElement(exp.tree, this.getID(), graph, this.getID(outID));
+    }
+
+    private parseExpr(exp: Expr, parent: string | null, graph: GraphSpec, out: string): void {
+        switch (exp.call.syntax) {
+            case 'RefOp': {
+                const id = `_GEN_EXPR_ID_${this.uniqueID++}_`;
+                const graphID = this.registerUID(id);
+                const node: NodeSpec = {
+                    id: this.getID(graphID),
+                    concept: exp.call.syntax,
+                    label: exp.call.name,
+                    nodeType: 'Expr',
+                    dataType: exp.call.syntax,
+                    parent: parent,
+                    nodeSubType: [exp.syntax],
+                    metadata: null, // exp,
+                }
+                graph.nodes.push(node);
+
+                if (exp.args) {
+                    for (const arg of exp.args) {
+                        if (typeof arg === 'string') {
+                            graph.edges.push({
+                                source: this.getID(this.registerUID(arg)),
+                                target: node.id,
+                            });
+                        } else {
+                            this.parseElement(arg as Expr, parent, graph, node.id);
+                        }
+                    }
+                }
+                graph.edges.push({
+                    source: node.id,
+                    target: out,
+                });
+            }
+                break;
+
+            default:
+                throw `Unknown Expr syntax [${exp.call.syntax}]`;
+        }
+    }
+
+    private parseLiteral(literal: Literal, parent: string | null, graph: GraphSpec, out: string): void {
+        const id = `_GEN_LITERAL_ID_${this.uniqueID++}_`;
+        const graphID = this.registerUID(id);
+        const node: NodeSpec = {
+            id: this.getID(graphID),
+            concept: literal.syntax,
+            label: literal.name || literal.value.val.toString(),
+            nodeType: 'Literal',
+            dataType: literal.type || literal.syntax,
+            parent: parent,
+            nodeSubType: [literal.syntax],
+            metadata: null, // literal,
+        }
+        graph.nodes.push(node);
+        graph.edges.push({
+            source: node.id,
+            target: out,
+        });
+    }
+
+    private parseBoxCall(call: BoxCall, parent: string | null, graph: GraphSpec): void {
+        this.parseBox(call, parent, graph);
+
+        if (call.ports) {
+            for (const portCallID of call.ports) {
+                const portCall = this.getElement(portCallID, this.ports) as PortCall;
+                const port = this.getElement(portCall.call, this.ports);
+
+                if (port.type && port.type.indexOf('PortOutput') !== -1) {
+                    graph.edges.push({
+                        source: this.getID(this.registerUID(call.call), this.registerUID(port.uid)),
+                        target: this.getID(this.registerUID(portCallID)),
+                    });
+                } else {
+                    graph.edges.push({
+                        source: this.getID(this.registerUID(portCallID)),
+                        target: this.getID(this.registerUID(call.call), this.registerUID(port.uid)),
+                    });
+                }
+            }
+        }
+
+        const box = this.getElement(call.call, this.boxes);
+        this.parseElement(box, this.getID(), graph);
+    }
+
+    private parseRelation(relation: Relation, parent: string | null, graph: GraphSpec): void {
+        this.parseFunction(relation, parent, graph);
+    }
+
+    private parseJunction(junction: Junction, parent: string | null, graph: GraphSpec): void {
+        const node: NodeSpec = {
+            id: this.getID(),
+            concept: junction.syntax,
+            label: junction.name || junction.uid,
+            nodeType: 'Junction',
+            dataType: junction.value_type || junction.type || junction.syntax,
+            parent: parent,
+            nodeSubType: [ junction.type || junction.syntax ],
+            metadata: null, // junction,
+        };
+        graph.nodes.push(node);
+    }
+
+    private _parseElement(element: GrometElm, parent: string | null, graph: GraphSpec, out?: string): void {
+        switch (element.syntax) {
+            case 'Function':
+                this.parseFunction(element as GroMEt.Function, parent, graph);
+                break;
+
+            case 'Port':
+            case 'PortCall':
+                this.parsePort(element as Port, parent, graph);
+                break;
+
+            case 'Wire':
+                this.parseWire(element as Wire, parent, graph);
+                break;
+
+            case 'Expression':
+                this.parseExpression(element as Expression, parent, graph);
+                break;
+
+            case 'Expr':
+                this.parseExpr(element as Expr, parent, graph, out as string);
+                break;
+
+            case 'Literal':
+                this.parseLiteral(element as Literal, parent, graph, out as string);
+                break;
+
+            case 'BoxCall':
+                this.parseBoxCall(element as BoxCall, parent, graph);
+                break;
+
+            case 'Relation':
+                this.parseRelation(element as Relation, parent, graph);
+                break;
+
+            case 'Junction':
+                this.parseJunction(element as Junction, parent, graph);
+                break;
+
+            default:
+                throw `Unsupported element syntax [${element.syntax}]`;
+        }
+    }
+
+    private parseElement(element: GrometElm, parent: string | null, graph: GraphSpec, out?: string): void {
+        const elWithUID = element as unknown as { uid: string };
+        if ('uid' in elWithUID) {
+            const graphID = this.registerUID(elWithUID.uid);
+
+            switch (element.syntax) {
+                // these are all the element types that don't need to be pushed to the id stack
+                case 'Wire':
+                    this._parseElement(element, parent, graph, out);
+                    break;
+
+                default:
+                    this.idStack.push(graphID);
+                    this._parseElement(element, parent, graph, out);
+                    this.idStack.pop();
+                    break;
+            }
+        } else {
+            this._parseElement(element, parent, graph, out);
+        }
+    }
+}
