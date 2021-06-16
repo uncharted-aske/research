@@ -1,5 +1,4 @@
-/// <reference path="../GroMEt.d.ts" />
-/// <reference path="../graph.d.ts" />
+/// <reference path="../types/graph.d.ts" />
 
 import GrometElm = GroMEt.GrometElm;
 import Box = GroMEt.Box;
@@ -14,7 +13,7 @@ import PortCall = GroMEt.PortCall;
 import Relation = GroMEt.Relation;
 import Junction = GroMEt.Junction;
 import Gromet = GroMEt.Gromet;
-import {GroMEtMap} from "./GroMEtMap.ts";
+import {GroMEtMap} from './GroMEtMap.ts';
 
 export class GroMEt2Graph extends GroMEtMap {
     private idStack: number[] = [];

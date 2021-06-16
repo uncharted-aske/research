@@ -1,5 +1,5 @@
 import {loadFileJSON} from './JSONL.js';
-import {GroMEt2Graph} from "./gromet/GroMEt2Graph.ts";
+import {GroMEt2Graph} from '../parser/GroMEt2Graph.ts';
 
 async function main(inputFile: string, outputFile: string): Promise<void> {
     const gromet: GroMEt.Gromet = await loadFileJSON(inputFile);

@@ -1,4 +1,4 @@
-/// <reference path="../GroMEt.d.ts" />
+/// <reference path="../types/GroMEt.d.ts" />
 
 import Gromet = GroMEt.Gromet;
 
