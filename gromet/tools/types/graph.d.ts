@@ -1,6 +1,7 @@
 interface NodeSpec {
     id: string;
     concept: string;
+    role: string[];
     label: string;
     nodeType: string;
     dataType: string;
