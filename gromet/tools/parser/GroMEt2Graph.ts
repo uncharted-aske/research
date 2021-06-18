@@ -14,9 +14,12 @@ import Relation = GroMEt.Relation;
 import Junction = GroMEt.Junction;
 import Gromet = GroMEt.Gromet;
 import {GroMEtMap} from './GroMEtMap.ts';
+import ModelInterface = GroMEt.ModelInterface;
 
 export class GroMEt2Graph extends GroMEtMap {
     private idStack: number[] = [];
+    private variableSet: Set<string> = new Set();
+    private parameterSet: Set<string> = new Set();
     private idMap: Map<string, number> = new Map();
     private uniqueID: number = 0;
 
@@ -25,11 +28,56 @@ export class GroMEt2Graph extends GroMEtMap {
         return inst.toGraph();
     }
 
+    private constructor(gromet: Gromet) {
+        super(gromet);
+        this.processMetadata();
+    }
+
+    private processMetadataReferences(ids: string[], set: Set<string>): void {
+        for (const id of ids) {
+            // look in the variables first (because reasons) and then junctions
+            if (this.vars && this.vars.has(id)) {
+                const varObj = this.vars.get(id);
+                if (varObj) {
+                    set.add(varObj.states[0]);
+                }
+            } else if (this.junctions && this.junctions.has(id)) {
+                set.add(id);
+            }
+        }
+    }
+
+    private processMetadata(): void {
+        if (this.gromet.metadata) {
+            for (const datum of this.gromet.metadata) {
+                if (datum.metadata_type === 'ModelInterface') {
+                    const meta = datum as ModelInterface;
+                    this.processMetadataReferences(meta.variables, this.variableSet);
+                    this.processMetadataReferences(meta.parameters, this.parameterSet);
+                }
+            }
+        }
+    }
+
+    private getElementRoles(id: string): string[] {
+        const result = [];
+
+        if (this.variableSet.has(id)) {
+            result.push('variable');
+        }
+
+        if (this.parameterSet.has(id)) {
+            result.push('parameter');
+        }
+
+        return result;
+    }
+
     private toGraph(): GraphSpec {
-        const graph = {
+        const graph: GraphSpec = {
             nodes: [],
             edges: [],
-            metadata: [],
+            metadata: this.gromet.metadata,
         };
 
         if (!this.gromet.root) {
@@ -68,12 +116,13 @@ export class GroMEt2Graph extends GroMEtMap {
         const node: NodeSpec = {
             id: this.getID(),
             concept: box.syntax,
+            role: this.getElementRoles(box.uid),
             label: box.name || box.uid,
             nodeType: 'Box',
             dataType: box.type || box.syntax,
             parent: parent,
             nodeSubType: [ box.syntax ],
-            metadata: null, // box,
+            metadata: box.metadata,
         };
         graph.nodes.push(node);
 
@@ -115,12 +164,13 @@ export class GroMEt2Graph extends GroMEtMap {
         const node: NodeSpec = {
             id: this.getID(),
             concept: port.syntax,
+            role: this.getElementRoles(port.uid),
             label: port.name || port.uid,
             nodeType: 'Port',
             dataType: port.value_type || port.type || port.syntax,
             parent: parent,
             nodeSubType: [ port.type || port.syntax ],
-            metadata: null, // port,
+            metadata: port.metadata,
         };
         graph.nodes.push(node);
     }
@@ -186,6 +236,7 @@ export class GroMEt2Graph extends GroMEtMap {
                 const node: NodeSpec = {
                     id: this.getID(graphID),
                     concept: exp.call.syntax,
+                    role: [], // Expr does not have a uid
                     label: exp.call.name,
                     nodeType: 'Expr',
                     dataType: exp.call.syntax,
@@ -225,12 +276,13 @@ export class GroMEt2Graph extends GroMEtMap {
         const node: NodeSpec = {
             id: this.getID(graphID),
             concept: literal.syntax,
+            role: literal.uid ? this.getElementRoles(literal.uid) : [],
             label: literal.name || literal.value.val.toString(),
             nodeType: 'Literal',
             dataType: literal.type || literal.syntax,
             parent: parent,
             nodeSubType: [literal.syntax],
-            metadata: null, // literal,
+            metadata: literal.metadata,
         }
         graph.nodes.push(node);
         graph.edges.push({
@@ -273,12 +325,13 @@ export class GroMEt2Graph extends GroMEtMap {
         const node: NodeSpec = {
             id: this.getID(),
             concept: junction.syntax,
+            role: this.getElementRoles(junction.uid),
             label: junction.name || junction.uid,
             nodeType: 'Junction',
             dataType: junction.value_type || junction.type || junction.syntax,
             parent: parent,
             nodeSubType: [ junction.type || junction.syntax ],
-            metadata: null, // junction,
+            metadata: junction.metadata,
         };
         graph.nodes.push(node);
     }
