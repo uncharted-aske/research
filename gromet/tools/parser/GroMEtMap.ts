@@ -16,7 +16,7 @@ export class GroMEtMap {
     protected ports: PortMap | null;
     protected wires: WireMap | null;
     protected junctions: JunctionMap | null;
-    protected boxes: BoxMap;
+    protected boxes: BoxMap | null;
     protected vars: VarMap | null;
 
     constructor(gromet: Gromet) {
@@ -25,7 +25,7 @@ export class GroMEtMap {
         this.ports = gromet.ports ? this.parseMap(gromet.ports, 'uid') : null;
         this.wires = gromet.wires ? this.parseMap(gromet.wires, 'uid') : null;
         this.junctions = gromet.junctions ? this.parseMap(gromet.junctions, 'uid') : null;
-        this.boxes = this.parseMap(gromet.boxes, 'uid');
+        this.boxes = gromet.boxes ? this.parseMap(gromet.boxes, 'uid') : null;
         this.vars = gromet.variables ? this.parseMap(gromet.variables, 'uid') : null;
     }
 
