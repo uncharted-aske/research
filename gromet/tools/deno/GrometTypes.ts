@@ -4,6 +4,7 @@ interface ParsingState {
     content: string;
     writeIndent: number;
     readIndent: string;
+    declaredTypes: Set<string>;
     state: ((line: string, state: ParsingState) => void)[];
 }
 
@@ -87,7 +88,7 @@ function convertType(pyType: string): string {
     const list = rxListType.exec(pyType);
     if (list) {
         if (list[1].indexOf(',') === -1) {
-            return `${list[1].trim()}[]`;
+            return `${convertType(list[1].trim())}[]`;
         } else {
             const elements = splitList(list[1]);
             return `Array<${elements.map(t => convertType(t)).join(', ')}>`;
@@ -95,6 +96,7 @@ function convertType(pyType: string): string {
     }
 
     const clean = pyType.trim().replace(/['"]?([^'"]+)['"]?/g, '$1');
+
     switch (clean) {
         case 'str':
             return 'string';
@@ -104,6 +106,15 @@ function convertType(pyType: string): string {
 
         case 'None':
             return 'null';
+
+        case 'int':
+            return 'number';
+
+        case 'bool':
+            return 'boolean';
+
+        case 'dict':
+            return '{ [key: string]: any }';
 
         default:
             return clean;
@@ -157,7 +168,8 @@ function processClassDeclaration(line: string, state: ParsingState): boolean {
     // check for class declarations
     const declaration = rxClassDeclaration.exec(line);
     if (declaration) {
-        const content = `interface ${declaration[2]} ${declaration[3] && declaration[3] !== 'object' ? `extends ${declaration[3]} ` : ''}{`;
+        const ancestors = declaration[3] && declaration[3].split(',').filter(t => t.trim() !== 'object' && t.trim() !== 'ABC') || null;
+        const content = `interface ${declaration[2]} ${ancestors && ancestors.length ? `extends ${ancestors.join(',')} ` : ''}{`;
         state.content += makeLine(addInlineComment(content, line), state.writeIndent++);
         state.state.push(stateClassDeclaration);
         return true;
@@ -168,9 +180,10 @@ function processClassDeclaration(line: string, state: ParsingState): boolean {
 function processTypeDeclaration(line: string, state: ParsingState): boolean {
     // check for type declarations
     const declaration = rxTypeDeclaration.exec(line);
-    if (declaration) {
+    if (declaration && !state.declaredTypes.has(declaration[1])) {
         const content = addInlineComment(`type ${declaration[1]} = ${convertType(declaration[2])};`, line);
         state.content += makeLine(content, state.writeIndent);
+        state.declaredTypes.add(declaration[1]);
         return true;
     }
     return false;
@@ -237,27 +250,30 @@ function runState(state: ParsingState, line: string): void {
     state.state[state.state.length - 1](line, state);
 }
 
-async function main(inputFile: string, outputFile: string): Promise<void> {
+async function main(...files: string[]): Promise<void> {
     const state: ParsingState = {
         content: '',
         writeIndent: 0,
         readIndent: '',
+        declaredTypes: new Set(),
         state: [stateUnknown],
     };
 
     // add the namespace
     state.content += makeLine('declare namespace GroMEt {', state.writeIndent++);
 
-    await parseLines(inputFile, line => {
-        // maintain spacing
-        runState(state, line);
-    });
+    for (let i = 0, n = files.length - 1; i < n; ++i) {
+        await parseLines(files[i], line => {
+            // maintain spacing
+            runState(state, line);
+        });
+    }
 
     // close the namespace
     state.content += makeLine('}', --state.writeIndent);
 
     console.log('Writing type definition file...');
-    await Deno.writeTextFile(outputFile, state.content);
+    await Deno.writeTextFile(files[files.length - 1], state.content);
 }
 
 main(...Deno.args as [string, string]);
