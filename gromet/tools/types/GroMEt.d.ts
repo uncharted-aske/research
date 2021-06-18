@@ -2,6 +2,392 @@ declare namespace GroMEt {
     
     
     /**
+     * Metadatum types:
+     * (*) <Any>.CodeSpanReference
+     * (*) <Gromet>.ModelInterface  # designates variables, parameters, initial_conditions
+     * (*) <Gromet>.TextualDocumentReferenceSet
+     * (*) <Gromet>.CodeCollectionReference
+     * (*) <Box>.EquationDefinition
+     * (*) <Variable>.TextDefinition
+     * (*) <Variable>.TextParameter
+     * () <Variable>.EquationParameter
+     *
+     * 
+     * INDRA Metadatum types:
+     * () <Junction>.ReactionReference
+     * () <Junction>.IndraAgentReferenceSet
+     */
+    
+    
+    //  =============================================================================
+    //  Uid
+    //  =============================================================================
+    
+    //  The following also get defined in gromet.py, which imports this file...
+    type UidVariable = string;
+    type UidJunction = string;
+    
+    type UidMetadatum = string;
+    type UidDocumentReference = string;
+    type UidCodeFileReference = string;
+    
+    //  ISO 8601 Extended format: YYYY-MM-DDTHH:mm:ss:ffffff_ZZZ±zzzz
+    //  where
+    //  YYYY : 4-digit year
+    //  MM   : 2-digit month (January is 01, December is 12)
+    //  DD   : 2-digit date (0 to 31)
+    //  -    : Date delimiters
+    //  T    : Indicates the start of time
+    //  HH   : 24-digit hour (0 to 23)
+    //  mm   : Minutes (0 to 59)
+    //  ss   : Seconds (0 to 59)
+    //  ffffff  : Microseconds (0 to 999)
+    //  :    : Time delimiters
+    //  _    : Time zone delimiter
+    //  ZZZ  : Three-letter timezone
+    //  zzzz : 4 number UTC timezone offset
+    type Datetime = string;
+    
+    //  for tz in pytz.common_timezones:
+    //      print(tz)
+    
+    
+    //  TODO Description of method that produced the metadata
+    //  Some descriptor that enables identifying process by which metadata was created
+    //  There will generally be a set of 1 or more methods that may generate
+    //  each Metadatum type
+    //  For example: AutoMATES program analysis creates code_span metadata.
+    type MetadatumMethod = string;
+    
+    
+    //  -----------------------------------------------------------------------------
+    
+    /**
+     *     Utility for getting a GroMEt formatted current datetime string.
+     *     String is in Datetime ISO 8601 Extended format format (see comment above)
+     *         YYYY-MM-DDTHH:mm:ss:ffffff_ZZZ±zzzz
+     *     (helpful resource https://pythonhosted.org/pytz/)
+     *     :tz: Specify pytz timezone
+     *     :return: Datetime
+     */
+    
+    
+    //  =============================================================================
+    //  Metadatum
+    //  =============================================================================
+    
+    interface MetadatumElm {
+        /**
+         * Base class for all Gromet Metadatum types.
+         * Implements __post_init__ that saves syntactic type (syntax)
+         *     as GroMEt element class name.
+         */
+        metadata_type: string;
+    }
+
+    interface Provenance extends MetadatumElm {
+        /**
+         * Provenance of metadata
+         */
+        method: MetadatumMethod;
+        timestamp: Datetime;
+    }
+
+    interface Metadatum extends MetadatumElm {
+        /**
+         * Metadatum base.
+         */
+        uid: UidMetadatum;
+        provenance: Provenance;
+    }
+
+    //  TODO: add Metadatum subtypes
+    //        Will be based on: https://ml4ai.github.io/automates-v2/grfn_metadata.html
+    
+    
+    type Metadata = Metadatum[] | null;
+    
+    
+    //  =============================================================================
+    //  Metadata components
+    //  =============================================================================
+    
+    interface TextExtraction {
+        /**
+         * Text extraction.
+         * 'document_reference_uid' should match the uid of a
+         *   TextualDocumentReference for the document from which this
+         *   text definition was extracted.
+         * COSMOS within-document reference coordinates to the span of text.
+         *   'block' is found on a 'page'
+         *   'char_begin' and 'char_end' are relative to the 'block'.
+         */
+        document_reference_uid: UidDocumentReference;
+        page: number;
+        block: number;
+        char_begin: number;
+        char_end: number;
+    }
+
+    interface EquationExtraction {
+        /**
+         * 'document_reference_uid' should match the uid of a
+         *   TextualDocumentReference.
+         * 'equation_number' is 0-indexed, relative order of equation
+         *   as identified in the document.
+         */
+        document_reference_uid: UidDocumentReference;
+        equation_number: number;
+        equation_source_latex: string; // latex
+        equation_source_mml: string; // MathML
+    }
+
+    interface CodeFileReference {
+        /**
+         * 'name': filename
+         * 'path': Assume starting from root of code collection
+         */
+        uid: UidCodeFileReference;
+        name: string;
+        path: string;
+    }
+
+    //  =============================================================================
+    //  Metadata host: <Any>
+    //  metadata that may be associated with any GroMEt element
+    //  =============================================================================
+    
+    //  -----------------------------------------------------------------------------
+    //  CodeSpanReference
+    //  -----------------------------------------------------------------------------
+    
+    interface CodeSpanReference extends Metadatum {
+        /**
+         * host: <Any>
+         * Code span references may be associated with any GroMEt object.
+         * 'code_type': One of 'IDENTIFIER', 'CODE_BLOCK'
+         * code span coordinates are relative to the source file
+         *     (denoted by the file_id)
+         */
+        code_type: string; // 'IDENTIFIER', 'CODE_BLOCK'
+        file_id: UidCodeFileReference;
+        line_begin: number;
+        line_end: number | null; // None if one one line
+        col_begin: number | null; // None if multi-line
+        col_end: number | null; // None if single char or multi-line
+    }
+
+    //  =============================================================================
+    //  Metadata host: <Gromet>
+    //  metadata associated with a top-level <Gromet> object
+    //  =============================================================================
+    
+    //  -----------------------------------------------------------------------------
+    //  ModelInterface
+    //  -----------------------------------------------------------------------------
+    
+    interface ModelInterface extends Metadatum {
+        /**
+         * Explicit definition of model interface.
+         * The interface identifies explicit roles of these variables
+         * 'variables': All model variables (anything that can be measured)
+         * 'parameters': Variables that are generally set to explicit values
+         *     (either by default or in experiment spec).
+         *     Often these remain constant during execution/simultation,
+         *     although they may be updated by the model during
+         *     execution/simulation depending on conditions.
+         * 'initial_conditions': Variables that typically take an initial
+         *     value but then update during execution/simulation
+         * TODO: will want to later introduce experiment spec concept
+         *         of intervention clamping (keeping parameters/variables
+         *         throughout irrespective of original model variable
+         *         value update structure).
+         */
+        variables: Array<UidVariable | UidJunction>;
+        parameters: Array<UidVariable | UidJunction>;
+        initial_conditions: Array<UidVariable | UidJunction>;
+    }
+
+    //  -----------------------------------------------------------------------------
+    //  TextualDocumentReferenceSet
+    //  -----------------------------------------------------------------------------
+    
+    //  GlobalReferenceId: Identifier of source document.
+    //  Rank preference of identifier type:
+    //   (1) 'DOI' (digital objectd identifier) recognize by COSMOS
+    //   (2) 'PMID' (Pubmed ID) or other DOI
+    //   (3) 'aske_id' (ASKE unique identifier)
+    interface GlobalReferenceId {
+        type: string;
+        id: string;
+    }
+
+    interface BibjsonAuthor {
+        name: string;
+    }
+
+    interface Bibjson {
+        /**
+         * Placeholder for bibjson JSON object; format described in:
+         *     http://okfnlabs.org/bibjson/
+         */
+        title: string;
+        author: BibjsonAuthor[];
+        type: string;
+        website: { [key: string]: any };
+        timestamp: string;
+        file: string;
+        file_url: string;
+        identifier: { [key: string]: any }[];
+    }
+
+    interface TextualDocumentReference {
+        /**
+         * Reference to an individual document
+         * 'cosmos_id': ID of COSMOS component used to process document.
+         * 'cosmos_version_number': Version number of COSMOS component.
+         * 'automates_id': ID of AutoMATES component used to process document.
+         * 'automates_version_number': Version number of AutoMATES component.
+         */
+        uid: UidDocumentReference;
+        global_reference_id: GlobalReferenceId;
+        cosmos_id: string;
+        cosmos_version_number: string;
+        automates_id: string;
+        automates_version_number: string;
+        bibjson: Bibjson;
+    }
+
+    interface TextualDocumentReferenceSet extends Metadatum {
+        /**
+         * host: <Gromet>
+         * A collection of references to textual documents
+         * (e.g., software documentation, scientific publications, etc.).
+         */
+        documents: TextualDocumentReference[];
+    }
+
+    //  -----------------------------------------------------------------------------
+    //  CodeCollectionReference
+    //  -----------------------------------------------------------------------------
+    
+    interface CodeCollectionReference extends Metadatum {
+        /**
+         * host: <Gromet>
+         * Reference to a code collection (i.e., repository)
+         */
+        global_reference_id: GlobalReferenceId;
+        file_ids: CodeFileReference[];
+    }
+
+    //  =============================================================================
+    //  Metadata host: <Box>
+    //  metadata associated with a Box
+    //  =============================================================================
+    
+    //  -----------------------------------------------------------------------------
+    //  EquationDefinition
+    //  -----------------------------------------------------------------------------
+    
+    interface EquationDefinition extends Metadatum {
+        /**
+         * host: <Box>
+         * Association of an equation extraction with a Box
+         *     (e.g., Function, Expression, Relation).
+         */
+        equation_extraction: EquationExtraction;
+    }
+
+    //  =============================================================================
+    //  Metadata host: <Variable>
+    //  metadata associated with a Variable
+    //  =============================================================================
+    
+    //  -----------------------------------------------------------------------------
+    //  TextDefinition
+    //  -----------------------------------------------------------------------------
+    
+    interface TextDefinition extends Metadatum {
+        /**
+         * host: <Variable>
+         * Association of text definition of host derived from text source.
+         * 'variable_identifier': char/string representation of the variable.
+         * 'variable_definition': text definition of the variable.
+         */
+        text_extraction: TextExtraction;
+        variable_identifier: string;
+        variable_definition: string;
+    }
+
+    //  -----------------------------------------------------------------------------
+    //  TextParameter
+    //  -----------------------------------------------------------------------------
+    
+    interface TextParameter extends Metadatum {
+        /**
+         * host: <Variable>
+         * Association of parameter values extracted from text.
+         */
+        text_extraction: TextExtraction;
+        variable_identifier: string;
+        value: string; // eventually Literal?
+    }
+
+    //  -----------------------------------------------------------------------------
+    //  EquationParameter
+    //  -----------------------------------------------------------------------------
+    
+    interface EquationParameter extends Metadatum {
+        /**
+         * host: <Variable>
+         * Association of parameter value extracted from equation.
+         */
+        equation_extraction: EquationExtraction;
+        variable_uid: UidVariable;
+        value: string; // eventually Literal?
+    }
+
+    //  =============================================================================
+    //  Metadata host: <Junction>
+    //  metadata associated with a Junction
+    //  =============================================================================
+    
+    //  -----------------------------------------------------------------------------
+    //  INDRA Metadatums
+    //  -----------------------------------------------------------------------------
+    
+    interface ReactionReference extends Metadatum {
+        /**
+         * host: <Junction> : PNC Rate
+         */
+        indra_stmt_hash: string;
+        reaction_rule: string;
+        is_reverse: boolean;
+    }
+
+    interface IndraAgent {
+    }
+
+    interface IndraAgentReferenceSet extends Metadatum {
+        /**
+         * host: <Junction> : PNC State
+         */
+        indra_agent_references: IndraAgent[];
+    }
+
+    //  =============================================================================
+    //  =============================================================================
+    //  CHANGE LOG
+    //  =============================================================================
+    //  =============================================================================
+    
+    /**
+     * Changes 2021-06-10:
+     * () Started migration of GrFN metadata types to GroMEt metadatum types.
+     */
+    
+    
+    /**
      * Shared working examples:
      * gromet/
      *     docs/
@@ -39,9 +425,9 @@ declare namespace GroMEt {
      *
      * 
      * Event-driven programming
-     * () No static trace (directed edges from one fn to another),
+     * () No static trace (directed edges from one fn to another), 
      *     so a generalization of side-effects
-     *     Requires undirected, which corresponds to under-specification
+     *     Requires undirected, which corresponds to under-specification 
      */
     
     //  -----------------------------------------------------------------------------
@@ -49,7 +435,7 @@ declare namespace GroMEt {
     //  -----------------------------------------------------------------------------
     
     //  Data:
-    //  Float, Integer, Boolean
+    //  Real, Float, Integer, Boolean
     
     //  Primitive term constructors (i.e., primitive operators):
     //  arithmetic: "+", "*", "-", "/", "exp", "log"
@@ -64,8 +450,8 @@ declare namespace GroMEt {
     //  Bilayer
     //  Junction, Wire
     //  Types:
-    //   Junction: State, Flux, Tangent, Literal
-    //   Wire: W_in, W_pos, W_neg
+    //   Junctions: State, Flux, Tangent
+    //   Wires: W_in, W_pos, W_neg
     
     //  Petri Net Classic (PetriNetClassic)
     //  Junction, Wire, Literal
@@ -107,31 +493,26 @@ declare namespace GroMEt {
     //    hand-construct example GroMEt instances, but these could be
     //    sequential integers (as James uses) or uuids.
     
-    type UidMetadatum = string;
     type UidType = string;
     type UidLiteral = string;
     type UidPort = string;
-    type UidJunction = string;
     type UidWire = string;
-    
-    type UidBox = string;
-    
+    type UidBox = string; // Uids for defined Boxes
     type UidOp = string; // Primitive operator name
-    type UidFn = string; // Defined function name
-    
-    type UidVariable = string;
     type UidGromet = string;
+    
+    type UidMeasure = string;
     
     
     //  Explicit "reference" objects.
     //  Required when there is ambiguity about which type of uid reference
     //  is specified.
     
-    interface RefFn extends GrometElm {
+    interface RefBox extends GrometElm {
         /**
          * Representation of an explicit reference to a defined box
          */
-        name: UidFn;
+        name: UidBox;
     }
 
     interface RefOp extends GrometElm {
@@ -141,27 +522,9 @@ declare namespace GroMEt {
         name: UidOp;
     }
 
-    //  --------------------
-    //  Metadata
-    
-    interface Metadatum extends GrometElm {
-        /**
-         * Metadatum base.
-         */
-        uid: UidMetadatum;
-        type: UidType | null;
-    }
-
-    //  TODO: add Metadatum subtypes
-    //        Will be based on: https://ml4ai.github.io/automates-v2/grfn_metadata.html
-    
-    
-    type Metadata = Metadatum[] | null;
-    
-    
-    //  --------------------
+    //  -----------------------------------------------------------------------------
     //  Type
-    
+    //  -----------------------------------------------------------------------------
     
     interface Type {
         /**
@@ -182,66 +545,73 @@ declare namespace GroMEt {
     
     //  Atomics
     
-    interface Atomic extends Type {
-    }
-
+    //  Assumed "built-in" Atomic Types:
+    //    Any, Void (Nothing)
+    //    Number
+    //      Integer
+    //      Real
+    //        Float
+    //    Bool
+    //    Character
+    //    Symbol
+    
     //  @dataclass
-    //  class Any(Atomic):
-    //      pass
-    //  @dataclass
-    //  class Nothing(Atomic):
-    //      pass
-    //  @dataclass
-    //  class Number(Atomic):
-    //      pass
-    //  @dataclass
-    //  class Integer(Number):
-    //      pass
-    //  @dataclass
-    //  class Real(Number):
-    //      pass
-    //  @dataclass
-    //  class Float(Real):
-    //      pass
-    //  @dataclass
-    //  class Boolean(Atomic):
-    //      pass
-    //  @dataclass
-    //  class Character(Atomic):
-    //      pass
-    //  @dataclass
-    //  class Symbol(Atomic):
+    //  class Atomic(Type):
     //      pass
     
     
     //  Composites
     
-    interface Composite extends Type {
-    }
-
+    //  @dataclass
+    //  class Composite(Type):
+    //      pass
+    
+    
     //  Algebra
     
-    //  @dataclass
-    //  class Prod(Composite):
-    //      element_type: List[UidType]
-    //      cardinality: Union[int, None]
-    //  @dataclass
-    //  class String(Prod):
-    //      element_type: List[UidType]
-    //  @dataclass
-    //  class Sum(Composite):
-    //      element_type: List[UidType]
-    //  @dataclass
-    //  class NamedAttribute(Composite):
-    //      name: str
-    //      element_type: UidType
+    interface Prod extends Type {
+        /**
+         * A Product type constructor.
+         * The elements of the element_type list are assumed to be
+         * present in each instance.
+         */
+        cardinality: number | null;
+        element_type: UidType[];
+    }
+
+    interface String extends Prod {
+        /**
+         * A type representing a sequence (Product) of Characters.
+         */
+        element_type: UidType[];
+    }
+
+    interface Sum extends Type {
+        /**
+         * A Sum type constructor.
+         * The elements of the element_type list are assumed to be variants
+         * forming a disjoint union; only one variant is actualized in each
+         * instance.
+         */
+        element_type: UidType[];
+    }
+
+    interface NamedAttribute extends Type {
+        /**
+         * A named attribute of a Product composite type.
+         */
+        name: string;
+        element_type: UidType;
+    }
+
     //  @dataclass
     //  class Map(Prod):
     //      element_type: List[Tuple[UidType, UidType]]
     
     
-    //  --------------------
+    //  -----------------------------------------------------------------------------
     //  TypedGrometElm
+    //  -----------------------------------------------------------------------------
     
     interface TypedGrometElm extends GrometElm {
         /**
@@ -404,25 +774,6 @@ declare namespace GroMEt {
         junctions: UidJunction[] | null;
     }
 
-    //  @dataclass
-    //  class BoxUndirected(Box):
-    //      """
-    //      Undirected Box base.
-    //      Unoriented list of Ports represent interface to Box
-    //      """
-    //      # NOTE: Redundant since Ports specify the Box they belong to.
-    //      # However, natural to think of boxes "having" Ports, and DirectedBoxes
-    //      # must specify the "face" their ports belong to, so for parity we'll
-    //      # have BoxUndirected also name their Ports
-    //      ports: Union[List[UidPort], None]
-    //  @dataclass
-    //  class BoxDirected(Box):
-    //      # NOTE: This is NOT redundant since Ports are not oriented,
-    //      # but DirectedBox has ports on a "orientation/face"
-    //      input_ports: Union[List[UidPort], None]
-    //      output_ports: Union[List[UidPort], None]
-    
-    
     //  Relations
     
     interface Relation extends Box, HasContents { // BoxUndirected
@@ -453,7 +804,7 @@ declare namespace GroMEt {
          *     (b) RefOp: an explicitly defined Box (e.g., a Function)
          * The args field is a list of: UidPort reference, Literal or Expr
          */
-        call: RefFn | RefOp;
+        call: RefBox | RefOp;
         args: Array<UidPort | Literal | Expr> | null;
     }
 
@@ -632,27 +983,6 @@ declare namespace GroMEt {
         exit_condition: Predicate | null;
     }
 
-    //  Special forms for Pr/T (Predicate/Transition) Petri Nets, used by Galois
-    
-    //  @dataclass
-    //  class CNFPredicate(Relation):
-    //      """
-    //      A Conjunctive Normal Form (CNF) Predicate.
-    //      Interpreted as a conjunction of Predicates:
-    //          All must be True for the CNFPredicate to be True.
-    //      """
-    //      terms: List[Predicate]
-    //  @dataclass
-    //  class PrTEvent(Box):
-    //      """
-    //      An Event in a Predicate/Transition (Pr/T) Petri Net: 'PTNet'.
-    //      All edges in a PrTEvent are undirected.
-    //      """
-    //      enable: CNFPredicate
-    //      rate: Relation
-    //      effect: Relation
-    
-    
     //  --------------------
     //  Variable
     
@@ -671,29 +1001,21 @@ declare namespace GroMEt {
     }
 
     //  --------------------
-    //  Gromet top level
+    //  Gromet top level class
     
     interface Gromet extends TypedGrometElm {
         uid: UidGromet;
         root: UidBox | null;
+        //  definitions
         types: TypeDeclaration[] | null;
         literals: Literal[] | null;
         junctions: Junction[] | null;
         ports: Port[] | null;
         wires: Wire[] | null;
-        boxes: Box[]; // has to be one top-level Box
+        boxes: Box[] | null;
         variables: Variable[] | null;
     }
 
-    /**
-     * @dataclass
-     * class Measure(GrometElm):
-     *     wire: Wire
-     *     interval: ???: Tuple or Array
-     *     type: Type  # Enum("instance", interval, steady_state)
-     */
-    
-    
     //  -----------------------------------------------------------------------------
     //  Utils
     //  -----------------------------------------------------------------------------
@@ -705,28 +1027,42 @@ declare namespace GroMEt {
     //  -----------------------------------------------------------------------------
     
     /**
+     * Changes 2021-06-13:
+     * () Changed RefFn to RefBox (as reference could be to any defined Box)
+     * () Remove UidFn as not needed; instead use general UidBox (e.g., by RefBox)
+     * () Moved metadata into separate file to reduce clutter.
+     * () Started migration of GrFN metadata types to GroMEt metadatum types.
+     *     () <Gromet>.TextualDocumentReferenceSet
+     * () First example of Experiment Specification
+     *     () ExperimentSpecSet : A set of Experiment Specifications
+     *     () FrontendExperimentSpec : Message from HMI to Proxy
+     *     () BackendExperimentSpec : Message from Proxy to execution framework
+     *
+     * 
+     *
+     * 
      * Changes 2021-05-27:
      * () Added the following mechanism by which a Box can be "called"
      *         in an arbitrary number of different contexts within the gromet.
      *     This include adding the following two TypedGrometElms:
-     *     (1) BoxCall: A type of Box --- being a Box, the BoxCall itself has
-     *         it's own UidBox uid (to represent the instance) and its own
-     *         list of Ports (to wire it within a context).
-     *         The BoxCall adds a 'call' field that will consist of the UidBox
-     *             of another Box that will serve as the "definition" of the
+     *     (1) BoxCall: A type of Box --- being a Box, the BoxCall itself has 
+     *         it's own UidBox uid (to represent the instance) and its own 
+     *         list of Ports (to wire it within a context). 
+     *         The BoxCall adds a 'call' field that will consist of the UidBox 
+     *             of another Box that will serve as the "definition" of the 
      *             BoxCall.
-     *         An arbitrary number of different BoxCalls may "call" this
-     *             "definition" Box. There is nothing else about the
-     *             "definition" Box that makes it a definition -- just that
+     *         An arbitrary number of different BoxCalls may "call" this 
+     *             "definition" Box. There is nothing else about the 
+     *             "definition" Box that makes it a definition -- just that 
      *             it is being called by a BoxCall.
      *         The BoxCall itself will have no internal contents, it's
      *             internals are defined by the "definition" Box.
-     *         For each Port in the "definition" Box, BoxCall will have
-     *             a corresponding PortCall Port; this PortCall will reference
-     *             the "definition" Box Port.
-     *     (2) PortCall: A tye of Port -- being a Port, the PortCall has it's
-     *         own UidPort uid (to represent the instance), and adds a 'call'
-     *         field that will be the UidPort of the  Port on the "definition"
+     *         For each Port in the "definition" Box, BoxCall will have 
+     *             a corresponding PortCall Port; this PortCall will reference 
+     *             the "definition" Box Port. 
+     *     (2) PortCall: A tye of Port -- being a Port, the PortCall has it's 
+     *         own UidPort uid (to represent the instance), and adds a 'call' 
+     *         field that will be the UidPort of the  Port on the "definition" 
      *         Box referenced by a BoxCall.
      *         The 'box' field of the PortCall will be the UidBox of the BoxCall
      *             instance.
@@ -743,8 +1079,8 @@ declare namespace GroMEt {
      *     exclusively by the 'type' attribute of any TypedGrometElm.
      *     This is a much more clean way of separating syntax (the elements) from
      *         their semantics (how to interpret or differentially visualize).
-     *     A Model Framework will designate what types are the TypedGrometElms may be.
-     *     For example, a Function Network will have
+     *     A Model Framework will designate what types are the TypedGrometElms may be. 
+     *     For example, a Function Network will have 
      *         Port types: PortInput, PortOutput
      *         Wire types: WireDirected, WireUndirected
      *     For example, a Bilayer will have
@@ -766,13 +1102,13 @@ declare namespace GroMEt {
      *     Top-level Box now has 'ports' attribute. This is still required
      *         as we need to preserve information about ordering of Ports,
      *         both for positional arguments and for pairing inputs to outputs in Loop.
-     * () Valued now includes 'value_type' attribute.
-     *     Previously was using Port, Junction and Wire 'type' to capture the
-     *         value type, but now the value type will be explicitly represented
+     * () Valued now includes 'value_type' attribute. 
+     *     Previously was using Port, Junction and Wire 'type' to capture the 
+     *         value type, but now the value type will be explicitly represented 
      *         by the value_type attribute.
      *     The 'type' attribute will instead be reserved for Model Framework type.
      * () Added 'name' to TypedGrometElm, so all children can be named
-     *     The purpose of name: provide model domain-relevant identifier to model component
+     *     The purpose of name: provide model domain-relevant identifier to model component 
      * () Metadatum is no longer a TypedGrometElm, just a GrometElm, as it is not
      *     itself a component of a model; it is data *about* a model component.
      * () Gromet object: added 'literals' and 'junctions' attributes
