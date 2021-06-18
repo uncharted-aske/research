@@ -17,5 +17,5 @@ interface EdgeSpec {
 interface GraphSpec {
     nodes: NodeSpec[];
     edges: EdgeSpec[];
-    metadata: any[];
+    metadata: any[] | null;
 }
