@@ -18,8 +18,7 @@ import ModelInterface = GroMEt.ModelInterface;
 
 export class GroMEt2Graph extends GroMEtMap {
     private idStack: number[] = [];
-    private variableSet: Set<string> = new Set();
-    private parameterSet: Set<string> = new Set();
+    private roleMap: Map<string, Set<string>> = new Map();
     private idMap: Map<string, number> = new Map();
     private uniqueID: number = 0;
 
@@ -33,7 +32,12 @@ export class GroMEt2Graph extends GroMEtMap {
         this.processMetadata();
     }
 
-    private processMetadataReferences(ids: string[], set: Set<string>): void {
+    private processMetadataReferences(ids: string[], setName: string): void {
+        if (!this.roleMap.has(setName)) {
+            this.roleMap.set(setName, new Set());
+        }
+        const set = this.roleMap.get(setName) as Set<string>;
+
         for (const id of ids) {
             // look in the variables first (because reasons) and then junctions
             if (this.vars && this.vars.has(id)) {
@@ -52,8 +56,9 @@ export class GroMEt2Graph extends GroMEtMap {
             for (const datum of this.gromet.metadata) {
                 if (datum.metadata_type === 'ModelInterface') {
                     const meta = datum as ModelInterface;
-                    this.processMetadataReferences(meta.variables, this.variableSet);
-                    this.processMetadataReferences(meta.parameters, this.parameterSet);
+                    this.processMetadataReferences(meta.variables, 'variables');
+                    this.processMetadataReferences(meta.parameters, 'parameters');
+                    this.processMetadataReferences(meta.initial_conditions, 'initial_conditions');
                 }
             }
         }
@@ -62,12 +67,16 @@ export class GroMEt2Graph extends GroMEtMap {
     private getElementRoles(id: string): string[] {
         const result = [];
 
-        if (this.variableSet.has(id)) {
+        if (this.roleMap.get('variables')?.has(id)) {
             result.push('variable');
         }
 
-        if (this.parameterSet.has(id)) {
+        if (this.roleMap.get('parameters')?.has(id)) {
             result.push('parameter');
+        }
+
+        if (this.roleMap.get('initial_conditions')?.has(id)) {
+            result.push('initial_condition');
         }
 
         return result;
