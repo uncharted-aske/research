@@ -54,6 +54,7 @@ with open('./data/kaggle/metadata.csv') as f:
 num_docs = len(docs)
 map_uids_docs = {doc['cord_uid']: i for i, doc in enumerate(docs)}
 ind = [num_docs for i in range(num_docs)]
+
 embs = [[] for i in range(num_docs)]
 with open('./data/kaggle/cord_19_embeddings_2020-12-13.csv') as f:
     for i, row in enumerate(csv.reader(f)):
