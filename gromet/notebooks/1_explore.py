@@ -16,21 +16,28 @@ import requests
 # %%[markdown]
 # # Get Latest GroMEt scripts
 
-# %%
+# %%[markdown]
 # ## From AutoMATES
 
+# %%
 url_repo = "https://github.com/ml4ai/automates/raw/claytonm/gromet/scripts/gromet"
 
 filenames = [
-    "gromet.py", 
-    "example_SimpleSIR_Bilayer.py", 
-    "example_SimpleSIR_PetriNetClassic.py",
-    "example_SimpleSIR_FN.py",
+    "gromet.py",
+    "gromet_experiment.py", 
+    "gromet_metadata.py",
+    # "gromet_validate.py",
+    # "example_SimpleSIR_Bilayer.py", 
+    "example_SimpleSIR_Bilayer_metadata.py", 
+    # "example_SimpleSIR_PetriNetClassic.py",
+    "example_SimpleSIR_PetriNetClassic_metadata.py",
+    # "example_SimpleSIR_FN.py",
+    "example_SimpleSIR_FN_metadata.py",
     "example_SimpleSIR_PrTNet.py",
     "example_emmaaSBML_PetriNetClassic.py",
-    "example_call_ex1.py",
-    "example_cond_ex1.py",
-    "example_toy1.py"
+    # "example_call_ex1.py",
+    # "example_cond_ex1.py",
+    # "example_toy1.py"
 ]
 
 local_dir = "../data/ml4ai_repo"
@@ -70,6 +77,7 @@ for filename in filenames:
     except:
         print(f"Error: {f}")
 
+# %%
 
 for filename in os.listdir():
 
@@ -80,13 +88,21 @@ for filename in os.listdir():
 filename = f = None
 del filename, f
 
+
+# %%[markdown]
+# ## Read GroMEt Files
+
+gromets = [json.load(open(local_dir + "/" + filename)) for filename in next(os.walk(local_dir))[2] if filename.split(".")[1] == "json"]
+
+
 # %%[markdown]
 # ## From EMMAA
 
 # %%
-
-url = "https://github.com/indralab/emmaa/raw/master/models/marm_model/gromet_2021-06-07-17-20-49.json"
+# url = "https://github.com/indralab/emmaa/raw/master/models/marm_model/gromet_2021-06-07-17-20-49.json"
+url = "https://github.com/dianakolusheva/emmaa/raw/gromet_metadata/models/marm_model/gromet_2021-06-20-17-05-07.json"
 filename = url.split("/")[-1]
+local_dir = "../data/emmaa"
 
 with requests.get(url, stream = True) as r:
 
@@ -101,12 +117,10 @@ with requests.get(url, stream = True) as r:
 url = r = None
 del url, r
 
-
 # %%[markdown]
-# ## Read GroMEt Files
+# ## Read EMMAA GroMEt Files
 
-gromets = [json.load(open(local_dir + "/" + filename)) for filename in next(os.walk(local_dir))[2] if filename.split(".")[1] == "json"]
-
+gromets = gromets + [json.load(open(local_dir + "/" + filename)) for filename in next(os.walk(local_dir))[2] if filename.split(".")[1] == "json"]
 
 # %%[markdown]
 # # Validate GroMEt Object

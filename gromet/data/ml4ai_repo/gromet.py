@@ -1,6 +1,9 @@
+from gromet_metadata import *
 import json
 from typing import NewType, List, Tuple, Union
 from dataclasses import dataclass, field, asdict
+from abc import ABC
+import os
 
 
 """
@@ -47,7 +50,7 @@ Event-driven programming
 # -----------------------------------------------------------------------------
 
 # Data:
-# Float, Integer, Boolean
+# Real, Float, Integer, Boolean
 
 # Primitive term constructors (i.e., primitive operators):
 # arithmetic: "+", "*", "-", "/", "exp", "log"
@@ -62,8 +65,8 @@ Event-driven programming
 # Bilayer
 # Junction, Wire
 # Types:
-#  Junction: State, Flux, Tangent, Literal
-#  Wire: W_in, W_pos, W_neg
+#  Junctions: State, Flux, Tangent
+#  Wires: W_in, W_pos, W_neg
 
 # Petri Net Classic (PetriNetClassic)
 # Junction, Wire, Literal
@@ -88,7 +91,7 @@ Event-driven programming
 
 
 @dataclass
-class GrometElm(object):
+class GrometElm(ABC):
     """
     Base class for all Gromet Elements.
     Implements __post_init__ that saves syntactic type (syntax)
@@ -109,20 +112,17 @@ class GrometElm(object):
 #   hand-construct example GroMEt instances, but these could be
 #   sequential integers (as James uses) or uuids.
 
-UidMetadatum = NewType('UidMetadatum', str)
 UidType = NewType('UidType', str)
 UidLiteral = NewType('UidLiteral', str)
 UidPort = NewType('UidPort', str)
 UidJunction = NewType('UidJunction', str)
 UidWire = NewType('UidWire', str)
-
-UidBox = NewType('UidBox', str)
-
-UidOp = NewType('UidOp', str)  # Primitive operator name
-UidFn = NewType('UidFn', str)  # Defined function name
-
+UidBox = NewType('UidBox', str)  # Uids for defined Boxes
+UidOp = NewType('UidOp', str)    # Primitive operator name
 UidVariable = NewType('UidVariable', str)
 UidGromet = NewType('UidGromet', str)
+
+UidMeasure = NewType('UidMeasure', str)
 
 
 # Explicit "reference" objects.
@@ -130,11 +130,11 @@ UidGromet = NewType('UidGromet', str)
 # is specified.
 
 @dataclass
-class RefFn(GrometElm):
+class RefBox(GrometElm):
     """
     Representation of an explicit reference to a defined box
     """
-    name: UidFn
+    name: UidBox
 
 
 @dataclass
@@ -145,31 +145,20 @@ class RefOp(GrometElm):
     name: UidOp
 
 
-# --------------------
-# Metadata
-
 @dataclass
-class Metadatum(GrometElm):
+class RefLiteral(GrometElm):
     """
-    Metadatum base.
+    Representation of an explicit reference to a declared Literal
     """
-    uid: UidMetadatum
-    type: Union[UidType, None]
+    name: UidLiteral
 
 
-# TODO: add Metadatum subtypes
-#       Will be based on: https://ml4ai.github.io/automates-v2/grfn_metadata.html
-
-
-Metadata = NewType('Metadata', Union[List[Metadatum], None])
-
-
-# --------------------
+# -----------------------------------------------------------------------------
 # Type
-
+# -----------------------------------------------------------------------------
 
 @dataclass
-class Type:
+class Type(ABC):
     """
     Type Specification.
     Constructed as an expression of the GroMEt Type Algebra
@@ -259,11 +248,12 @@ class NamedAttribute(Type):
 #     element_type: List[Tuple[UidType, UidType]]
 
 
-# --------------------
+# -----------------------------------------------------------------------------
 # TypedGrometElm
+# -----------------------------------------------------------------------------
 
 @dataclass
-class TypedGrometElm(GrometElm):
+class TypedGrometElm(GrometElm, ABC):
     """
     Base class for all Gromet Elements that may be typed.
     """
@@ -280,7 +270,14 @@ class TypedGrometElm(GrometElm):
 class Literal(TypedGrometElm):
     """
     Literal base. (A kind of GAT Nullary Term Constructor)
-    A literal is an instance of a Type
+    A literal is an instance of a Type.
+
+    If a Literal is to be "referred to" in multiple places in the model,
+        then assign it a 'uid' and place its declaration in the
+        'literals' field of the top-level Gromet.
+        This is referred to as a 'named Literal'
+            (where in this case, by "name" I mean the uid)
+    Example of a simple "inline" Literal
     """
     uid: Union[UidLiteral, None]  # allows anonymous literals
     value: 'Val'  # TODO
@@ -317,7 +314,7 @@ Literal: (type: "SetInt10", [1,2,3,3,4,52....])
 # Valued
 
 @dataclass
-class Valued(TypedGrometElm):
+class Valued(TypedGrometElm, ABC):
     """
     This class is never instantiated; it's purpose is to
         introduce attributes and a class-grouping into
@@ -414,7 +411,7 @@ class BoxCall(Box):
 
 
 @dataclass
-class HasContents:
+class HasContents(ABC):
     """
     Mixin class, never instantiated.
     Bookkeeping for Box "contents" references.
@@ -430,28 +427,6 @@ class HasContents:
     wires: Union[List[UidWire], None]
     boxes: Union[List[UidBox], None]
     junctions: Union[List[UidJunction], None]
-
-
-# @dataclass
-# class BoxUndirected(Box):
-#     """
-#     Undirected Box base.
-#     Unoriented list of Ports represent interface to Box
-#     """
-#
-#     # NOTE: Redundant since Ports specify the Box they belong to.
-#     # However, natural to think of boxes "having" Ports, and DirectedBoxes
-#     # must specify the "face" their ports belong to, so for parity we'll
-#     # have BoxUndirected also name their Ports
-#     ports: Union[List[UidPort], None]
-#
-#
-# @dataclass
-# class BoxDirected(Box):
-#     # NOTE: This is NOT redundant since Ports are not oriented,
-#     # but DirectedBox has ports on a "orientation/face"
-#     input_ports: Union[List[UidPort], None]
-#     output_ports: Union[List[UidPort], None]
 
 
 # Relations
@@ -489,7 +464,7 @@ class Expr(GrometElm):
         (b) RefOp: an explicitly defined Box (e.g., a Function)
     The args field is a list of: UidPort reference, Literal or Expr
     """
-    call: Union[RefFn, RefOp]
+    call: Union[RefBox, RefOp]
     args: Union[List[Union[UidPort, Literal, 'Expr']], None]
 
 
@@ -520,184 +495,186 @@ class Predicate(Expression):
 
 
 @dataclass
-class Conditional(Box):  # BoxDirected
+class Conditional(Box):
     """
     Conditional
         ( TODO:
             Assumes no side effects.
-            Assumes no breaks.
+            Assumes no breaks/continues.
         )
     ( NOTE: the following notes make references to elements as they
             appear in Clay's gromet visual notation. )
     Terminology:
-        *branch Predicate* (a type of Expression computing a
-            boolean) represents the branch conditional test whose
-            outcome determines whether the branch will be executed.
-        *branch Function* represents the computation of anything in
-            the branch
+        *branch Predicate* (a Predicate is a type of Expression
+            with a single Boolean PortOutput): represents the branch
+            conditional test whose outcome determines whether the
+            branch will be evaluated.
+        *branch body*: represents the computation of anything in the
+            branch.
+            If the branch body only involves computing a single variable,
+                then it is an Expression.
+            If the branch body computes more than one variable, then it
+                is a Function.
         A *branch* itself consists of a Tuple of:
-                <Predicate>, <Function>, List[UidWire]
-            The UidWire list denotes the set of wires relevant for
-                completely wiring the branch Cond and Fn to the
-                Conditional input and output Ports.
+            (1) branch predicate (Predicate)
+            (2) branch body (Union[Expression, Function])
     Port conventions:
-        Being a BoxDirected, a Conditional has a set of
-            input and output Ports.
-        *input* Ports capture any values of state/variables
-            from the scope outside of the Conditional Box that
-            are required by any branch Predicate or Function.
-            (think of the input Ports as representing the relevant
-            "variable environment" to the Conditional.)
-        We can then think of each branch Function as a possible
+        A Conditional has a set of PortInput and PortOutput type
+            Ports/PortCalls that define the Conditional's "input"
+            and "output" *interface*.
+        The ports on the Predicates, Expressions and Functions
+            of the branch predicate and body will (mostly) be
+            PortCalls that reference the corresponding Ports
+            in the Conditional Port interface.
+            (The one exception is the Predicate PortOutput, which
+            is just a regular Port of value_type Boolean that
+            itself is determined by the Predicate but does not get
+            "read" by another model element; it is instead
+            used in evaluation to determine branch choice.)
+        *input* Ports (type PortInput) of the Conditional interface
+            capture any values of variables from the scope
+            outside of the Conditional Box that are required by any
+            branch Predicate or body.
+            (Think of the PortInput Ports as representing the
+            relevant "variable environment" to the Conditional.)
+        We can then think of each branch body as a possible
             modification to the "variable environment" of the
-            input Ports. When a branch Function is evaluated, it
-            may preserve the values from some or all of the original
-            input ports, or it may modify them, and/or it may
-            introduce *new* variables resulting in corresponding
-            new output Ports.
-        From the perspective of the output Ports of the Conditional,
-            we need to consider all of the possible new variable
-            environment changes made by the selection of any branch.
-            Doing so permits us to treat the Conditional as a modular
+            input Ports. When a branch body Expression/Function is
+            evaluated, it may: (a) preserve the values from some
+            or all of the original input ports, or (b) modify the
+            variable values introduced by those input ports,
+            and/or (c) introduce *new* variables resulting in
+            corresponding new output Ports.
+        From the perspective of the PortOutput type ports of the
+            Conditional output interface, we need to consider all
+            of the possible new variable environment changes made
+            by the selection of any branch.
+            Representing all possible branch environment variabels
+            permits us to treat the Conditional as a modular
             building-block to other model structures.
-            To achieve this, each branch Function must include in its
-            output_ports a set of Ports that represent any of the
-            "new variables" introduced by any branch Function.
-            This allows us to have a single output_ports set for the
-            entire Conditional, and whichever branch Function is
-            evaluated, those Ports will be defined.
-        NOTE: this does NOT mean those Ports are "Wired" and carry
-            values; branch Function B1 may introduce a new variable
-            "x" that branch Function B2 does not; B2 must still have
-            a Port corresponding to "x", but it will not be Wired to
-            anything -- it carries no value.
-        Each branch Predicate has a single Boolean Port devoted to
-            determining whether the branch is selected (when True).
-    Definition: A Conditional is a...
-        Sequence (List) of branches:
-            Tuple[Predicate, Function, List[UidWire]]
-        Each branch Predicate has a single boolean output Port
-            whose state determines whether the branch Function
-            will be evaluated to produce the state of the Conditional
-            output Ports.
-    Interpretation:
-        GrFN provides unambiguous full data flow semantics.
-        Here (for now), a gromet Conditional provides some abstraction
-            away from pure data flow (but it is directly recoverable
-            if desired).
-        The interpretation convention:
-            Branches are visited in order until the current branch
-                Predicate evals to True
-            If a branch Predicates evaluates to True, then branch
-                Function takes the Conitional input_ports and sets
-                determines the output_ports of the Conditional
-                according to its internal components.
-            If all no branch Predicate evaluats to True, then pass
-                input Ports to outputs and new Ports have undefined
-                values.
+            The Conditional PortOutput interface will therefore have a
+            corresponding PortOutput port for each possible variable
+            introduced in any branch body.
+        In cases where a PortOutput port of the Conditional represents
+            a variable that may not be set by a branch (or none of the
+            branches conditions evaluate to True and there is no *else*
+            branch body), but the variable represented by that port
+            *is* represented by a Port in the PortInput interface,
+            then the PortOutput will be a PortCall that 'call's the
+            PortInput Port.
+    Evaluation semantics:
+        Branches are visited in order until the current branch
+            Predicate evals to True.
+        If a branch Predicate evaluates to True, then the branch
+            body Expression/Function uses the values of the
+            Conditional PortInput Ports referred to ('call'ed by) the
+            body PortCalls and computes the resulting values of
+            variables (represented by the PortOutput PortCalls of the
+            body Expression or Function) in that branch;
+            The PortOutput PortCalls of the branch then 'call'
+            the corresponding PortOutput Ports in the Conditional
+            output interface, setting their values.
+        Any PortOutput ports NOT called by a branch body will then
+            either:
+            (1) themselves be PortCalls that call the corresponding
+                PortInput interface Ports to retrieve the variable's
+                original value, or
+            (2) have undefined (None) values.
+        An "else" branch has no branch Predicate -- the branch
+            body is directly evaluated. Only the last branch
+            may have no branch Predicate.
+        Finally, if none of the branch Predicates evaluate to True
+            and there is no "else" branch, then evaluation 'passes':
+            any PortOutput PortCalls in the Conditional output interface
+            will get their values from their 'call'ed PortInput,
+            or have undefined values.
+
+        TODO Updating that branch body MUST have Expression/Function
     """
-    # branches is a List of
-    #   ( <Predicate>1, <Function>, [<UidWire>+] )
-    branches: List[Tuple[Union[Predicate, None], Function, List[UidWire]]]
+    # branches is a List of UidBox references to
+    #   ( <Predicate>1, <Expression,Function> )
+    branches: List[Tuple[Union[UidBox, None], UidBox]]
 
 
 @dataclass
-class Loop(Box, HasContents):  # BoxDirected
+class Loop(Box, HasContents):
     """
     Loop
         ( TODO:
             Assumes no side-effects.
             Assumes no breaks.
         )
-    A BoxDirected that "loops" until an exit_condition (Predicate)
+    A Box that "loops" until an exit_condition (Predicate)
         is True.
-        By "loop", you can think of iteratively making a copies of
-            the Loop and wiring the previous Loop instance output_ports
-            to the input_ports of the next Loop instance.
-            (wiring of output-to-input Ports is done is order
-             of the Ports).
-    Definition / Terminology:
-        A Loop has a *body* (because it is a Box), that
-            represents the "body" of the loop.
+        By "loop", you can think of iteratively making copies of the
+            Loop and wiring the previous Loop instance PortOutputs
+            to the PortInput Ports of the next Loop instance.
+        "Wiring"/correspondence of output-to-input Ports is
+            accomplished by the PortOutput ports being
+            PortCalls that directly denote (call) their
+            corresponding PortInput Port.
+    Terminology:
+        A Loop has a contents (because it is a HasContents)
+            -- wires, junctions, boxes -- that represent the
+            *body* of the loop.
         A Loop has an *exit_condition*, a Predicate that
             determines whether to evaluate the loop.
-        A Loop has input_ports and output_ports (being
-            a BoxDirected).
-            A portion of the input_ports represent Ports
-                set by the incoming external "environment"
+        A Loop has PortInput and PortOutput ports.
+            A portion of the PortInput Ports acquire values
+                by the incoming external "environment"
                 of the Loop.
-            The remaining of the input_ports represent
-                Ports to store state values that may be
-                introduced within the Loop body
-                but are not themselves initially used in
-                (read by) the loop body wiring.
+            The remaining of the PortInput Ports represent
+                Ports to capture the state variables that may
+                be introduced within the Loop body but not
+                originating from the incoming external
+                "environment".
                 In the initial evaluation of the loop,
-                these Ports have no values; after one
-                iteration of the Loop, these Ports
-                may have their values assigned by the
-                Loop body.
-        Each input_port is "matched" to an output_port,
-            based on the Port order within the input_ports
-            and output_ports lists.
-        A Loop has a *port_map* is a bi-directional map
-            that pairs each Loop output Port with each Loop
-            input Port, determining what the Loop input Port
-            value will be based on the previous Loop iteration.
-            Some input Port values will not be changed as a
+                these Ports have no values OR the Port
+                has an initial 'value' Literal
+                (e.g., initializing a loop index).
+                After iteration through the loop, these
+                Ports may have their values assigned/changed
+                by the Loop body; these values are then used
+                to set the PortInput values for the start of
+                the next iteration through the loop.
+        Each PortInput Port is "paired" with (called by) a
+            PortOutput PortCall.
+        Some PortInput Port values will not be changed as a
             result of the Loop body, so these values "pass
-            through" to that input's paired output.
+            through" to that input's paired output PortCall.
             Others may be changed by the Loop body evaluation.
-    Interpretation:
-        The Loop exit_condition is evaluated at the very
-            beginning before evaluating any of the Loop
-            body wiring.
+    Evaluation semantics:
+        The Loop exit_condition Predicate is evaluated at
+            the very beginning before evaluating any of the
+            Loop body wiring.
             IF True (the exit_condition evaluates to True),
-                then the values of the Ports in input_ports
-                are passed directly to their corresponding
-                Ports in output_ports; The output_ports then
-                represent the final value/state of the Loop
-                output_ports.
+                then the PortOutput PortCalls have their
+                values set by the PortInput Ports they call,
+                skipping over any intervening computation in
+                Loop body.
             IF False (the exit_condition evaluates to False),
                 then the Loop body wiring is evaluated to
-                determine the state of each output Port value.
-                The values of each output Port are then assined
-                to the Port's corresponding input Port and
-                the next Loop iteration is begun.
+                determine the state of each PortOutput
+                PortCall value.
+                The values of each PortOutput PortCall are
+                then assigned to the PortCall's 'call'ed
+                PortInput Port and the next Loop iteration
+                is begun.
         This basic semantics supports both standard loop
             semantics:
             () while: the exit_condition is tested first.
-            () repeat until: an initial input Port set to False
+            () repeat until: an initial PortInput Port for flagging
+                the first Loop iteration is set to False to
                 make the initial exit_condition evaluation fail
                 and is thereafter set to True in the Loop body.
     """
-    exit_condition: Union[Predicate, None]
-
-
-# Special forms for Pr/T (Predicate/Transition) Petri Nets, used by Galois
-
-# @dataclass
-# class CNFPredicate(Relation):
-#     """
-#     A Conjunctive Normal Form (CNF) Predicate.
-#     Interpreted as a conjunction of Predicates:
-#         All must be True for the CNFPredicate to be True.
-#     """
-#     terms: List[Predicate]
-#
-#
-# @dataclass
-# class PrTEvent(Box):
-#     """
-#     An Event in a Predicate/Transition (Pr/T) Petri Net: 'PTNet'.
-#     All edges in a PrTEvent are undirected.
-#     """
-#     enable: CNFPredicate
-#     rate: Relation
-#     effect: Relation
+    exit_condition: Union[UidBox, None]
 
 
 # --------------------
 # Variable
+
+VariableState = NewType('VariableState', Union[UidPort, UidWire, UidJunction])
 
 @dataclass
 class Variable(TypedGrometElm):
@@ -708,43 +685,43 @@ class Variable(TypedGrometElm):
         (b) denotes a modeled domain (world) state.
     Currently, (b) will be represented in Metadata.
 
+    TODO document
+
     """
     uid: UidVariable
-    states: List[Union[UidPort, UidWire, UidJunction]]
+    main_state: VariableState
+    states: List[VariableState]
 
 
 # --------------------
-# Gromet top level
+# Gromet top level class
 
 @dataclass
 class Gromet(TypedGrometElm):
     uid: UidGromet
     root: Union[UidBox, None]
+
+    # definitions
     types: Union[List[TypeDeclaration], None]
     literals: Union[List[Literal], None]
     junctions: Union[List[Junction], None]
     ports: Union[List[Port], None]
     wires: Union[List[Wire], None]
-    boxes: List[Box]  # has to be one top-level Box
+    boxes: Union[List[Box], None]
     variables: Union[List[Variable], None]
-
-
-'''
-@dataclass
-class Measure(GrometElm):
-    wire: Wire
-    interval: ???: Tuple or Array
-    type: Type  # Enum("instance", interval, steady_state)
-'''
 
 
 # -----------------------------------------------------------------------------
 # Utils
 # -----------------------------------------------------------------------------
 
-def gromet_to_json(gromet: Gromet, tgt_file: Union[str, None] = None):
+def gromet_to_json(gromet: Gromet,
+                   tgt_file: Union[str, None] = None,
+                   tgt_root: Union[str, None] = None):
     if tgt_file is None:
         tgt_file = f"{gromet.name}_gromet_{gromet.type}.json"
+    if tgt_root is not None:
+        tgt_file = os.path.join(tgt_root, tgt_file)
     json.dump(asdict(gromet),  # gromet.to_dict(),
               open(tgt_file, "w"),
               indent=2)
@@ -755,6 +732,44 @@ def gromet_to_json(gromet: Gromet, tgt_file: Union[str, None] = None):
 # -----------------------------------------------------------------------------
 
 """
+Changes 2021-06-21:
+() Changes to Conditional:
+    () The conditional branch body may now be either an Expression or Function.
+    () Explicitly documented that there is no need for any Wires between
+        the Conditional input Ports and the branch Predicate and body ports, 
+        since these will always have the same corresponding Ports 
+        (similar to how Wires are not needed in Expressions/Expr); 
+        In this case, this is implemented by having the PortInput Ports to the
+        branch Predicate and the branch body Expression/Function be PortCalls
+        that 'call' the corresponding Conditional PortInput Ports; 
+        and similarly for branch body output Ports to the corresponding 
+        conditional output Ports: the branch body Expression/Function
+        output Ports will be PortCalls to the Conditional PortOutput Ports.
+        And in the case that a branch body does not 'call' one of the defined
+        Conditional PortOutputs BUT that output port corresponds to an input
+        port, then that PortOutput will be a PortCall that 'call's the
+        corresponding PortInput to get its value. 
+    - the 'wiring diagram' schema figure (in the gromet/docs/) has been updated.
+() Changes to Loop:
+    () The PortOutput ports will be PortCalls that call their
+        corresponding PortInput Ports to unambiguously determine
+        the output-to-input correspondence.
+        This removes the requirement that the correspondence is
+        derived from the order in which the Ports are referenced
+        in the Loop's 'ports' list.
+
+Changes 2021-06-13:
+() Changed RefFn to RefBox (as reference could be to any defined Box)
+() Remove UidFn as not needed; instead use general UidBox (e.g., by RefBox)
+() Moved metadata into separate file to reduce clutter.
+() Started migration of GrFN metadata types to GroMEt metadatum types.
+    () <Gromet>.TextualDocumentReferenceSet
+() First example of Experiment Specification
+    () ExperimentSpecSet : A set of Experiment Specifications
+    () FrontendExperimentSpec : Message from HMI to Proxy
+    () BackendExperimentSpec : Message from Proxy to execution framework
+
+
 Changes 2021-05-27:
 () Added the following mechanism by which a Box can be "called"
         in an arbitrary number of different contexts within the gromet.
