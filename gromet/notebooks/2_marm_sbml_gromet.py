@@ -13,9 +13,8 @@ import os
 import json
 import requests
 import xml.etree.ElementTree as ET
-
-# %%
-# https://github.com/indralab/emmaa/raw/master/models/marm_model/gromet_2021-06-07-17-20-49.json
+import networkx as nx
+import matplotlib.pyplot as plt
 
 
 # %%[markdown]
@@ -75,7 +74,117 @@ for l in root.getchildren()[0].getchildren():
                     model_sbml[k][i][kk] = n
 
 
-# %%
+# %%[markdown]
+# # Get GroMEt file of MARM model
 
+with open("../data/emmaa/gromet_2021-06-20-17-05-07.json", "r") as f:
+    gromet = json.load(f)
+
+# %%[markdown]
+# Some statistics
+
+print(f"Number of ")
+print(f"   {'variables:':<25} {len(gromet['metadata'][0]['variables']):>3d}")
+print(f"   {'parameters:':<25} {len(gromet['metadata'][0]['parameters']):>3d}")
+print(f"   {'initial conditions:':<25} {len(gromet['metadata'][0]['initial_conditions']):>3d}")
+
+print(f"   {'junctions:':<25} {len(gromet['junctions']):>3d}")
+print(f"      {'state:':<22} {len([j for j in gromet['junctions'] if j['type'] == 'State']):>3d}")
+print(f"      {'rate:':<22} {len([j for j in gromet['junctions'] if j['type'] == 'Rate']):>3d}")
+print(f"      {'flux:':<22} {len([j for j in gromet['junctions'] if j['type'] == 'FluxState']):>3d}")
+print(f"      {'tangent:':<22} {len([j for j in gromet['junctions'] if j['type'] == 'Tangent']):>3d}")
+
+#%%
+# Number of 
+#    variables:                473
+#    parameters:               399
+#    initial conditions:        74
+#    junctions:                473
+#       state:                  74
+#       rate:                  399
+#       flux:                    0
+#       tangent:                 0
+
+# %%[markdown]
+# ## Generate NetworkX Object
+
+# %%
+G = nx.MultiDiGraph()
+
+# State junctions
+G.add_nodes_from([j['uid'] for j in gromet['junctions'] if j['type'] == 'State'], bipartite = 0, type = 'State')
+
+# Rate junctions
+G.add_nodes_from([j['uid'] for j in gromet['junctions'] if j['type'] == 'Rate'], bipartite = 1, type = 'Rate')
+
+# Wires as directed edges
+[G.add_edge(w['src'], w['tgt'], weight = 1.0) for w in gromet['wires']]
+
+# %%[markdown]
+# ## Draw Model Graph
+
+# %%
+p = nx.kamada_kawai_layout(G, weight = 'weight')
+# p = nx.spring_layout(G, weight = 'weight', seed = 0)
+
+c = ['r' if G.nodes[n]['type'] == 'State' else 'b' for n in G.nodes]
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
+nx.draw(G, pos = p, with_labels = False, node_color = c, arrows = True, ax = ax)
+
+
+p = c = fig = ax = None
+del p, c, fig, ax
+
+# %%[markdown]
+# # Generate Unique List of INDRA Agents
+
+# %%
+# List of all state junctions
+list_states = {j['uid']: {a['name']: a for a in j['metadata'][0]['indra_agent_references']} for j in gromet['junctions'] if j['type'] == 'State'}
+
+
+# List of all INDRA agents referenced by the state junctions
+list_agents = {agent: metadata for s, agents in list_states.items() for agent, metadata in agents.items()}
+
+
+# List of all INDRA agents (and combinations thereof) referenced by the state junctions
+list_groups = {tuple(sorted(agents.keys())): [] for s, agents in list_states.items()}
+for s, agents in list_states.items():
+    i = tuple(sorted(agents.keys()))
+    list_groups[i].append(s)
+
+i = s = agents = None
+del i, s, agents
+
+# %%
+print("Number of")
+print(f"   {'state junctions:':<20} {len(list_states.keys())}")
+print(f"   {'INDRA agents:':<20} {len(list_agents.keys())}")
+print(f"   {'groups:':<20} {len(list_groups.keys())}")
+
+# %%
+# Number of
+#    state junctions:     74
+#    INDRA agents:        12
+#    groups:              28
+
+# %%[markdown]
+# ## Generate New Node/Edge Lists
+
+# %%
+list_nodes = 
+
+
+
+# # %%
+# G = nx.MultiDiGraph()
+
+# # State junctions
+# G.add_nodes_from([j['uid'] for j in gromet['junctions'] if j['type'] == 'State'], bipartite = 0, type = 'State')
+
+# # Rate junctions
+# G.add_nodes_from([j['uid'] for j in gromet['junctions'] if j['type'] == 'Rate'], bipartite = 1, type = 'Rate')
+
+# # Wires as directed edges
 
 
