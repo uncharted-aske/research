@@ -14,6 +14,7 @@ import json
 import requests
 import xml.etree.ElementTree as ET
 import networkx as nx
+import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -77,33 +78,46 @@ for l in root.getchildren()[0].getchildren():
 # %%[markdown]
 # # Get GroMEt file of MARM model
 
-with open("../data/emmaa/gromet_2021-06-20-17-05-07.json", "r") as f:
+with open("../data/emmaa/gromet_2021-06-23-17-08-47.json", "r") as f:
     gromet = json.load(f)
+
+f = None
+del f
 
 # %%[markdown]
 # Some statistics
 
-print(f"Number of ")
-print(f"   {'variables:':<25} {len(gromet['metadata'][0]['variables']):>3d}")
-print(f"   {'parameters:':<25} {len(gromet['metadata'][0]['parameters']):>3d}")
-print(f"   {'initial conditions:':<25} {len(gromet['metadata'][0]['initial_conditions']):>3d}")
+print(f"{'Name:':<25} {gromet['name']:<}")
+print(f"{'Type:':<25} {gromet['type']:<}")
 
-print(f"   {'junctions:':<25} {len(gromet['junctions']):>3d}")
-print(f"      {'state:':<22} {len([j for j in gromet['junctions'] if j['type'] == 'State']):>3d}")
-print(f"      {'rate:':<22} {len([j for j in gromet['junctions'] if j['type'] == 'Rate']):>3d}")
-print(f"      {'flux:':<22} {len([j for j in gromet['junctions'] if j['type'] == 'FluxState']):>3d}")
-print(f"      {'tangent:':<22} {len([j for j in gromet['junctions'] if j['type'] == 'Tangent']):>3d}")
+print(f"Number of ")
+print(f"   {'variables:':<25} {len(gromet['metadata'][0]['variables']):>5d}")
+print(f"   {'parameters:':<25} {len(gromet['metadata'][0]['parameters']):>5d}")
+print(f"   {'initial conditions:':<25} {len(gromet['metadata'][0]['initial_conditions']):>5d}")
+
+print(f"   {'junctions:':<25} {len(gromet['junctions']):>5d}")
+print(f"      {'state:':<22} {len([j for j in gromet['junctions'] if j['type'] == 'State']):>5d}")
+print(f"      {'rate:':<22} {len([j for j in gromet['junctions'] if j['type'] == 'Rate']):>5d}")
+print(f"      {'flux:':<22} {len([j for j in gromet['junctions'] if j['type'] == 'FluxState']):>5d}")
+print(f"      {'tangent:':<22} {len([j for j in gromet['junctions'] if j['type'] == 'Tangent']):>5d}")
+
+print(f"   {'wires:':<25} {len(gromet['wires']):>5d}")
+
 
 #%%
+# Name:                     marm_model
+# Type:                     PetriNetClassic
 # Number of 
-#    variables:                473
-#    parameters:               399
-#    initial conditions:        74
-#    junctions:                473
-#       state:                  74
-#       rate:                  399
-#       flux:                    0
-#       tangent:                 0
+#    variables:                  473
+#    parameters:                 399
+#    initial conditions:          74
+#    junctions:                  473
+#       state:                    74
+#       rate:                    399
+#       flux:                      0
+#       tangent:                   0
+#    wires:                     1207
+
 
 # %%[markdown]
 # ## Generate NetworkX Object
@@ -118,18 +132,20 @@ G.add_nodes_from([j['uid'] for j in gromet['junctions'] if j['type'] == 'State']
 G.add_nodes_from([j['uid'] for j in gromet['junctions'] if j['type'] == 'Rate'], bipartite = 1, type = 'Rate')
 
 # Wires as directed edges
-[G.add_edge(w['src'], w['tgt'], weight = 1.0) for w in gromet['wires']]
+__ = [G.add_edge(w['src'], w['tgt'], weight = 1.0) for w in gromet['wires']]
+
 
 # %%[markdown]
 # ## Draw Model Graph
 
 # %%
-p = nx.kamada_kawai_layout(G, weight = 'weight')
-# p = nx.spring_layout(G, weight = 'weight', seed = 0)
-
+# p = nx.kamada_kawai_layout(G, weight = 'weight')
+p = nx.spring_layout(G, weight = 'weight', seed = 0)
 c = ['r' if G.nodes[n]['type'] == 'State' else 'b' for n in G.nodes]
+
+
 fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
-nx.draw(G, pos = p, with_labels = False, node_color = c, arrows = True, ax = ax)
+nx.draw(G, pos = p, with_labels = False, node_color = c, node_size = 100, linewidths = 0.2, alpha = 0.5, arrows = True, ax = ax)
 
 
 p = c = fig = ax = None
@@ -139,6 +155,10 @@ del p, c, fig, ax
 # # Generate Unique List of INDRA Agents
 
 # %%
+# List of all rate junctions
+list_rates = {j['uid']: {} for j in gromet['junctions'] if j['type'] == 'Rate'}
+
+
 # List of all state junctions
 list_states = {j['uid']: {a['name']: a for a in j['metadata'][0]['indra_agent_references']} for j in gromet['junctions'] if j['type'] == 'State'}
 
@@ -152,6 +172,11 @@ list_groups = {tuple(sorted(agents.keys())): [] for s, agents in list_states.ite
 for s, agents in list_states.items():
     i = tuple(sorted(agents.keys()))
     list_groups[i].append(s)
+
+
+# Mapping between a state junction and the group to which it belongs
+map_states_groups = {s: tuple(sorted(agents.keys())) for s, agents in list_states.items()}
+
 
 i = s = agents = None
 del i, s, agents
@@ -168,23 +193,243 @@ print(f"   {'groups:':<20} {len(list_groups.keys())}")
 #    INDRA agents:        12
 #    groups:              28
 
+
+
 # %%[markdown]
+# # Collapsed State Nodes
+#
 # ## Generate New Node/Edge Lists
 
 # %%
-list_nodes = 
+# Aggregated nodes = groups | rate junctions
+list_nodes = list(list_groups.keys()) + list(list_rates.keys())
 
 
+# Aggregate the wires into weighted edges
+list_edges = {(src, tgt): [] for src in list_nodes for tgt in list_nodes if src != tgt}
 
-# # %%
-# G = nx.MultiDiGraph()
+for wire in gromet['wires']:
 
-# # State junctions
-# G.add_nodes_from([j['uid'] for j in gromet['junctions'] if j['type'] == 'State'], bipartite = 0, type = 'State')
+    src = wire['src']
+    if src in list_states:
+        src = map_states_groups[src]
+  
+    tgt = wire['tgt']
+    if tgt in list_states:
+        tgt = map_states_groups[tgt]
 
-# # Rate junctions
-# G.add_nodes_from([j['uid'] for j in gromet['junctions'] if j['type'] == 'Rate'], bipartite = 1, type = 'Rate')
 
-# # Wires as directed edges
+    list_edges[(src, tgt)].append(wire['uid'])
+
+
+# Remove empty edges
+x = [k for k, v in list_edges.items() if len(v) == 0]
+__ = [list_edges.pop(k, None) for k in x]
+
+
+src = tgt = wire = x = None
+del src, tgt, wire, x
+
+# %%[markdown]
+# ## Generate New NetworkX Object
+
+# %%
+G1 = nx.MultiDiGraph()
+
+# State nodes
+G1.add_nodes_from([node for node in list_nodes if node not in list_rates], bipartite = 0, type = 'State')
+
+# Rate nodes
+G1.add_nodes_from([node for node in list_nodes if node in list_rates], bipartite = 1, type = 'Rate')
+
+# Edges
+__ = [G1.add_edge(edge[0], edge[1], weight = len(list_wires)) for edge, list_wires in list_edges.items()]
+
+
+# %%[markdown]
+# ## Draw Model Graph
+
+# %%
+
+fig, ax = plt.subplots(nrows = 2, ncols = 2, figsize = (16, 16))
+
+
+p = nx.kamada_kawai_layout(G, weight = 'weight')
+# p = nx.spring_layout(G, weight = 'weight', seed = 0)
+c = ['r' if G.nodes[n]['type'] == 'State' else 'b' for n in G.nodes]
+
+nx.draw(G, ax = ax[0, 0], pos = p, with_labels = False, node_color = c, node_size = 50, linewidths = 0.2, alpha = 0.5, arrows = True)
+ax[0, 0].title.set_text(f"(V, E) = ({len(G.nodes)}, {len(G.edges)})")
+
+
+p = nx.kamada_kawai_layout(G1, weight = 'weight')
+# p = nx.spring_layout(G1, weight = 'weight', seed = 0)
+c = ['r' if G1.nodes[n]['type'] == 'State' else 'b' for n in G1.nodes]
+s = [50 if n in list_rates else 50 * len(list_groups[n]) for n in G1.nodes]
+
+nx.draw(G1, ax = ax[0, 1], pos = p, with_labels = False, node_color = c, node_size = s, width = 0.5, alpha = 0.5, arrows = True)
+ax[0, 1].title.set_text(f"(V, E) = ({len(G1.nodes)}, {len(G1.edges)})")
+
+p = c = s = fig = ax = None
+del p, c, s, fig, ax
+
+# %%
+# # Collapse State and Rate Nodes
+#
+# ## Generate New Node/Edge Lists
+
+# %%
+# Aggregated nodes = groups and rate junctions that connect more than one group
+list_nodes = list(list_groups.keys())
+
+for rate in list_rates.keys():
+    groups = set([map_states_groups[j] for i in [(wire['src'], wire['tgt']) for wire in gromet['wires'] if rate in (wire['src'], wire['tgt'])] for j in i if j in list_states])
+    if len(groups) >= 2:
+        list_nodes.append(rate)
+
+
+# Aggregate the wires into weighted edges
+list_edges = {(src, tgt): [] for src in list_nodes for tgt in list_nodes if src != tgt}
+
+for wire in gromet['wires']:
+
+    src = wire['src']
+    if src in list_states:
+        src = map_states_groups[src]
+  
+    tgt = wire['tgt']
+    if tgt in list_states:
+        tgt = map_states_groups[tgt]
+
+    if (src in list_nodes) & (tgt in list_nodes):
+        list_edges[(src, tgt)].append(wire['uid'])
+
+
+# Remove empty edges
+x = [k for k, v in list_edges.items() if len(v) == 0]
+__ = [list_edges.pop(k, None) for k in x]
+
+
+rate = groups = src = tgt = wire = x = None
+del rate, groups, src, tgt, wire, x
+
+# %%[markdown]
+# ## Generate New NetworkX Object
+
+# %%
+G2 = nx.MultiDiGraph()
+
+# State nodes
+G2.add_nodes_from([node for node in list_nodes if node not in list_rates], bipartite = 0, type = 'State')
+
+# Rate nodes
+G2.add_nodes_from([node for node in list_nodes if node in list_rates], bipartite = 1, type = 'Rate')
+
+# Edges
+__ = [G2.add_edge(edge[0], edge[1], weight = len(list_wires)) for edge, list_wires in list_edges.items()]
+
+
+# %%[markdown]
+# ## Draw Model Graph
+
+# %%
+
+fig, ax = plt.subplots(nrows = 2, ncols = 2, figsize = (16, 16))
+
+for (x, g) in zip(fig.axes, (G, G1, G2)):
+
+    p = nx.kamada_kawai_layout(g, weight = 'weight')
+    # p = nx.spring_layout(g, weight = 'weight', seed = 0)
+    c = ['r' if g.nodes[n]['type'] == 'State' else 'b' for n in g.nodes]
+    s = [50 if n in list_rates else 50 * len(list_groups[n]) if n in list_groups else 50 for n in g.nodes]
+
+    nx.draw(g, ax = x, pos = p, with_labels = False, node_color = c, node_size = s, width = 0.2, alpha = 0.5, arrows = True)
+    x.title.set_text(f"(V, E) = ({len(g.nodes)}, {len(g.edges)})")
+
+
+p = c = s = g = x = fig = ax = None
+del p, c, s, g, x, fig, ax
+
+# %%
+# # Collapse State and Hide Rate Nodes
+#
+# ## Generate New Node/Edge Lists
+
+# %%
+# Aggregated nodes = groups only
+list_nodes = list(list_groups.keys())
+
+
+# Draw undirected edges between groups only if there are connecting wires
+list_edges = {(src, tgt): [] for src in list_nodes for tgt in list_nodes if src != tgt}
+G_ = G.to_undirected()
+for s1 in list_states:
+    for s2 in list_states:
+
+        src = map_states_groups[s1]
+        tgt = map_states_groups[s2]
+
+        if src != tgt:
+            p = nx.shortest_path(G_, source = s1, target = s2)
+
+            if len(p) == 3:
+                list_edges[(src, tgt)].append(None)
+
+
+# Remove empty edges
+x = [k for k, v in list_edges.items() if len(v) == 0]
+__ = [list_edges.pop(k, None) for k in x]
+
+
+s1 = s2 = src = tgt = x = G_ = p = None
+del s1, s2, src, tgt, x, G_, p
+
+# %%[markdown]
+# ## Generate New NetworkX Object
+
+# %%
+G3 = nx.Graph()
+
+# State nodes
+G3.add_nodes_from([node for node in list_nodes if node not in list_rates], bipartite = 0, type = 'State')
+
+
+# Edges
+__ = [G3.add_edge(edge[0], edge[1], weight = len(list_wires)) for edge, list_wires in list_edges.items()]
+
+
+# %%[markdown]
+# ## Draw Model Graph
+
+# %%
+
+fig, ax = plt.subplots(nrows = 2, ncols = 2, figsize = (16, 16))
+
+titles = ("Original", "Collapse States", "Collapse States and Hide Leaf Rates", "Collapse States and Hide Rates")
+for (x, g, t) in zip(fig.axes, (G, G1, G2, G3), titles):
+
+    p = nx.kamada_kawai_layout(g, weight = 'weight')
+    # p = nx.spring_layout(g, weight = 'weight', seed = 0, k = 0.5)
+    c = ['r' if g.nodes[n]['type'] == 'State' else 'b' for n in g.nodes]
+    s = [50 if n in list_rates else 50 * len(list_groups[n]) if n in list_groups else 50 for n in g.nodes]
+    w = 0.5 * np.array(list(nx.get_edge_attributes(g, 'weight').values()))
+
+    nx.draw(g, ax = x, pos = p, with_labels = False, node_color = c, node_size = s, width = w, alpha = 0.5, arrows = True)
+    x.title.set_text(f"{t} ({len(g.nodes)} nodes, {len(g.edges)} edges)")
+
+
+fig.savefig('../figures/marm_gromet_collapse.png', dpi = 150)
+
+
+# fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (16, 16))
+# nx.draw(g, ax = ax, pos = p, with_labels = True, node_color = c, node_size = s, width = w, alpha = 0.5, arrows = True)
+# ax.title.set_text(f"{t} ({len(g.nodes)} nodes, {len(g.edges)} edges)")
+
+
+p = c = s = g = x = t = w = fig = ax = titles = None
+del p, c, s, g, x, t, w, fig, ax, titles
+
+# %%
+
 
 

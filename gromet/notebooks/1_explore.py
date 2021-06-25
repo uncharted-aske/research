@@ -101,7 +101,7 @@ gromets = [json.load(open(local_dir + "/" + filename)) for filename in next(os.w
 # %%
 # url = "https://github.com/indralab/emmaa/raw/master/models/marm_model/gromet_2021-06-07-17-20-49.json"
 # url = "https://github.com/dianakolusheva/emmaa/raw/gromet_metadata/models/marm_model/gromet_2021-06-20-17-05-07.json"
-url = "https://github.com/dianakolusheva/emmaa/blob/gromet_metadata/models/marm_model/gromet_2021-06-23-17-08-47.json"
+url = "https://github.com/dianakolusheva/emmaa/raw/gromet_metadata/models/marm_model/gromet_2021-06-23-17-08-47.json"
 filename = url.split("/")[-1]
 local_dir = "../data/emmaa"
 
