@@ -455,6 +455,31 @@ for i, l in enumerate(labels.T):
 eps = i = l = l_ = m = kwargs = clusterer = cluster_ids = cluster_mask = None
 del eps, i, l, l_, m, kwargs, clusterer, cluster_ids, cluster_mask
 
+# epsilon: 0.1
+# min_samples: 10.0
+# Number of clusters: 90
+# Unclustered Fraction: 1.34 %
+
+# epsilon: 0.1
+# min_samples: 1000.0
+# Number of clusters: 92
+# Unclustered Fraction: 1.41 %
+
+# epsilon: 0.03
+# min_samples: 10.0
+# Number of clusters: 585
+# Unclustered Fraction: 35.63 %
+
+# epsilon: 0.02
+# min_samples: 10.0
+# Number of clusters: 714
+# Unclustered Fraction: 43.05 %
+
+# epsilon: 0.01
+# min_samples: 10.0
+# Number of clusters: 1002
+# Unclustered Fraction: 57.60 %
+
 # Time: 1 m 10 s
 
 # %%
@@ -509,6 +534,14 @@ edges, nodes = emlib.generate_kaggle_edgelist(docs = docs, nodes = nodes)
 
 # %%
 
+print(f"Number of nodes: {len(nodes)}")
+print(f"Number of edges: {len(edges)}")
+
+# Number of nodes: 347666
+# Number of edges: 292077
+
+# %%
+
 fig, ax = plt.subplots(nrows = 1, ncols = 2, figsize = (12, 6))
 
 l = 0
@@ -522,14 +555,17 @@ while m > 0:
 
         n.append(m)
 
-        x = 10 ** np.arange(np.log10(40), 5, 0.01)
+        x = 10 ** np.arange(np.log10(40), 5.6, 0.02)
         y, __ = np.histogram([len(g['node_ids_all']) for g in groups if g['level'] == l], bins = x)
         ax[1].plot(0.5 * (x[:-1] + x[1:]), y, label = f"l = {l}")
-
+        
     l += 1
 
+__ = ax[1].plot((m, m), (0, 40), color = 'k', linestyle = '--', linewidth = 1.0, label = 'Total')
 __ = ax[1].legend()
 __ = plt.setp(ax[1], xlabel = 'Size of Membership', ylabel = 'Number of Groups', xscale = 'log', title = 'Histogram of Group Membership Size')
+
+m = len(np.array([j for i in [g['node_ids_all'] for g in groups if g['level'] == 0] for j in i]))
 
 
 __ = ax[0].plot(range(l - 1), n, marker = 'o')

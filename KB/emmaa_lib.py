@@ -2459,9 +2459,8 @@ def generate_kaggle_nodelist(docs: List, embs: Any, labels: Any, model_id: int =
             'children_ids': [int(i) for i in sorted(list(set(map_groups_children[group_id]))) if i != -1],
             'model_id': model_id,
             'node_ids_all': [int(i) for i in sorted(list(set(map_groups_nodes[group_id])))],
-            # 'node_ids_direct': [int(i) for i in sorted(list(map_groups_nodes[group_id]))],
-            'node_ids_direct': None,
-            'node_id_centroid': None
+            'node_ids_direct': [int(i) for i in sorted(list(set(map_groups_nodes[group_id])))],
+            'node_id_centroid': None,
         } for group_id in sorted(map_groups_nodes.keys())]
 
 
