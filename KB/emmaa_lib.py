@@ -8,6 +8,7 @@
 
 import sys
 import os
+import errno
 # from time import time
 import pathlib
 from networkx.algorithms.centrality.degree_alg import out_degree_centrality

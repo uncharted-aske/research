@@ -28,7 +28,6 @@ import importlib
 import emmaa_lib as emlib
 
 
-
 # %%
 np.random.seed(0)
 
@@ -508,6 +507,45 @@ edges, nodes = emlib.generate_kaggle_edgelist(docs = docs, nodes = nodes)
 
 # Time: 43.9 s
 
+# %%
+
+fig, ax = plt.subplots(nrows = 1, ncols = 2, figsize = (12, 6))
+
+l = 0
+m = 1
+n = []
+while m > 0:
+
+    m = len([None for g in groups if g['level'] == l])
+    
+    if m > 0:
+
+        n.append(m)
+
+        x = 10 ** np.arange(np.log10(40), 5, 0.01)
+        y, __ = np.histogram([len(g['node_ids_all']) for g in groups if g['level'] == l], bins = x)
+        ax[1].plot(0.5 * (x[:-1] + x[1:]), y, label = f"l = {l}")
+
+    l += 1
+
+__ = ax[1].legend()
+__ = plt.setp(ax[1], xlabel = 'Size of Membership', ylabel = 'Number of Groups', xscale = 'log', title = 'Histogram of Group Membership Size')
+
+
+__ = ax[0].plot(range(l - 1), n, marker = 'o')
+__ = [ax[0].annotate(f"{i:d}", (j - 0.2, i + 15)) for i, j in zip(n, list(range(l - 1)))]
+__ = plt.setp(ax[0], xlabel = 'Hierarchical Level', ylabel = 'Number of Groups', xticks = range(l - 1), yticks = range(0, 1001, 200), 
+    title = 'Group Generation Per Level')
+
+
+fig.suptitle(f"Iterative Hierarchical Clustering")
+fig.savefig(dist_dir + 'embeddings_umap_clusters_dist.png', dpi = 150)
+
+
+l = m = n = x = y = fig = ax = None
+del l, m, n, x, y, fig, ax
+
+
 # %%[markdown]
 # ## Export Data Locally
 
@@ -547,6 +585,17 @@ for x in tqdm(('nodes', 'nodeLayout', 'nodeAtts', 'groups', 'edges')):
         preamble = emlib.get_obj_preamble(obj_type = x),
         obj_key = x
     )
+
+
+# %%
+# ## Reload
+
+# %%
+if False:
+    data_dir = './data/kaggle/2021-06-29/'
+    dist_dir = './dist/kaggle/v4.0_citations/'
+
+    groups = emlib.load_jsonl(dist_dir + 'groups' + '.jsonl', remove_preamble = True)
 
 
 # %%
