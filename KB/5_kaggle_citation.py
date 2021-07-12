@@ -17,6 +17,7 @@ import pickle
 import numpy as np
 import scipy as sp
 import networkx as nx
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import umap
 import sklearn as skl
@@ -383,8 +384,13 @@ __ = plt.setp(ax, xlabel = 'x', ylabel = 'y', )
 # epsilons = np.array([0.1, 0.05, 0.01, 0.005, 0.001, 0.0005])
 # min_samples = np.array([10, 1000, 1500, 2000, 2500, 3000])
 
-epsilons = np.array([0.1, 0.1, 0.03, 0.02, 0.01])
-min_samples = np.array([10, 1000, 10, 10, 10])
+# epsilons = np.array([0.1, 0.1, 0.03, 0.02, 0.01])
+# min_samples = np.array([10, 1000, 10, 10, 10])
+
+
+epsilons = np.array([0.1, 0.01, 0.01, 0.01])
+min_samples = np.array([10, 10, 1000, 10])
+
 
 labels = np.zeros((num_docs, len(epsilons)), dtype = int)
 
@@ -512,6 +518,8 @@ for i, x in enumerate(fig.axes):
         x.axis('off')
 
 fig.suptitle(f"epsilon, min_samples -> n_clusters, noise")
+
+# %%
 fig.savefig(dist_dir + 'embeddings_umap_clusters.png', dpi = 150)
 
 
@@ -632,6 +640,89 @@ if False:
     dist_dir = './dist/kaggle/v4.0_citations/'
 
     groups = emlib.load_jsonl(dist_dir + 'groups' + '.jsonl', remove_preamble = True)
+
+
+# %%
+# ## Draw Group Tree
+
+G = nx.DiGraph()
+G.add_nodes_from([(-1, {'name': 'root', 'level': -1, 'size': len(nodes)})])
+G.add_nodes_from([(g['id'], {'name': g['name'], 'level': g['level'], 'size': len(g['node_ids_all'])}) for g in groups])
+G.add_edges_from([(g['id'], g['parent_id']) if g['parent_id'] != None else (g['id'], -1) for g in groups])
+G = G.reverse()
+
+# %%
+# shells = [[k for k, v in G.nodes.items() if v['level'] == l] for l in range(-1, 5, 1)]
+# pos = nx.shell_layout(G, nlist = shells, center = (0, 0), dim = 2)
+# pos = nx.planar_layout(G, center = (0, 0), dim = 2)
+# pos = nx.kamada_kawai_layout(G, center = (0, 0))
+
+pos = hierarchy_pos(G, -1)
+# pos = hierarchy_pos(G, -1, width = 2 * np.pi)
+# pos = {u: (r * np.cos(theta),r * np.sin(theta)) for u, (theta, r) in pos.items()}
+
+pos = nx.kamada_kawai_layout(G, center = (0, 0), pos = pos)
+
+col = [v['level'] for k, v in G.nodes.items()]
+
+# %%
+
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (18, 16))
+cmap = mpl.cm.viridis
+norm = mpl.colors.Normalize(vmin = -1, vmax = 4)
+
+nx.draw(G, pos = pos, ax = ax, arrowsize = 5, node_size = [10 * np.log2(v['size']) + 1 for __, v in G.nodes.items()], node_color = col, cmap = cmap, linewidths = 0.1)
+
+__ = fig.colorbar(mpl.cm.ScalarMappable(cmap = cmap, norm = norm), ax = ax)
+
+# %%
+
+def hierarchy_pos(G, root, levels = None, width = 1.0, height = 1.0):
+    '''If there is a cycle that is reachable from root, then this will see infinite recursion.
+       G: the graph
+       root: the root node
+       levels: a dictionary
+               key: level number (starting from 0)
+               value: number of nodes in this level
+       width: horizontal space allocated for drawing
+       height: vertical space allocated for drawing'''
+
+    TOTAL = "total"
+
+    CURRENT = "current"
+
+    def make_levels(levels, node=root, currentLevel=0, parent=None):
+        """Compute the number of nodes for each level
+        """
+        if not currentLevel in levels:
+            levels[currentLevel] = {TOTAL : 0, CURRENT : 0}
+        levels[currentLevel][TOTAL] += 1
+        neighbors = G.neighbors(node)
+        for neighbor in neighbors:
+            if not neighbor == parent:
+                levels =  make_levels(levels, neighbor, currentLevel + 1, node)
+        return levels
+
+    def make_pos(pos, node=root, currentLevel=0, parent=None, vert_loc=0):
+        dx = 1/levels[currentLevel][TOTAL]
+        left = dx/2
+        pos[node] = ((left + dx*levels[currentLevel][CURRENT])*width, vert_loc)
+        levels[currentLevel][CURRENT] += 1
+        neighbors = G.neighbors(node)
+        for neighbor in neighbors:
+            if not neighbor == parent:
+                pos = make_pos(pos, neighbor, currentLevel + 1, node, vert_loc-vert_gap)
+        return pos
+
+    if levels is None:
+        levels = make_levels({})
+
+    else:
+        levels = {l:{TOTAL: levels[l], CURRENT:0} for l in levels}
+
+    vert_gap = height / (max([l for l in levels])+1)
+
+    return make_pos({})
 
 
 # %%
