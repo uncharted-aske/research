@@ -26,6 +26,7 @@ dist_dir = '/home/nliu/projects/aske/research/gromet/dist/august_2021_demo_repo'
 gromet_path = data_dir + '/' + 'emmaa_models/marm_model_gromet_2021-06-28-17-07-14.json'
 graph_path = dist_dir + '/' + 'emmaa_models/marm_model_gromet_2021-06-28-17-07-14_graph.json'
 
+# %%
 __ = os.system(deno_command + ' ' + parser_path + ' ' + gromet_path + ' ' + graph_path)
 
 
@@ -216,8 +217,8 @@ graph_ = {
         'metadata': [dict_nodes[n]['metadata'][0] for n in l]
     } for group, l in dict_groups.items()],
     'edges': [{
-        'source': edge[0], 
-        'target': edge[1], 
+        'source': edge[0].__repr__(), 
+        'target': edge[1].__repr__(), 
         'weight': len(l)
     } for edge, l in dict_edges.items()],
     'metadata': graph['metadata']
