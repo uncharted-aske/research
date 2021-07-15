@@ -725,4 +725,36 @@ def hierarchy_pos(G, root, levels = None, width = 1.0, height = 1.0):
     return make_pos({})
 
 
+
+# %%[markdown]
+# # Create Small Version
+
+N = 5000
+mask = np.random.randint(0, high = num_docs, size = N)
+
+nodes, nodeLayout, nodeAtts, groups = emlib.generate_kaggle_nodelist(docs = list(np.asarray(docs)[mask]), embs = embs_red[mask, :], labels = labels[mask, :], model_id = None)
+edges, nodes = emlib.generate_kaggle_edgelist(docs = list(np.asarray(docs)[mask]), nodes = nodes)
+
+
+x = dist_dir.split('/')
+x[-2] += '_small'
+dist_dir_small = '/'.join(x)
+for x, y in zip(('nodes', 'nodeLayout', 'nodeAtts', 'groups', 'edges'), (nodes, nodeLayout, nodeAtts, groups, edges)):
+    emlib.save_jsonl(y, f'{dist_dir_small}{x}.jsonl', preamble = emlib.get_obj_preamble(obj_type = x))
+
+
+data = {'nodes': nodes, 'nodeLayout': nodeLayout, 'nodeAtts': nodeAtts, 'groups': groups, 'edges': edges}
+s3_url = 'http://10.64.18.171:9000'
+s3_bucket = 'aske'
+s3_path = 'research/KB' + dist_dir_small[1:(len(dist_dir_small) - 1)]
+for x in tqdm(('nodes', 'nodeLayout', 'nodeAtts', 'groups', 'edges')):
+    emlib.load_obj_to_s3(
+        obj = data, 
+        s3_url = s3_url, 
+        s3_bucket = s3_bucket, 
+        s3_path = f"{s3_path}/{x}.jsonl", 
+        preamble = emlib.get_obj_preamble(obj_type = x),
+        obj_key = x
+    )
+
 # %%
