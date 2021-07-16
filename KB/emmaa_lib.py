@@ -2494,6 +2494,169 @@ def generate_kaggle_nodelist(docs: List, embs: Any, labels: Any, model_id: int =
     return nodes, nodeLayout, nodeAtts, groups
 
 # %%
+# Generate node, node-attribute, node-layout lists from a set of metadata, coordinates, labels
+def generate_top2vec_nodelist(docs: List, embs: Any, labels: Any, model_id: int = 0, print_opt: bool = False) -> Tuple:
+
+    # Check sizes
+    if (not isinstance(embs, np.ndarray)) | (not isinstance(labels, np.ndarray)):
+        raise TypeError("'embs' and 'labels' must be numpy ndarrays.")
+
+    if (len(docs) != embs.shape[0]) | (len(docs) != labels.shape[0]):
+        raise ValueError("'docs', 'embs', and 'labels' must have the same number of elements.")
+
+
+    # Get number of nodes and epsilon values
+    num_nodes = len(docs)
+    num_eps = labels.shape[1]
+
+
+    if num_nodes == 0:
+
+        nodes = []
+        nodeLayout = []
+        nodeAtts = []
+        groups = []
+
+
+    else:
+
+        # Initialize the node list
+        nodes = [{
+            'id': i,
+            'model_id': model_id,
+            'name': doc['title'],
+            'grounded_db': True,
+            'db_ids': [{j['type']: j['id']} for j in doc['identifier']],
+            'edge_ids_source': [],
+            'edge_ids_target': [],
+            'out_degree': 0,
+            'in_degree': 0
+        } for i, doc in enumerate(docs)]
+
+
+        # Create global node IDs
+        nodes = [transform_obj_ids(node, obj_type = 'nodes') for node in nodes]
+
+
+        # Generate node-layout list
+        nodeLayout = [{
+            'node_id': node['id'],
+            'coor_sys_name': 'cartesian',
+            'coors': [float(x) for x in embs[i, :3]]
+        } for i, node in enumerate(nodes)]
+
+
+        # Generate node-attribute list
+        nodeAtts = [{
+            'node_id': node['id'],
+            'grounded_group': None,
+            'type': None,
+            'group_ids': None,
+            'node_group_level': None,
+            'extras': {}
+        } for __, node in enumerate(nodes)]
+
+
+        # Get node bibjson data
+        for node, atts, doc in zip(nodes, nodeAtts, docs):
+            atts['extras']['bibjson'] = doc
+
+
+        # Create global group IDs from labels
+        m = np.cumsum(np.insert(np.max(labels, axis = 0)[:-1], 0, 0))
+        labels_ = labels + m
+        labels_[labels == -1] = -1
+        labels_ids = np.array([[transform_obj_ids(int(i), obj_type = 'groups') if i != -1 else -1 for i in l] for l in labels_])
+
+
+        for i, node in tqdm(enumerate(nodeAtts), total = num_nodes):
+
+            j = np.argwhere(labels[i, :] != -1).flatten()
+
+            if len(j) > 0:
+                node['grounded_group'] = True
+                node['group_ids'] = [int(l) for l in labels_ids[i, labels_ids[i, :] != -1]]
+                node['node_group_level'] = int(j[-1] + 1)
+      
+            else:
+                node['grounded_group'] = False
+                node['groupd_ids'] = None
+                node['node_group_level'] = None
+
+
+        # Generate group membership list
+        map_nodes_ids = {i: node['id'] for i, node in enumerate(nodes)}
+        map_groups_nodes = {group_id: [] for row in labels_ids for group_id in row if group_id != -1}
+        for i in tqdm(range(num_nodes)):
+            for j in range(num_eps):
+                group_id = labels_ids[i, j]
+                if group_id != -1:
+                    map_groups_nodes[group_id].append(map_nodes_ids[i])
+                    # map_groups_nodes[group_id] = map_groups_nodes[group_id] | set([map_nodes_ids[i]])
+
+
+        # Generatet group-level list
+        map_groups_levels = {group_id: j for row in labels_ids for j, group_id in enumerate(row) if group_id != -1}
+
+
+        # Generate group-parent list
+        map_groups_parent = {group_id: row[j - 1] if j > 0 else None for row in labels_ids for j, group_id in enumerate(row) if group_id != -1}
+        map_groups_children = {group_id: [] for row in labels_ids for group_id in row if group_id != -1}
+        for i in tqdm(range(num_nodes)):
+            for j in range(num_eps - 1):
+                group_id = labels_ids[i, j]
+                if group_id != -1:
+                    map_groups_children[group_id].extend(labels_ids[i, (j + 1):])
+                    # map_groups_children[group_id] = map_groups_children[group_id] | set(labels_ids[i, (j + 1):])
+
+
+        # Generate group list
+        groups = [{
+            'id': int(group_id),
+            'id_onto': None,
+            'name': None,
+            'level': (lambda x: int(x) if x != None else None)(map_groups_levels[group_id]),
+            'parent_id': (lambda x: int(x) if x != None else None)(map_groups_parent[group_id]),
+            'children_ids': [int(i) for i in sorted(list(set(map_groups_children[group_id]))) if i != -1],
+            'model_id': model_id,
+            'node_ids_all': [int(i) for i in sorted(list(set(map_groups_nodes[group_id])))],
+            'node_ids_direct': [int(i) for i in sorted(list(set(map_groups_nodes[group_id])))],
+            'node_id_centroid': None,
+        } for group_id in sorted(map_groups_nodes.keys())]
+
+
+        # # Node IDs of children groups (redundant since nodes are assigned to multiple groups)
+        # for group in groups:
+
+        #     # group['node_ids_all'] = [int(i) for group_id in group['children_ids'] if group_id != -1 for i in sorted(map_groups_nodes[group_id])]
+
+        #     group['node_ids_all'] = [int(i) for i in sorted(map_groups_nodes[group_id])]
+
+        #     group['node_ids_all'].extend([int(i) for group_id in group['children_ids'] if group_id != -1 for i in map_groups_nodes[group_id]])
+
+
+        # Calculate kNN median centroid of each group
+        map_ids_nodes = {node['id']: i for i, node in enumerate(nodes)}
+        for group in tqdm(groups):
+            
+            coors = embs[np.array([map_ids_nodes[i] for i in group['node_ids_all']]), :]
+
+            i, __, __ = generate_nn_cluster_centroid_list(coors = coors, labels = [])
+
+            group['node_id_centroid'] = group['node_ids_all'][i.item()]
+            group['name'] = nodes[map_ids_nodes[group['node_ids_all'][i.item()]]]['name']
+
+    
+    if print_opt == True:
+
+        print(f"{len(nodes)} nodes and {len(groups)} groups.")
+
+
+    return nodes, nodeLayout, nodeAtts, groups
+
+
+
+# %%
 # Load object to S3 bucket
 def load_obj_to_s3(obj: Union[List, Dict], s3_url: str, s3_bucket: str, s3_path: str, preamble: Optional[Dict] = None, obj_key: Optional[str] = None, print_opt: bool = False) -> NoReturn:
 

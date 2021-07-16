@@ -119,32 +119,16 @@ print(f"{len(dois_emmaa - dois_wisconsin) / len(dois_emmaa) * 100:.0f}% of the E
 
 num_dims_red = 2
 # model_umap = umap.UMAP(n_components = num_dims_red, n_neighbors = 4, min_dist = 0.05, metric = 'minkowski', metric_kwds = {'p': 2.0/3.0}, random_state = 0)
-model_umap = umap.UMAP(n_components = num_dims_red, n_neighbors = 4, min_dist = 0.05, metric = 'cosine', random_state = 0)
+model_umap = umap.UMAP(n_components = num_dims_red, n_neighbors = 10, min_dist = 0.05, metric = 'cosine', random_state = 0)
+# model_umap = umap.UMAP(densmap = True, n_components = num_dims_red, n_neighbors = 10, min_dist = 0.1, metric = 'cosine', random_state = 0)
 
 embs_wisconsin_2d = model_umap.fit_transform(embs_wisconsin)
 embs_wisconsin_2d = embs_wisconsin_2d - np.mean(embs_wisconsin_2d, axis = 0)
-
 
 model_umap = None
 del model_umap
 
 # Time: 2 m 19 s
-
-# %%
-%%time
-
-num_dims_red = 3
-model_umap = umap.UMAP(n_components = num_dims_red, n_neighbors = 4, min_dist = 0.05, metric = 'cosine', random_state = 0)
-
-embs_wisconsin_3d = model_umap.fit_transform(embs_wisconsin)
-embs_wisconsin_3d = embs_wisconsin_3d - np.mean(embs_wisconsin_3d, axis = 0)
-
-
-model_umap = None
-del model_umap
-
-# Time: 1 m 1 s
-
 
 # %%
 with open('./dist/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_2d.pkl', 'wb') as f:
@@ -155,14 +139,6 @@ if False:
     with open('./dist/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_2d.pkl', 'rb') as f:
         embs_wisconsin_2d = pickle.load(f)
 
-# %%
-with open('./dist/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_3d.pkl', 'wb') as f:
-    pickle.dump(embs_wisconsin_3d, f)
-
-# %%
-if False:
-    with open('./dist/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_3d.pkl', 'rb') as f:
-        embs_wisconsin_3d = pickle.load(f)
 
 # %% 
 # Label by overlap with EMMAA Covid-19 corpus 
@@ -171,8 +147,14 @@ labels_emmaa = np.array([True if doi in dois_emmaa else False for doi in model_w
 # %%
 # Plot result
 fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
-__ = emlib.plot_emb(coor = embs_wisconsin_2d, labels = labels_emmaa, cmap_name = 'qual', legend_kwargs = {'loc': 'lower left'}, colorbar = False, str_title = 'Dimensionally Reduced Document Embeddings (Doc2Vec) of the Wisconsin Covid-19 Corpus', ax = ax)
+__ = emlib.plot_emb(
+    coor = embs_wisconsin_2d, 
+    # labels = labels_emmaa, 
+    marker_size = 0.5, marker_alpha = 0.1, 
+    cmap_name = 'qual', legend_kwargs = {'loc': 'lower left'}, colorbar = False, 
+    str_title = 'Dimensionally Reduced Document Embeddings (Doc2Vec) of the Wisconsin Covid-19 Corpus', ax = ax)
 __ = plt.setp(ax, xlabel = 'x', ylabel = 'y')
+
 fig.savefig('./figures/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_2d_emmaa.png', dpi = 150)
 
 
@@ -229,49 +211,26 @@ del fig, ax, x
 # %%
 %%time
 
-# Generate cluster labels
-cluster_eps = 0.05
-kwargs = {'metric': 'euclidean', 'min_cluster_size': 2, 'min_samples': 3, 'cluster_selection_epsilon': cluster_eps}
-clusterer = hdbscan.HDBSCAN(**kwargs)
-clusterer.fit(embs_wisconsin_2d)
-labels_clusters_2d = clusterer.labels_
-# cluster_probs = clusterer.probabilities_
-# outlier_scores = clusterer.outlier_scores_
-# cluster_persist = clusterer.cluster_persistence_
+epsilons = [0.1, 0.065, 0.05, 0.01]
+labels_clusters_2d = []
+for eps in epsilons:
+
+    # Generate cluster labels
+    cluster_eps = eps
+    kwargs = {'prediction_data': True, 'metric': 'euclidean', 'min_cluster_size': 10, 'min_samples': 10, 'cluster_selection_epsilon': cluster_eps}
+    clusterer = hdbscan.HDBSCAN(**kwargs)
+    clusterer.fit(embs_wisconsin_2d)
+    labels_clusters_2d.append(clusterer.labels_)
+    # memberships = hdbscan.all_points_membership_vectors(clusterer)
+    # cluster_probs = clusterer.probabilities_
+    # outlier_scores = clusterer.outlier_scores_
+    # cluster_persist = clusterer.cluster_persistence_
 
 
-print(f'\nNumber of clusters: {len(np.unique(labels_clusters_2d)):d}')
-print(f'Number of unclustered points: {sum(labels_clusters_2d == -1) / len(labels_clusters_2d) * 100:.3f} %')
-# Number of clusters: 1902
-# Number of unclustered points: 4.770%
-
-
-kwargs = clusterer = None
-del kwargs, clusterer
-
-# Time: 31.7 s
-
-# %%[markdown]
-# # Apply Hierarchical Clustering (3D)
-
-# %%
-%%time
-
-# Generate cluster labels
-cluster_eps = 0.05
-kwargs = {'metric': 'euclidean', 'min_cluster_size': 2, 'min_samples': 3, 'cluster_selection_epsilon': cluster_eps}
-clusterer = hdbscan.HDBSCAN(**kwargs)
-clusterer.fit(embs_wisconsin_3d)
-labels_clusters_3d = clusterer.labels_
-# cluster_probs = clusterer.probabilities_
-# outlier_scores = clusterer.outlier_scores_
-# cluster_persist = clusterer.cluster_persistence_
-
-
-print(f'\nNumber of clusters: {len(np.unique(labels_clusters_3d)):d}')
-print(f'Number of unclustered points: {sum(labels_clusters_3d == -1) / len(labels_clusters_3d) * 100:.3f} %')
-# Number of clusters: 5802
-# Number of unclustered points: 21.780%
+    print(f'\nNumber of clusters: {len(np.unique(labels_clusters_2d[-1])):d}')
+    print(f'Number of unclustered points: {sum(labels_clusters_2d[-1] == -1) / len(labels_clusters_2d[-1]) * 100:.3f} %')
+    # Number of clusters: 1902
+    # Number of unclustered points: 4.770%
 
 
 kwargs = clusterer = None
@@ -288,17 +247,6 @@ if False:
     with open('./dist/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_2d_clusters.pkl', 'rb') as f:
         labels_clusters_2d = pickle.load(f)
 
-# %%
-with open('./dist/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_3d_clusters.pkl', 'wb') as f:
-    pickle.dump(labels_clusters_3d, f)
-
-# %%
-if False:
-    with open('./dist/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_3d_clusters.pkl', 'rb') as f:
-        labels_clusters_3d = pickle.load(f)
-
-
-
 # %%[markdown]
 # Generate centroid list from cluster labels
 
@@ -307,31 +255,31 @@ knn_ind = emlib.generate_nn_cluster_centroid_list(coors = embs_wisconsin_2d, lab
 # %%[markdown]
 # Plot result
 
-fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
+N = 50000
+num_docs = len(docs_wisconsin_reordered)
+mask = np.random.randint(0, high = num_docs, size = N)
 
-__ = emlib.plot_emb(coor = embs_wisconsin_2d, labels = labels_clusters_2d, cmap_name = 'qual', legend_kwargs = {}, colorbar = False, str_title = f"Cluster Epsilon = {cluster_eps}", marker_alpha = 0.05, ax = ax)
-__ = ax.scatter(embs_wisconsin_2d[knn_ind, 0], embs_wisconsin_2d[knn_ind, 1], marker = '+', alpha = 0.5, color = 'k', zorder = 101)
-__ = plt.setp(ax, xlabel = 'x', ylabel = 'y')
+fig, ax = plt.subplots(nrows = 2, ncols = 2, figsize = (16, 16))
 
-fig.savefig('./figures/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_2d_clusters.png', dpi = 150)
+for i, (eps, x) in tqdm(enumerate(zip(epsilons, fig.axes)), total = len(epsilons)):
+
+    mask = labels_clusters_2d[i] != -1
+
+    __ = emlib.plot_emb(
+        coor = embs_wisconsin_2d[mask , :], 
+        labels = labels_clusters_2d[i][mask], 
+        cmap_name = 'qual', legend_kwargs = {}, colorbar = False, 
+        str_title = f"Epsilon = {eps}, Number of Clusters = {len(np.unique(labels_clusters_2d[i]))}", 
+        marker_size = 0.5, marker_alpha = 0.1, 
+        ax = x)
+    # __ = ax.scatter(embs_wisconsin_2d[knn_ind, 0], embs_wisconsin_2d[knn_ind, 1], marker = '+', alpha = 0.5, color = 'k', zorder = 101)
+    __ = plt.setp(x, xlabel = 'x', ylabel = 'y')
+
+# fig.savefig('./figures/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_2d_clusters.png', dpi = 150)
+fig.savefig('./figures/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_2d_clusters_noNoise.png', dpi = 150)
 
 fig = ax = None
 del fig, ax
-
-# %%[markdown]
-# Plot result
-
-# fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
-
-__ = emlib.plot_emb(coor = embs_wisconsin_3d, labels = labels_clusters_3d, cmap_name = 'qual', legend_kwargs = {}, colorbar = False, str_title = f"Cluster Epsilon = {cluster_eps}", marker_alpha = 0.05)
-# __ = ax.scatter(embs_wisconsin_2d[knn_ind, 0], embs_wisconsin_2d[knn_ind, 1], marker = '+', alpha = 0.5, color = 'k', zorder = 101)
-__ = plt.setp(ax, xlabel = 'x', ylabel = 'y', zlabel = 'z')
-
-fig.savefig('./figures/wisconsin/xdd-covid-19-8Dec-doc2vec/embeddings_3d_clusters.png', dpi = 150)
-
-fig = ax = None
-del fig, ax
-
 
 # %%[markdown]
 # # Generate Node and Cluster Lists (2D)
@@ -339,254 +287,187 @@ del fig, ax
 # %%
 %%time
 
-model_id = None
-x = ['doc', 'epi', 'emmaa', 'clusters']
+labels_ = np.array(labels_clusters_2d).transpose()
 
-# for labels, name in zip([labels_doc, labels_emmaa, labels_clusters[0]], x):
-for labels, name in zip([labels_doc, labels_epi, labels_emmaa, labels_clusters_2d], x):
+for doc in docs_wisconsin_reordered:
+    if isinstance(doc['journal'], str) == False:
+        doc['journal'] = doc['journal']['name']
 
-    # Ensure integer type in case of boolean labels
-    labels = labels.astype('int')
+nodes, nodeLayout, nodeAtts, groups = emlib.generate_top2vec_nodelist(
+    docs = docs_wisconsin_reordered, 
+    embs = embs_wisconsin_2d, 
+    labels = labels_, 
+    model_id = None
+)
 
-    # Generate node lists
-    nodes, nodeLayout, nodeAtts = emlib.generate_nodelist_bibjson(model_id = model_id, node_metadata = docs_wisconsin_reordered, node_coors = embs_wisconsin_2d, node_labels = labels)
+# Time: 43.9 s
 
-    # Save node lists
-    preamble = {
-        'model_id': '<int> unique model ID that is present in all related distribution files',
-        'id': '<int> unique node ID that is referenced by other files',
-        'name': '<str> unique human-interpretable name of this node (from the `title` attribute in `metadata.csv`)',
-        'db_refs': '<dict> database references of this node (`doi`, `pmcid`, `pubmed_id` attributes in `metadata.csv`)',
-        'grounded': '<bool> whether this node is grounded to any database (`True` for all)',
-        'edge_ids_source': '<list of int> ID of edges that have this node as a source',
-        'edge_ids_target': '<list of int> ID of edges that have this node as a target',
-        'out_degree': '<int> out-degree of this node',
-        'in_degree': '<int> in-degree of this node' 
-    }
-    emlib.save_jsonl(nodes, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/nodes.jsonl', preamble = preamble)
+# %%
+print(f"Number of nodes: {len(nodes)}")
+print(f"Number of groups: {len(groups)}")
 
-    preamble = {
-        'model_id': '<int> unique model ID that is present in all related distribution files',
-        'id': '<int> unique node ID that is defined in `nodes.jsonl`',
-        'x': '<float> position of the node in the graph layout',
-        'y': '<float> position of the node in the graph layout',
-        'z': '<float> position of the node in the graph layout'
-    }
-    emlib.save_jsonl(nodeLayout, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/nodeLayout.jsonl', preamble = preamble)
+# Number of nodes: 104997
+# Number of groups: 1907
 
-    preamble = {
-        'model_id': '<int> unique model ID that is present in all related distribution files',
-        'id': '<int> unique node ID that is defined in `nodes.jsonl`',
-        'db_ref_priority': '<str> database reference from `db_refs` of `nodes.jsonl`, that is used by the INDRA ontology v1.5', 
-        'grounded_onto': '<bool> whether this model node is grounded to something that exists within the ontology', 
-        'ontocat_level': '<int> the level of the most fine-grained ontology node/category to which this model node was mapped (`-1` if not mappable, `0` if root)', 
-        'ontocat_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
-        'grounded_cluster': '<bool> whether this model node is grounded to any cluster', 
-        'cluster_level': '<int> the level of the most fine-grained cluster at which this model node was mapped (`-1` if not mappable, `0` if root)', 
-        'cluster_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)' 
-    }
-    emlib.save_jsonl(nodeAtts, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/nodeAtts.jsonl', preamble = preamble)
+# %%
 
+%%time
 
-    # Generate cluster list
-    labels_unique, labels_unique_counts = np.unique(labels, return_counts = True)
-    labels_unique = labels_unique.astype('int')
-    labels_unique_counts = labels_unique_counts.astype('int')
+dist_dir = './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/v4.0_nonTop2Vec/'
+for x, y in zip(('nodes', 'nodeLayout', 'nodeAtts', 'groups'), (nodes, nodeLayout, nodeAtts, groups)):
 
-    clusters = [{
-        'model_id': model_id,
-        'id': int(cluster_id),
-        'ref': None,
-        'name': None,
-        'size': int(cluster_size),
-        'level': 0,
-        'parent_id': None,
-        'children_ids': None,
-        'node_ids': [i for i, l in enumerate(labels) if l == cluster_id],
-        'node_ids_direct': [i for i, l in enumerate(labels) if l == cluster_id],
-        'hyperedge_ids': []
-    } for cluster_id, cluster_size in zip(labels_unique, labels_unique_counts)]
-
-
-    # Get centroids
-    knn_ind, __, coors_centroid = emlib.generate_nn_cluster_centroid_list(coors = embs_wisconsin_2d, labels = labels, p = 2)
-
-    # Get centroid name
-    for i, __  in enumerate(labels_unique):
-        clusters[i]['name'] = nodes[knn_ind[i]]['name']
-
-    # Save cluster metadata
-    preamble = {
-        'model_id': '<int> unique model ID that is present in all related distribution files',
-        'id': '<int> unique ID for this cluster that is referenced by other files',
-        'ref': '<str> None',
-        'name': '<str> name of this cluster (taken as the name of the centroid node)',
-        'size': '<int> number of model nodes that were mapped to this cluster and its children',
-        'level': '<int> number of hops to reach the local root (`0` if root)',
-        'parent_id': '<int> ID of the parent of this cluster in the ontology',
-        'children_ids': '<array of int> unordered list of the child cluster IDs',
-        'node_ids': '<array of int> unordered list of IDs from model nodes in the membership of this cluster',
-        'node_ids_direct': '<array of int> node_ids but only model nodes which were directly mapped to this cluster and not any of the child categories',
-        'hyperedge_ids': '<array of int> unordered list of hyperedge IDs (see `hyperedges.jsonl`) that are within this cluster',
-    }
-    emlib.save_jsonl(clusters, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/clusters.jsonl', preamble = preamble)
-
-
-    # Generate cluster layout
-    clusterLayout = [{
-        'model_id': model_id,
-        'id': int(cluster_id),
-        'x': coors_centroid[k, 0],
-        'y': coors_centroid[k, 1],
-        'z': 0.0,
-
-    } for k, cluster_id in enumerate(labels_unique)]
-
-    # Save cluster layout
-    preamble = {
-        "model_id": "<int> unique model ID that is present in all related distribution files", 
-        "id": "<int> unique node ID that is defined in `nodes.jsonl`", 
-        "x": "<float> position of the node in the graph layout", 
-        "y": "<float> position of the node in the graph layout", 
-        "z": "<float> position of the node in the graph layout"
-    }
-    emlib.save_jsonl(clusterLayout, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/clusterLayout.jsonl', preamble = preamble)
-
-
-
-i = x = node = nodeLayout = nodeAtts = name = labels = labels_unique = clusters = clusterLayout = knn_ind = None
-del i, x, node, nodeLayout, nodeAtts, name, labels, labels_unique, clusters, clusterLayout, knn_ind
-
-
-# time: 1 m 36 s
-
-
-# %%[markdown]
-# # Generate Node and Cluster Lists (3D)
+    emlib.save_jsonl(y, f'{dist_dir}{x}.jsonl', preamble = emlib.get_obj_preamble(obj_type = x))
 
 # %%
 %%time
 
-model_id = None
-x = ['doc_3d', 'epi_3d', 'emmaa_3d', 'clusters_3d']
+data = {
+    'nodes': nodes,
+    'nodeLayout': nodeLayout,
+    'nodeAtts': nodeAtts,
+    'groups': groups,
+}
 
-# for labels, name in zip([labels_doc, labels_emmaa, labels_clusters[0]], x):
-for labels, name in zip([labels_doc, labels_epi, labels_emmaa, labels_clusters_3d], x):
+s3_url = 'http://10.64.18.171:9000'
+s3_bucket = 'aske'
+s3_path = 'research/KB' + dist_dir[1:(len(dist_dir) - 1)]
 
-    # Ensure integer type in case of boolean labels
-    labels = labels.astype('int')
+for x in tqdm(('nodes', 'nodeLayout', 'nodeAtts', 'groups')):
 
-    # Generate node lists
-    nodes, nodeLayout, nodeAtts = emlib.generate_nodelist_bibjson(model_id = model_id, node_metadata = docs_wisconsin_reordered, node_coors = embs_wisconsin_3d, node_labels = labels)
-
-    # Save node lists
-    preamble = {
-        'model_id': '<int> unique model ID that is present in all related distribution files',
-        'id': '<int> unique node ID that is referenced by other files',
-        'name': '<str> unique human-interpretable name of this node (from the `title` attribute in `metadata.csv`)',
-        'db_refs': '<dict> database references of this node (`doi`, `pmcid`, `pubmed_id` attributes in `metadata.csv`)',
-        'grounded': '<bool> whether this node is grounded to any database (`True` for all)',
-        'edge_ids_source': '<list of int> ID of edges that have this node as a source',
-        'edge_ids_target': '<list of int> ID of edges that have this node as a target',
-        'out_degree': '<int> out-degree of this node',
-        'in_degree': '<int> in-degree of this node' 
-    }
-    emlib.save_jsonl(nodes, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/nodes.jsonl', preamble = preamble)
-
-    preamble = {
-        'model_id': '<int> unique model ID that is present in all related distribution files',
-        'id': '<int> unique node ID that is defined in `nodes.jsonl`',
-        'x': '<float> position of the node in the graph layout',
-        'y': '<float> position of the node in the graph layout',
-        'z': '<float> position of the node in the graph layout'
-    }
-    emlib.save_jsonl(nodeLayout, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/nodeLayout.jsonl', preamble = preamble)
-
-    preamble = {
-        'model_id': '<int> unique model ID that is present in all related distribution files',
-        'id': '<int> unique node ID that is defined in `nodes.jsonl`',
-        'db_ref_priority': '<str> database reference from `db_refs` of `nodes.jsonl`, that is used by the INDRA ontology v1.5', 
-        'grounded_onto': '<bool> whether this model node is grounded to something that exists within the ontology', 
-        'ontocat_level': '<int> the level of the most fine-grained ontology node/category to which this model node was mapped (`-1` if not mappable, `0` if root)', 
-        'ontocat_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
-        'grounded_cluster': '<bool> whether this model node is grounded to any cluster', 
-        'cluster_level': '<int> the level of the most fine-grained cluster at which this model node was mapped (`-1` if not mappable, `0` if root)', 
-        'cluster_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)' 
-    }
-    emlib.save_jsonl(nodeAtts, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/nodeAtts.jsonl', preamble = preamble)
-
-
-    # Generate cluster list
-    labels_unique, labels_unique_counts = np.unique(labels, return_counts = True)
-    labels_unique = labels_unique.astype('int')
-    labels_unique_counts = labels_unique_counts.astype('int')
-
-    clusters = [{
-        'model_id': model_id,
-        'id': int(cluster_id),
-        'ref': None,
-        'name': None,
-        'size': int(cluster_size),
-        'level': 0,
-        'parent_id': None,
-        'children_ids': None,
-        'node_ids': [i for i, l in enumerate(labels) if l == cluster_id],
-        'node_ids_direct': [i for i, l in enumerate(labels) if l == cluster_id],
-        'hyperedge_ids': []
-    } for cluster_id, cluster_size in zip(labels_unique, labels_unique_counts)]
-
-
-    # Get centroids
-    knn_ind, __, coors_centroid = emlib.generate_nn_cluster_centroid_list(coors = embs_wisconsin_3d, labels = labels, p = 2)
-
-    # Get centroid name
-    for i, __  in enumerate(labels_unique):
-        clusters[i]['name'] = nodes[knn_ind[i]]['name']
-
-    # Save cluster metadata
-    preamble = {
-        'model_id': '<int> unique model ID that is present in all related distribution files',
-        'id': '<int> unique ID for this cluster that is referenced by other files',
-        'ref': '<str> None',
-        'name': '<str> name of this cluster (taken as the name of the centroid node)',
-        'size': '<int> number of model nodes that were mapped to this cluster and its children',
-        'level': '<int> number of hops to reach the local root (`0` if root)',
-        'parent_id': '<int> ID of the parent of this cluster in the ontology',
-        'children_ids': '<array of int> unordered list of the child cluster IDs',
-        'node_ids': '<array of int> unordered list of IDs from model nodes in the membership of this cluster',
-        'node_ids_direct': '<array of int> node_ids but only model nodes which were directly mapped to this cluster and not any of the child categories',
-        'hyperedge_ids': '<array of int> unordered list of hyperedge IDs (see `hyperedges.jsonl`) that are within this cluster',
-    }
-    emlib.save_jsonl(clusters, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/clusters.jsonl', preamble = preamble)
-
-
-    # Generate cluster layout
-    clusterLayout = [{
-        'model_id': model_id,
-        'id': int(cluster_id),
-        'x': coors_centroid[k, 0],
-        'y': coors_centroid[k, 1],
-        'z': coors_centroid[k, 2],
-
-    } for k, cluster_id in enumerate(labels_unique)]
-
-    # Save cluster layout
-    preamble = {
-        "model_id": "<int> unique model ID that is present in all related distribution files", 
-        "id": "<int> unique node ID that is defined in `nodes.jsonl`", 
-        "x": "<float> position of the node in the graph layout", 
-        "y": "<float> position of the node in the graph layout", 
-        "z": "<float> position of the node in the graph layout"
-    }
-    emlib.save_jsonl(clusterLayout, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/clusterLayout.jsonl', preamble = preamble)
+    emlib.load_obj_to_s3(
+        obj = data, 
+        s3_url = s3_url, 
+        s3_bucket = s3_bucket, 
+        s3_path = f"{s3_path}/{x}.jsonl", 
+        preamble = emlib.get_obj_preamble(obj_type = x),
+        obj_key = x
+    )
 
 
 
-i = x = node = nodeLayout = nodeAtts = name = labels = labels_unique = clusters = clusterLayout = knn_ind = None
-del i, x, node, nodeLayout, nodeAtts, name, labels, labels_unique, clusters, clusterLayout, knn_ind
+# %%
+# %%time
+
+# model_id = None
+# x = ['doc', 'epi', 'emmaa', 'clusters']
+
+# # for labels, name in zip([labels_doc, labels_emmaa, labels_clusters[0]], x):
+# for labels, name in zip([labels_doc, labels_epi, labels_emmaa, labels_clusters_2d], x):
+
+#     # Ensure integer type in case of boolean labels
+#     labels = labels.astype('int')
+
+#     # Generate node lists
+#     nodes, nodeLayout, nodeAtts = emlib.generate_nodelist_bibjson(model_id = model_id, node_metadata = docs_wisconsin_reordered, node_coors = embs_wisconsin_2d, node_labels = labels)
+
+#     # Save node lists
+#     preamble = {
+#         'model_id': '<int> unique model ID that is present in all related distribution files',
+#         'id': '<int> unique node ID that is referenced by other files',
+#         'name': '<str> unique human-interpretable name of this node (from the `title` attribute in `metadata.csv`)',
+#         'db_refs': '<dict> database references of this node (`doi`, `pmcid`, `pubmed_id` attributes in `metadata.csv`)',
+#         'grounded': '<bool> whether this node is grounded to any database (`True` for all)',
+#         'edge_ids_source': '<list of int> ID of edges that have this node as a source',
+#         'edge_ids_target': '<list of int> ID of edges that have this node as a target',
+#         'out_degree': '<int> out-degree of this node',
+#         'in_degree': '<int> in-degree of this node' 
+#     }
+#     emlib.save_jsonl(nodes, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/nodes.jsonl', preamble = preamble)
+
+#     preamble = {
+#         'model_id': '<int> unique model ID that is present in all related distribution files',
+#         'id': '<int> unique node ID that is defined in `nodes.jsonl`',
+#         'x': '<float> position of the node in the graph layout',
+#         'y': '<float> position of the node in the graph layout',
+#         'z': '<float> position of the node in the graph layout'
+#     }
+#     emlib.save_jsonl(nodeLayout, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/nodeLayout.jsonl', preamble = preamble)
+
+#     preamble = {
+#         'model_id': '<int> unique model ID that is present in all related distribution files',
+#         'id': '<int> unique node ID that is defined in `nodes.jsonl`',
+#         'db_ref_priority': '<str> database reference from `db_refs` of `nodes.jsonl`, that is used by the INDRA ontology v1.5', 
+#         'grounded_onto': '<bool> whether this model node is grounded to something that exists within the ontology', 
+#         'ontocat_level': '<int> the level of the most fine-grained ontology node/category to which this model node was mapped (`-1` if not mappable, `0` if root)', 
+#         'ontocat_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)', 
+#         'grounded_cluster': '<bool> whether this model node is grounded to any cluster', 
+#         'cluster_level': '<int> the level of the most fine-grained cluster at which this model node was mapped (`-1` if not mappable, `0` if root)', 
+#         'cluster_ids': '<array of int> ordered list of ontological category IDs (see `ontocats.jsonl`) to which this node is mapped (order = root-to-leaf)' 
+#     }
+#     emlib.save_jsonl(nodeAtts, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/nodeAtts.jsonl', preamble = preamble)
 
 
-# time: 1 m 36 s
+#     # Generate cluster list
+#     labels_unique, labels_unique_counts = np.unique(labels, return_counts = True)
+#     labels_unique = labels_unique.astype('int')
+#     labels_unique_counts = labels_unique_counts.astype('int')
+
+#     clusters = [{
+#         'model_id': model_id,
+#         'id': int(cluster_id),
+#         'ref': None,
+#         'name': None,
+#         'size': int(cluster_size),
+#         'level': 0,
+#         'parent_id': None,
+#         'children_ids': None,
+#         'node_ids': [i for i, l in enumerate(labels) if l == cluster_id],
+#         'node_ids_direct': [i for i, l in enumerate(labels) if l == cluster_id],
+#         'hyperedge_ids': []
+#     } for cluster_id, cluster_size in zip(labels_unique, labels_unique_counts)]
+
+
+#     # Get centroids
+#     knn_ind, __, coors_centroid = emlib.generate_nn_cluster_centroid_list(coors = embs_wisconsin_2d, labels = labels, p = 2)
+
+#     # Get centroid name
+#     for i, __  in enumerate(labels_unique):
+#         clusters[i]['name'] = nodes[knn_ind[i]]['name']
+
+#     # Save cluster metadata
+#     preamble = {
+#         'model_id': '<int> unique model ID that is present in all related distribution files',
+#         'id': '<int> unique ID for this cluster that is referenced by other files',
+#         'ref': '<str> None',
+#         'name': '<str> name of this cluster (taken as the name of the centroid node)',
+#         'size': '<int> number of model nodes that were mapped to this cluster and its children',
+#         'level': '<int> number of hops to reach the local root (`0` if root)',
+#         'parent_id': '<int> ID of the parent of this cluster in the ontology',
+#         'children_ids': '<array of int> unordered list of the child cluster IDs',
+#         'node_ids': '<array of int> unordered list of IDs from model nodes in the membership of this cluster',
+#         'node_ids_direct': '<array of int> node_ids but only model nodes which were directly mapped to this cluster and not any of the child categories',
+#         'hyperedge_ids': '<array of int> unordered list of hyperedge IDs (see `hyperedges.jsonl`) that are within this cluster',
+#     }
+#     emlib.save_jsonl(clusters, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/clusters.jsonl', preamble = preamble)
+
+
+#     # Generate cluster layout
+#     clusterLayout = [{
+#         'model_id': model_id,
+#         'id': int(cluster_id),
+#         'x': coors_centroid[k, 0],
+#         'y': coors_centroid[k, 1],
+#         'z': 0.0,
+
+#     } for k, cluster_id in enumerate(labels_unique)]
+
+#     # Save cluster layout
+#     preamble = {
+#         "model_id": "<int> unique model ID that is present in all related distribution files", 
+#         "id": "<int> unique node ID that is defined in `nodes.jsonl`", 
+#         "x": "<float> position of the node in the graph layout", 
+#         "y": "<float> position of the node in the graph layout", 
+#         "z": "<float> position of the node in the graph layout"
+#     }
+#     emlib.save_jsonl(clusterLayout, './dist/wisconsin/xdd-covid-19-8Dec-doc2vec/' + name + '/clusterLayout.jsonl', preamble = preamble)
+
+
+
+# i = x = node = nodeLayout = nodeAtts = name = labels = labels_unique = clusters = clusterLayout = knn_ind = None
+# del i, x, node, nodeLayout, nodeAtts, name, labels, labels_unique, clusters, clusterLayout, knn_ind
+
+
+# # time: 1 m 36 s
 
 
 # %%
