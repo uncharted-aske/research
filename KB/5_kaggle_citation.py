@@ -303,6 +303,7 @@ if False:
 %%time
 
 model_umap = umap.UMAP(n_components = 2, n_neighbors = 7, min_dist = 0.2, metric = 'minkowski', metric_kwds = {'p': 2.0/3.0}, random_state = 0)
+# model_umap = umap.UMAP(n_components = 2, n_neighbors = 100, min_dist = 0.2, metric = 'cosine', random_state = 0)
 
 embs_red = model_umap.fit_transform(embs)
 embs_red = embs_red - np.mean(embs_red, axis = 0)
@@ -333,10 +334,10 @@ __ = emlib.plot_emb(
         marker_size = 1.0, marker_alpha = 0.2, 
         legend_kwargs = {}, colorbar = False, 
         str_title = 'Dimensionally Reduced SPECTER Embeddings of the Kaggle CORD-19 Dataset', ax = ax)
-# __ = emlib.plot_emb(coor = embs_red, cmap_name = 'qual', marker_size = 0.5, marker_alpha = 0.01, legend_kwargs = {}, colorbar = False, str_title = 'Dimensionally Reduced SPECTER Embeddings of the Kaggle CORD-19 Dataset', ax = ax)
 __ = plt.setp(ax, xlabel = 'x', ylabel = 'y', )
 
 fig.savefig(dist_dir + 'embeddings_umap.png', dpi = 150)
+# fig.savefig(dist_dir + 'embeddings_umapCosine.png', dpi = 150)
 
 fig = ax = None
 del fig, ax
