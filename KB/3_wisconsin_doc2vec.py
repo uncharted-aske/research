@@ -508,19 +508,87 @@ __ = emlib.plot_emb(coor = embs_wisconsin_2d, labels = np.array([1 if i in k els
 , cmap_name = 'qual', legend_kwargs = {}, colorbar = False, marker_size = 20)
 
 
-# %%[markdown]
-
-
 # %%
 # Check if these xddids match with those from `docs_wisconsin`
-
-
 [i for i, j in zip(docs_wisconsin_xddids, x) if i != j]
 
+# %%[markdown]
+# # Test AlignedUMAP
+
+# %%
+%%time
+
+N = 9
+num_docs = embs_wisconsin.shape[0]
+min_dist = np.linspace(0.01, 0.5, N)
+constant_relations = [{i:i for i in range(num_docs)} for i in range(N - 1)]
+
+M = 5000
+mask = np.random.randint(0, num_docs, M)
+
+X = umap.AlignedUMAP(
+    n_neighbors = 10,
+    min_dist = min_dist,
+    alignment_window_size = 2,
+    alignment_regularisation = 1e-3
+).fit([embs_wisconsin[mask, :] for __ in range(N)], relations = constant_relations)
+
+# %%
+from IPython.display import display, Image, HTML
+from matplotlib import animation
+import scipy as sp
+import pandas as pd
+
+def axis_bounds(embedding):
+    left, right = embedding.T[0].min(), embedding.T[0].max()
+    bottom, top = embedding.T[1].min(), embedding.T[1].max()
+    adj_h, adj_v = (right - left) * 0.1, (top - bottom) * 0.1
+    return [left - adj_h, right + adj_h, bottom - adj_v, top + adj_v]
+
+# %%
 
 
+ax_bound = axis_bounds(np.vstack(X.embeddings_))
+
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
+h = ax.scatter([], [], s = 2)
+text = ax.text(ax_bound[0] + 0.5, ax_bound[2] + 0.5, '')
+__ = plt.setp(h, array = labels_[:, 0], cmap = 'Spectral', )
+__ = plt.setp(ax, xticks = [], yticks = [])
 
 
+n_embeddings = len(X.embeddings_)
+es = X.embeddings_
+embedding_df = pd.DataFrame(np.vstack(es), columns=('x', 'y'))
+embedding_df['z'] = np.repeat(np.linspace(0, 1.0, n_embeddings), es[0].shape[0])
+embedding_df['id'] = np.tile(np.arange(es[0].shape[0]), n_embeddings)
+embedding_df['digit'] = np.tile(labels_[:, 0], n_embeddings)
+fx = sp.interpolate.interp1d(
+    embedding_df.z[embedding_df.id == 0], embedding_df.x.values.reshape(n_embeddings, labels_[:, 0].shape[0]).T, kind="cubic"
+)
+fy = sp.interpolate.interp1d(
+    embedding_df.z[embedding_df.id == 0], embedding_df.y.values.reshape(n_embeddings, labels_[:, 0].shape[0]).T, kind="cubic"
+)
+z = np.linspace(0, 1.0, 100)
+interpolated_traces = [fx(z), fy(z)]
 
+offsets = np.array(interpolated_traces).T
+num_frames = offsets.shape[0]
 
+def animate(i):
+    h.set_offsets(offsets[i])
+    text.set_text(f'Frame {i}')
+    return scat
 
+anim = animation.FuncAnimation(
+    fig,
+    init_func = None,
+    func = animate,
+    frames = num_frames,
+    interval = 40)
+
+anim.save('aligned_umap_anim.gif', writer = 'pillow')
+plt.close(anim._fig)
+
+with open('aligned_umap_anim.gif', 'rb') as f:
+    display(Image(f.read()))
