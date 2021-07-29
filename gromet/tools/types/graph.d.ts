@@ -8,6 +8,7 @@ interface NodeSpec {
     parent: string | null;
     nodeSubType: string[];
     metadata: any;
+    var_metadata: any[];
 }
 
 interface EdgeSpec {

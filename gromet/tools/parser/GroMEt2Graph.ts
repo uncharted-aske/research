@@ -13,12 +13,13 @@ import PortCall = GroMEt.PortCall;
 import Relation = GroMEt.Relation;
 import Junction = GroMEt.Junction;
 import Gromet = GroMEt.Gromet;
-import {GroMEtMap} from './GroMEtMap.ts';
 import ModelInterface = GroMEt.ModelInterface;
+import {GroMEtMap} from './GroMEtMap.ts';
 
 export class GroMEt2Graph extends GroMEtMap {
     private idStack: number[] = [];
     private roleMap: Map<string, Set<string>> = new Map();
+    private varMetaMap: Map<string, any[]> = new Map();
     private idMap: Map<string, number> = new Map();
     private uniqueID: number = 0;
 
@@ -30,6 +31,7 @@ export class GroMEt2Graph extends GroMEtMap {
     private constructor(gromet: Gromet) {
         super(gromet);
         this.processMetadata();
+        this.processVariables();
     }
 
     private processMetadataReferences(ids: string[], setName: string): void {
@@ -64,6 +66,21 @@ export class GroMEt2Graph extends GroMEtMap {
         }
     }
 
+    private processVariables(): void {
+        if (this.vars) {
+            for (const variable of this.vars.values()) {
+                for (const stateID of variable.states) {
+                    const varMetaArr = this.varMetaMap.get(stateID);
+                    if (varMetaArr) {
+                        varMetaArr.push(variable.metadata);
+                    } else {
+                        this.varMetaMap.set(stateID, [variable.metadata]);
+                    }
+                }
+            }
+        }
+    }
+
     private getElementRoles(id: string): string[] {
         const result = [];
 
@@ -80,6 +97,10 @@ export class GroMEt2Graph extends GroMEtMap {
         }
 
         return result;
+    }
+
+    private getVariableMetadata(id: string): any[] {
+        return this.varMetaMap.get(id) || [];
     }
 
     private toGraph(): GraphSpec {
@@ -132,6 +153,7 @@ export class GroMEt2Graph extends GroMEtMap {
             parent: parent,
             nodeSubType: [ box.syntax ],
             metadata: box.metadata,
+            var_metadata: this.getVariableMetadata(box.uid),
         };
         graph.nodes.push(node);
 
@@ -180,6 +202,7 @@ export class GroMEt2Graph extends GroMEtMap {
             parent: parent,
             nodeSubType: [ port.type || port.syntax ],
             metadata: port.metadata,
+            var_metadata: this.getVariableMetadata(port.uid),
         };
         graph.nodes.push(node);
     }
@@ -252,6 +275,7 @@ export class GroMEt2Graph extends GroMEtMap {
                     parent: parent,
                     nodeSubType: [exp.syntax],
                     metadata: null, // exp,
+                    var_metadata: [], // can't have a variable?
                 }
                 graph.nodes.push(node);
 
@@ -292,6 +316,7 @@ export class GroMEt2Graph extends GroMEtMap {
             parent: parent,
             nodeSubType: [literal.syntax],
             metadata: literal.metadata,
+            var_metadata: literal.uid ? this.getVariableMetadata(literal.uid) : [],
         }
         graph.nodes.push(node);
         graph.edges.push({
@@ -341,6 +366,7 @@ export class GroMEt2Graph extends GroMEtMap {
             parent: parent,
             nodeSubType: [ junction.type || junction.syntax ],
             metadata: junction.metadata,
+            var_metadata: this.getVariableMetadata(junction.uid),
         };
         graph.nodes.push(node);
     }
