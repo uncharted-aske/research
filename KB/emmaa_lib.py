@@ -8,6 +8,7 @@
 
 import sys
 import os
+import errno
 # from time import time
 import pathlib
 from networkx.algorithms.centrality.degree_alg import out_degree_centrality
@@ -27,6 +28,15 @@ import sklearn as skl
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 # from mpl_toolkits.mplot3d import Axes3D
+
+
+from tqdm import tqdm
+
+from typing import Dict, List, Tuple, Set, Union, Optional, NoReturn, Any
+
+from io import StringIO
+import boto3
+from botocore.client import Config
 
 
 # %%
@@ -1856,3 +1866,711 @@ def generate_nodelist_bibjson(model_id = -1, node_metadata = [], node_coors = []
                 
     return nodes, nodeLayout, nodeAtts
 
+
+# %%
+# Transform object IDs (local <-> global)
+def transform_obj_ids(obj: Union[Dict, int], obj_type: str, obj_id_key: str = 'id', num_bits_global: int = 32, num_bits_namespace: int = 4, reverse: bool = False) -> Union[Dict, int]:
+
+    # Number of bits for the local ID
+    num_bits_local = num_bits_global - num_bits_namespace
+
+
+    # Local ID -> globally unique ID
+    if reverse == False:
+
+        # Object type -> namespace ID
+        obj_types = ('models', 'tests', 'paths', 'edges', 'evidences', 'docs', 'nodes', 'groups')
+        map_type_namespace = {t: i for i, t in enumerate(obj_types)}
+        id_namespace = map_type_namespace[obj_type]
+
+
+        if isinstance(obj, dict):
+            id_local = obj[obj_id_key]
+            id_global = (id_namespace << num_bits_local) | id_local
+            obj[obj_id_key] = id_global
+        
+        elif isinstance(obj, int):
+            id_local = obj
+            id_global = (id_namespace << num_bits_local) | id_local
+            obj = id_global
+
+
+    # globally unique ID -> local ID
+    else:
+
+        if isinstance(obj, dict):
+            id_global = obj[obj_id_key]
+
+        elif isinstance(obj, int):
+            id_global = obj
+
+
+        # a = 0xf0000000
+        a = int((1.0 - 2.0 ** num_bits_namespace) / (1.0 - 2.0)) << num_bits_local
+        id_namespace = (id_global & a) >> num_bits_local
+
+
+        # b = 0x0fffffff
+        b = int(2.0 ** num_bits_local - 1.0)
+        id_local = (id_global & b)
+
+
+        if isinstance(obj, dict):
+            obj[obj_id_key] = id_local
+        
+        elif isinstance(obj, int):
+            obj = id_local
+
+
+    return obj
+
+
+# %%
+# Get the preamble of a given object type
+def get_obj_preamble(obj_type: str) -> Dict:
+
+    preamble = {}
+    obj_types_valid = ('models', 'tests', 'paths', 'edges', 'evidences', 'docs', 'docLayout', 'nodes', 'nodeLayout', 'nodeAtts', 'groups', 'groupLayout')
+    if obj_type not in obj_types_valid:
+        raise ValueError(f'`{obj_type}` is not a valid object type.')
+
+
+    if obj_type == 'models':
+    
+        preamble = {
+            'id': '<int> ID of this model',
+            'id_emmaa': '<str> EMMAA ID of this model, necessary for making requests on the EMMAA API',
+            'name': '<str> Human-readable name of this model',
+            'description': '<str> Human-readable description of this model',
+            'test_ids': '<list of ints> list ofIDs of the tests against which this model has been tested by EMMAA',
+            'snapshot_time': '<str> Date and UTC time (ISO 8601 format) at which the model data (statements, etc.) is requested on the EMMAA API'
+        }
+
+
+    if obj_type == 'tests':
+
+        preamble = {
+            'id': '<int> ID of this test (corpus)',
+            'id_emmaa': '<str> EMMAA ID of this test, necessary for making requests on the EMMAA API',
+            'name': '<str> Human-readable name of this test',
+            'model_ids': '<list of ints> list ofIDs of the models that have been tested against this test by EMMAA',
+            'snapshot_time': '<str> Date and UTC time (ISO 8601 format) at which the model data (statements, etc.) is requested on the EMMAA API'
+        }
+
+
+    if obj_type == 'paths':
+
+        preamble = {
+            'id': '<int> ID of this (test or explanatory) path',
+            'model_id': '<int> ID of the associated model',
+            'test_id': '<int> ID of the associated test (corpus)',
+            'test_statement_id': '<str> EMMAA ID of the test statement that this path explains',
+            'type': '<str> type of this path (`unsigned_graph`, `signed_graph`, `pybel`, etc.)',
+            'edge_ids': '<int> List of IDs of the edges in this path',
+            'node_ids': '<int> List of IDs of the nodes in this path'
+        }
+
+
+    if obj_type == 'edges':
+
+        preamble = {
+            'id': '<int> ID of this edge',
+            'model_id': '<int> ID of the associated model',
+            'statement_id': '<str> EMMAA ID or `matches_hash` of the INDRA statement from which this edge is derived',
+            'statement_type': '<str> type of the source statement',
+            'belief': '<float> belief score of the source statement',
+            'evidence_ids': '<list of ints> list of IDs of the evidences that support the source statement',
+            'doc_ids': '<list of ints> list of IDs of the docs that support the source statement',
+            'source_node_id': '<int> ID of the source node',
+            'target_node_id': '<int> ID of the target node',
+            'tested': '<bool> test status of the source statement according to `paths`',
+            'test_path_ids': '<list of ints> list of IDs of (test/explanatory) paths that reference this edge',
+            'curated': '<int> curation status of the source statement',
+            'directed': '<bool> whether this edge is directed or not (`True` = directed, `False` = undirected)',
+            'polarity': '<bool> prescribed polarity of this edge (`True` = positive, `False` = negative, `None` = undefined)'
+        }
+
+
+    if obj_type == 'evidences':
+
+        preamble = {
+            'id': '<int> ID of this evidence',
+            'model_id': '<int> ID of the associated model',
+            'text': '<str> plain text of this evidence',
+        }
+
+
+    if obj_type == 'docs':
+
+        preamble = {
+            'id': '<int> ID of this doc',
+            'model_id': '<int> ID of the associated model',
+            'evidence_ids': '<list of ints> list ofIDs of the evidences that references this doc',
+            'edge_ids': '<list of ints> list ofIDs of the edges that references this doc',
+            'identifier': '<list of dicts> list ofexternal doc IDs (dict keys = `type`, `id`)',
+        }
+
+
+    if obj_type == 'docLayout':
+
+        preamble = {
+            'doc_id': '<int> ID of the associated doc',
+            'coor_sys_name': '<str> name of the coordinate system (`cartesian`, `spherical`)',
+            'coors': '<list of floats> list ofcoordinate values of this doc layout',
+        }
+
+
+    if obj_type == 'nodes':
+
+        preamble = {
+            'id': '<int> ID of this node',
+            'model_id': '<int> ID of the associated model',
+            'name': '<str> human-readable name of this node',
+            'grounded_db': '<bool> whether this node is grounded to any database',
+            'db_ids': '<list of strs> list of database `namespace:id` strings, sorted by priority in descending order',
+            'edge_ids_source': '<list of ints> list of IDs of the edges to which this node is the source',
+            'edge_ids_target': '<list of ints> list of IDs of the edges to which this node is the target',
+            'out_degree': '<int> out-degree of this node (length of `edge_ids_source`)', 
+            'in_degree': '<int> in-degree of this node (length of `edge_ids_target`)'
+        }
+
+
+    if obj_type == 'nodeLayout':
+
+        preamble = {
+            'node_id': '<int> ID of the node',
+            'coor_sys_name': '<str> name of the coordinate system (`cartesian`, `spherical`)',
+            'coors': '<list of floats> list of coordinate values of this node layout',
+        }
+
+    if obj_type == 'nodeAtts':
+
+        preamble = {
+            'node_id': '<int> ID of the node',
+            # 'db_ref_priority': '<str>',
+            'grounded_group': '<bool> whether this node is grounded to the given ontology',
+            'type': '<str> `name` of the ancestor ontological group of this node',
+            'group_ids': 'ordered list of IDs of the ontological groups to which database grounding of the node is mapped (order = ancestor-to-parent)',
+            # 'group_refs': '<list of strs>',
+            'node_group_level': '<int> length of the shortest path from the parent ontological group of the node to the ancestor group, plus one',
+            'extras': '<dict> extra attributes' 
+        }
+
+
+    if obj_type == 'groups':
+
+        preamble = {
+            'id': '<int> ID of this group',
+            'id_onto': '<str> ID of this group within the given ontology (format = `namespace:id`)',
+            'name': '<str> human-readable name of this group',
+            'level': '<int> length of the shortest path from this group to the ancestor group',
+            'parent_id': '<int> ID of other groups in the ontology that are the immediate parent of this group',
+            'children_ids': '<list of ints> List of IDs of other groups in the ontology that are the immediate children of this group',
+            'model_id': '<int> ID of the associated model',
+            'node_ids_all': '<list of ints> List of IDs of the model nodes that are grounded to this group and all its children',
+            'node_ids_direct': '<list of ints> List of IDs of the model nodes that are directly grounded to this group (i.e. excluding its children)',
+            'node_id_centroid': '<int> ID of the model node that is nearest to the median-centroid of this group'
+        }
+
+
+    if obj_type == 'groupLayout':
+
+        preamble = {
+            'node_id': '<int> ID of the group',
+            'coor_sys_name': '<str> name of the coordinate system (`cartesian`, `spherical`)',
+            'coors': '<list of floats> list of coordinate values of this group layout',
+        }
+
+
+    return preamble
+
+# %%
+# Generate nearest-neighbour median-centroid list from a set of coordinates and cluster labels
+def generate_nn_cluster_centroid_list(coors: Any, labels: Any, p: Union[int, float] = 2) -> Tuple:
+
+    # Error handling
+    if not isinstance(coors, np.ndarray):
+        raise TypeError("'coors' must be an numpy ndarray.")
+
+    # if (not isinstance(labels, np.ndarray)) | (len(labels) not in [0, coors.shape[0]]): 
+    #     raise TypeError("'labels' must be a N x 1 numpy ndarrray.")
+
+
+    # Dimensions
+    num_coors, num_dim = coors.shape
+
+
+    # Assume no label = identically zeros
+    if len(labels) == 0:
+        labels = np.zeros((num_coors, ))
+
+    labels_unique = np.unique(labels)
+    num_unique = len(labels_unique)
+
+
+    # Calculate centroid coordinates
+    coors_centroid = np.empty((num_unique, num_dim))
+    for i in range(num_unique):
+        coors_centroid[i, :] = np.nanmedian(coors[labels == labels_unique[i], :], axis = 0)
+
+
+    # Choose kNN metric
+    if isinstance(p, int) & (p >= 1):
+        knn = skl.neighbors.NearestNeighbors(n_neighbors = 1, metric = 'minkowski', p = p)
+
+    else:
+
+        # Define custom Minkowski distance function to enable non-integer `p`
+        @numba.njit
+        def minkowski_distance(u, v, p):
+            return (np.abs(u - v) ** p).sum() ** (1.0 / p)
+
+        knn = skl.neighbors.NearestNeighbors(n_neighbors = 2, metric = lambda u, v: minkowski_distance(u, v, p = p))
+    
+    
+    # Find index of k-nearest neighbour to the cluster centroids
+    knn_ind = np.empty((num_unique, ), dtype = np.int)
+    for i in range(num_unique):
+
+        knn.fit(coors[labels == labels_unique[i], :])
+        k = knn.kneighbors(coors_centroid[i, :].reshape(1, -1), return_distance = False)
+        k = k.item()
+
+        # Convert to global index
+        knn_ind[i] = np.flatnonzero(labels == labels_unique[i])[k].astype('int')
+
+
+    return (knn_ind, labels_unique, coors_centroid)
+
+
+# %%
+# Calculate minimum spanning tree and distances from given clusters
+def calc_mstree_dist(X: Any, labels: Any = [], metric: str = 'euclidean', plot_opt: bool = False, plot_opt_hist: bool = False, ax: Any = []) -> Any:
+
+    # Error handling
+    if not isinstance(X, np.ndarray):
+        raise TypeError("'coor' must be an numpy ndarray.")
+    # if (len(labels) > 1) and (not isinstance(labels, np.ndarray)):
+    #     raise TypeError("'labels' must be an numpy ndarrray.")
+    
+    # Label clusters if not given
+    if len(labels) < 1:
+        labels = np.zeros((X.shape[0], ), dtype = np.int8)
+    
+
+    # Unique cluster labels
+    labels_uniq = np.unique(labels)
+    n_labels_uniq = labels_uniq.size
+
+
+    # If boolean labels, only keep `True` labels
+    if isinstance(labels_uniq[0], np.bool_):
+        labels_uniq = np.array([True])
+        n_labels_uniq = 1
+
+
+    # Get pairwise distances from cluster-specific minimum spanning tree
+    mstree = []
+    mstree_dist_uniq = []
+    for i, l in enumerate(labels_uniq):
+
+        # Filter by cluster
+        ind = (labels == l)
+
+        # Run HDBSCAN to generate the minimum spanning tree
+        mstree.append(hdbscan.HDBSCAN(metric = metric, gen_min_span_tree = True).fit(X[ind, :]).minimum_spanning_tree_.to_numpy())
+
+        # Get the pairwise distances
+        mstree_dist_uniq.append(mstree[i][:, 2])
+
+
+    # Plot for debugging
+    if plot_opt == True:
+
+        # Colormap
+        col = np.asarray([plt.cm.get_cmap('tab10')(i) for i in range(10)])
+        col[:, 3] = 1.0
+
+        # Plot figure
+        if type(ax).__name__ != 'AxesSubplot':
+            if plot_opt_hist == True:
+                fig, ax = plt.subplots(figsize = (12, 6), nrows = 1, ncols = 2)
+                ax_ = ax[0]
+            else:
+                fig, ax = plt.subplots(figsize = (6, 6), nrows = 1, ncols = 1)
+                ax_ = ax
+        else:
+            fig = plt.getp(ax, 'figure')
+        
+
+        # Plot mstree for each labelled set of vertices
+        for i, l in enumerate(labels_uniq):
+
+            # Filter by cluster
+            ind = (labels == l)
+
+            for j, k, __ in mstree[i]:
+
+                x = [X[ind, :][int(j), 0], X[ind, :][int(k), 0]]
+                y = [X[ind, :][int(j), 1], X[ind, :][int(k), 1]]
+
+                __ = ax_.plot(x, y, color = col[i % 10, :3])
+                    
+        plt.setp(ax_, title = 'Minimum Spanning Tree', xlabel = '$x$', ylabel = '$y$', aspect = 1.0)
+
+        # Square axes
+        xlim = plt.getp(ax_, 'xlim')
+        ylim = plt.getp(ax_, 'ylim')
+        dx = 0.5 * (xlim[1] - xlim[0])
+        dy = 0.5 * (ylim[1] - ylim[0])
+        if dy > dx:
+            xlim = tuple(np.mean(xlim) + (-dy, dy))
+            plt.setp(ax_, xlim = xlim)
+        elif dx > dy:
+            ylim = tuple(np.mean(ylim) + (-dx, dx))
+            plt.setp(ax_, ylim = ylim)
+
+
+        # Plot histogram
+        if plot_opt_hist == True:
+            
+            m = max([max(l) for l in mstree_dist_uniq])
+            z = np.linspace(0, m, 101)
+
+            for i, l in enumerate(mstree_dist_uniq):
+                
+                # Calculate and plot histogram
+                y = np.histogram(l, bins = z, density = True)[0] * (z[1] - z[0])
+                h = ax[1].plot(z[:-1], y, color = col[i % 10, :3], label = f'{labels_uniq[i]}')
+
+                # min, median, max
+                min_dist = min(l)
+                median_dist = np.median(l)
+                max_dist = max(l)
+                n = 0.5 * max(y)
+                __ = ax[1].plot([min_dist, median_dist, max_dist], [n, n, n], color = plt.getp(h[0], 'color'), marker = 'o', markerfacecolor = 'w')
+
+            __ = plt.setp(ax[1], xlabel = 'Pairwise Distance', ylabel = 'PMF', title = f'Histogram of Pairwise Distances')
+
+            if n_labels_uniq > 1:
+                __ = ax[1].legend()
+
+    return mstree_dist_uniq, mstree
+
+# %%
+# Generate edge list from the bibliographical entries
+def generate_kaggle_edgelist(docs: List, nodes: List) -> Tuple:
+
+    # Checks
+    if (not isinstance(docs, list)) | (not isinstance(nodes, list)):
+        raise TypeError("'docs' and 'nodes' must be numpy ndarrays.")
+
+    if len(docs) != len(nodes):
+        raise ValueError("'docs' and 'nodes' must have the same number of elements.")
+    
+
+    # Map CORD UIDs to node IDs
+    map_uids_ids = {node['db_ids'][0]['cord_uid']: node['id'] for node in nodes}
+
+
+    # Add one directed edge for each bibliographical entry of each docs
+    edges = [
+        {
+            'id': None,
+            'model_id': nodes[0]['model_id'],
+            'statement_id': None,
+            'statement_type': None,
+            'belief': None,
+            'evidence_ids': None,
+            'doc_ids': None,
+            'source_node_id': map_uids_ids[doc['cord_uid']],
+            'target_node_id': map_uids_ids[bib_entry],
+            'tested': None,
+            'test_path_ids': None,
+            'curated': None,
+            'directed': True,
+            'polarity': None
+        } for doc in tqdm(docs) if doc['cord_uid'] in map_uids_ids.keys() for bib_entry in doc['bib_entries'] if bib_entry in map_uids_ids.keys()]
+
+
+    print(f"Number of nodes: {len(nodes)}")
+    print(f"Number of edges: {len(edges)}")
+
+
+    # Create global node IDs
+    for i, edge in enumerate(edges):
+        edge['id'] = i
+    edges = [transform_obj_ids(edge, obj_type = 'edges') for edge in edges]
+
+
+    # Update 'nodes' with edge lists
+    map_ids_inds = {node['id']: i for i, node in enumerate(nodes)}
+
+    for edge in tqdm(edges):
+        nodes[map_ids_inds[edge['source_node_id']]]['edge_ids_source'].append(edge['id'])
+        nodes[map_ids_inds[edge['target_node_id']]]['edge_ids_target'].append(edge['id'])
+
+    for node in tqdm(nodes):
+        node['out_degree'] = len(node['edge_ids_source'])
+        node['in_degree'] = len(node['edge_ids_target'])
+
+
+    return (edges, nodes)
+
+
+# %%
+# Generate node, node-attribute, node-layout lists from a set of metadata, coordinates, labels
+def generate_kaggle_nodelist(docs: List, embs: Any, labels: Any, model_id: int = 0, print_opt: bool = False) -> Tuple:
+
+    # Check sizes
+    if (not isinstance(embs, np.ndarray)) | (not isinstance(labels, np.ndarray)):
+        raise TypeError("'embs' and 'labels' must be numpy ndarrays.")
+
+    if (len(docs) != embs.shape[0]) | (len(docs) != labels.shape[0]):
+        raise ValueError("'docs', 'embs', and 'labels' must have the same number of elements.")
+
+
+    # Get number of nodes and epsilon values
+    num_nodes = len(docs)
+    num_eps = labels.shape[1]
+
+
+    if num_nodes == 0:
+
+        nodes = []
+        nodeLayout = []
+        nodeAtts = []
+        groups = []
+
+
+    else:
+
+        # Initialize the node list
+        nodes = [{
+            'id': i,
+            'model_id': model_id,
+            'name': doc['title'],
+            'grounded_db': True,
+            'db_ids': [
+                {k: doc[k]}
+            for k in ('cord_uid', 'doi', 'pmcid', 'pubmed_id', 'mag_id', 'who_covidence_id', 'arxiv_id') if k in doc.keys() if doc[k] != ''],
+            'edge_ids_source': [],
+            'edge_ids_target': [],
+            'out_degree': 0,
+            'in_degree': 0
+        } for i, doc in enumerate(docs)]
+
+
+        # Create global node IDs
+        nodes = [transform_obj_ids(node, obj_type = 'nodes') for node in nodes]
+
+
+        # Generate node-layout list
+        nodeLayout = [{
+            'node_id': node['id'],
+            'coor_sys_name': 'cartesian',
+            'coors': [float(x) for x in embs[i, :3]]
+        } for i, node in enumerate(nodes)]
+
+
+        # Generate node-attribute list
+        nodeAtts = [{
+            'node_id': node['id'],
+            'grounded_group': None,
+            'type': None,
+            'group_ids': None,
+            'node_group_level': None,
+            'extras': {}
+        } for __, node in enumerate(nodes)]
+
+
+        # Get node bibjson data
+        for node, atts, doc in zip(nodes, nodeAtts, docs):
+
+            atts['extras']['bibjson'] = {
+                'title': doc['title'],
+                'author': [{'name': name} for name in doc['authors'].split(';')],
+                'type': 'article',
+                'year': doc['publish_time'].split('-')[0],
+                # 'month': doc['publish_time'].split('-')[1],
+                # 'day': doc['publish_time'].split('-')[2],
+                'journal': doc['journal'],
+                'link': [{'url': doc['url']}],
+                'identifier': [{'type': k, 'id': v} for d in node['db_ids'] for k, v in d.items()],
+                # 'abstract': doc['abstract']
+            }
+
+
+        # Create global group IDs from labels
+        m = np.cumsum(np.insert(np.max(labels, axis = 0)[:-1], 0, 0))
+        labels_ = labels + m
+        labels_[labels == -1] = -1
+        labels_ids = np.array([[transform_obj_ids(int(i), obj_type = 'groups') if i != -1 else -1 for i in l] for l in labels_])
+
+
+        for i, node in tqdm(enumerate(nodeAtts), total = num_nodes):
+
+            j = np.argwhere(labels[i, :] != -1).flatten()
+
+            if len(j) > 0:
+                node['grounded_group'] = True
+                node['group_ids'] = [int(l) for l in labels_ids[i, labels_ids[i, :] != -1]]
+                node['node_group_level'] = int(j[-1] + 1)
+      
+            else:
+                node['grounded_group'] = False
+                node['groupd_ids'] = None
+                node['node_group_level'] = None
+
+
+        # Generate group membership list
+        map_nodes_ids = {i: node['id'] for i, node in enumerate(nodes)}
+        map_groups_nodes = {group_id: [] for row in labels_ids for group_id in row if group_id != -1}
+        for i in tqdm(range(num_nodes)):
+            for j in range(num_eps):
+                group_id = labels_ids[i, j]
+                if group_id != -1:
+                    map_groups_nodes[group_id].append(map_nodes_ids[i])
+                    # map_groups_nodes[group_id] = map_groups_nodes[group_id] | set([map_nodes_ids[i]])
+
+
+        # Generatet group-level list
+        map_groups_levels = {group_id: j for row in labels_ids for j, group_id in enumerate(row) if group_id != -1}
+
+
+        # Generate group-parent list
+        map_groups_parent = {group_id: row[j - 1] if j > 0 else None for row in labels_ids for j, group_id in enumerate(row) if group_id != -1}
+        map_groups_children = {group_id: [] for row in labels_ids for group_id in row if group_id != -1}
+        for i in tqdm(range(num_nodes)):
+            for j in range(num_eps - 1):
+                group_id = labels_ids[i, j]
+                if group_id != -1:
+                    map_groups_children[group_id].extend(labels_ids[i, (j + 1):])
+                    # map_groups_children[group_id] = map_groups_children[group_id] | set(labels_ids[i, (j + 1):])
+
+
+        # Generate group list
+        groups = [{
+            'id': int(group_id),
+            'id_onto': None,
+            'name': None,
+            'level': (lambda x: int(x) if x != None else None)(map_groups_levels[group_id]),
+            'parent_id': (lambda x: int(x) if x != None else None)(map_groups_parent[group_id]),
+            'children_ids': [int(i) for i in sorted(list(set(map_groups_children[group_id]))) if i != -1],
+            'model_id': model_id,
+            'node_ids_all': [int(i) for i in sorted(list(set(map_groups_nodes[group_id])))],
+            'node_ids_direct': [int(i) for i in sorted(list(set(map_groups_nodes[group_id])))],
+            'node_id_centroid': None,
+        } for group_id in sorted(map_groups_nodes.keys())]
+
+
+        # # Node IDs of children groups (redundant since nodes are assigned to multiple groups)
+        # for group in groups:
+
+        #     # group['node_ids_all'] = [int(i) for group_id in group['children_ids'] if group_id != -1 for i in sorted(map_groups_nodes[group_id])]
+
+        #     group['node_ids_all'] = [int(i) for i in sorted(map_groups_nodes[group_id])]
+
+        #     group['node_ids_all'].extend([int(i) for group_id in group['children_ids'] if group_id != -1 for i in map_groups_nodes[group_id]])
+
+
+        # Calculate kNN median centroid of each group
+        map_ids_nodes = {node['id']: i for i, node in enumerate(nodes)}
+        for group in tqdm(groups):
+            
+            coors = embs[np.array([map_ids_nodes[i] for i in group['node_ids_all']]), :]
+
+            i, __, __ = generate_nn_cluster_centroid_list(coors = coors, labels = [])
+
+            group['node_id_centroid'] = group['node_ids_all'][i.item()]
+            group['name'] = nodes[map_ids_nodes[group['node_ids_all'][i.item()]]]['name']
+
+    
+    if print_opt == True:
+
+        print(f"{len(nodes)} nodes and {len(groups)} groups.")
+
+
+    return nodes, nodeLayout, nodeAtts, groups
+
+# %%
+# Load object to S3 bucket
+def load_obj_to_s3(obj: Union[List, Dict], s3_url: str, s3_bucket: str, s3_path: str, preamble: Optional[Dict] = None, obj_key: Optional[str] = None, print_opt: bool = False) -> NoReturn:
+
+
+    # Pick out sub-object by key
+    if isinstance(obj, dict) & (obj_key != None):
+        obj = obj[obj_key]
+
+
+    # Serialize `obj`
+    with StringIO() as fp:
+
+        # `obj` is type `dict`
+        if isinstance(obj, dict):
+
+            # Only include keys specified by preamble
+            if preamble != None:
+                # obj_ = {k: v for k, v in obj.items() if k in preamble.keys()}
+                obj_ = {k: obj[k] if k in obj.keys() else None for k in preamble.keys() if k in preamble.keys()}
+
+            else:
+                obj_ = obj
+
+
+            json.dump(obj_, fp)
+
+
+        # `obj` is type `list` of `dict`
+        if isinstance(obj, list):
+
+            # Include preamble if available
+            if preamble != None:
+                json.dump(preamble, fp)
+                fp.write('\n')
+
+
+            # Do for each 
+            for item in obj:
+
+                # Only include keys specified by preamble
+                if preamble != None:
+                    # item_ = {k: v for k, v in item.items() if k in preamble.keys()}
+                    item_ = {k: item[k] if k in item.keys() else None for k in preamble.keys()}
+
+                else:
+                    item_ = item
+
+
+                json.dump(item_, fp)
+                fp.write('\n')
+
+
+        # Load file onto S3 bucket
+        try:
+
+            # Define S3 interface
+            s3_resource = boto3.resource(
+                's3', 
+                endpoint_url = s3_url, 
+                config = Config(signature_version = 's3v4'), 
+                region_name = 'us-east-1',
+                aws_access_key_id = 'foobar',
+                aws_secret_access_key = 'foobarbaz',
+            )
+            # aws_access_key_id = Secret('AWS_CREDENTIALS').get()['ACCESS_KEY']
+            # aws_secret_access_key = Secret('AWS_CREDENTIALS').get()['SECRET_ACCESS_KEY']
+
+
+            s3_resource.Object(s3_bucket, s3_path).put(Body = fp.getvalue())
+
+
+            if print_opt == True:
+                print(f'S3 request: {s3_url}/{s3_bucket}/{s3_path}')
+
+        except:
+
+            if print_opt == True:
+                print(f'S3 request error: {s3_url}/{s3_bucket}/{s3_path}')
+
+# %%

@@ -10,6 +10,7 @@ __pycache__/
 *.bibjson
 *.csv
 *.tsv
+*.zip
 /aske_files/
 .local
 *.npy
