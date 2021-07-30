@@ -7,8 +7,7 @@ interface NodeSpec {
     dataType: string;
     parent: string | null;
     nodeSubType: string[];
-    metadata: any;
-    var_metadata: any[];
+    metadata: any[];
 }
 
 interface EdgeSpec {

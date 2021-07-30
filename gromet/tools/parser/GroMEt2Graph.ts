@@ -152,8 +152,7 @@ export class GroMEt2Graph extends GroMEtMap {
             dataType: box.type || box.syntax,
             parent: parent,
             nodeSubType: [ box.syntax ],
-            metadata: box.metadata,
-            var_metadata: this.getVariableMetadata(box.uid),
+            metadata: [box.metadata, ...this.getVariableMetadata(box.uid)].filter(v => Boolean(v)),
         };
         graph.nodes.push(node);
 
@@ -201,8 +200,7 @@ export class GroMEt2Graph extends GroMEtMap {
             dataType: port.value_type || port.type || port.syntax,
             parent: parent,
             nodeSubType: [ port.type || port.syntax ],
-            metadata: port.metadata,
-            var_metadata: this.getVariableMetadata(port.uid),
+            metadata: [port.metadata, ...this.getVariableMetadata(port.uid)].filter(v => Boolean(v)),
         };
         graph.nodes.push(node);
     }
@@ -274,8 +272,7 @@ export class GroMEt2Graph extends GroMEtMap {
                     dataType: exp.call.syntax,
                     parent: parent,
                     nodeSubType: [exp.syntax],
-                    metadata: null, // exp,
-                    var_metadata: [], // can't have a variable?
+                    metadata: [], // no metadata or var metadata for Expr? // Future Dario, look into this :)
                 }
                 graph.nodes.push(node);
 
@@ -315,8 +312,7 @@ export class GroMEt2Graph extends GroMEtMap {
             dataType: literal.type || literal.syntax,
             parent: parent,
             nodeSubType: [literal.syntax],
-            metadata: literal.metadata,
-            var_metadata: literal.uid ? this.getVariableMetadata(literal.uid) : [],
+            metadata: [literal.metadata, ...(literal.uid ? this.getVariableMetadata(literal.uid) : [])].filter(v => Boolean(v)),
         }
         graph.nodes.push(node);
         graph.edges.push({
@@ -365,8 +361,7 @@ export class GroMEt2Graph extends GroMEtMap {
             dataType: junction.value_type || junction.type || junction.syntax,
             parent: parent,
             nodeSubType: [ junction.type || junction.syntax ],
-            metadata: junction.metadata,
-            var_metadata: this.getVariableMetadata(junction.uid),
+            metadata: [junction.metadata, ...this.getVariableMetadata(junction.uid)].filter(v => Boolean(v)),
         };
         graph.nodes.push(node);
     }
