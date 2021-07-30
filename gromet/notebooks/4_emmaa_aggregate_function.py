@@ -5,28 +5,45 @@
 
 # %%[markdown]
 # Content:
-# * Parse the GroMEt of the MARM model using Dario's parser
-# * Apply aggregation as before to this object
+# * Run the Dario parser over the GroMEt of a model (MARM here)
+# * Load the output graph object
+# * Apply aggregation using the node agent-metadata
 
 # %%
-import json
+
 from typing import Dict, Tuple
 import networkx as nx
 
+import os
+import json
 import numpy as np
 import matplotlib.pyplot as plt
 
 # %%[markdown]
-# # Load the Parsed GroMEt Graph
+# # Run the Dario parser over the GroMEt
 
-dist_dir = '/home/nliu/projects/aske/research/gromet/dist/august_2021_demo_repo'
-graph_path = dist_dir + '/' + 'emmaa_models/marm_model_gromet_2021-06-28-17-07-14_graph.json'
+deno_command = 'deno run --allow-write --allow-read'
+parser_path = '/home/nliu/projects/aske/research/gromet/tools/parse.ts'
+data_dir = '/home/nliu/projects/aske/research/gromet/data/august_2021_demo_repo/'
+dist_dir = '/home/nliu/projects/aske/research/gromet/dist/august_2021_demo_repo/'
+
+gromet_path = data_dir + 'emmaa_models/marm_model_gromet_2021-06-28-17-07-14.json'
+graph_path = dist_dir + 'emmaa_models/marm_model_gromet_2021-06-28-17-07-14_graph.json'
+
+__ = os.system(deno_command + ' ' + parser_path + ' ' + gromet_path + ' ' + graph_path)
+
+
+with open(gromet_path, 'r') as f:
+    gromet = json.load(f)
+
 
 with open(graph_path, 'r') as f:
     graph = json.load(f)
 
-f = None
-del f
+
+deno_command = parser_path = data_dir = dist_dir = gromet_path = graph_path = f = None
+del deno_command, parser_path, data_dir, dist_dir, gromet_path, graph_path, f
+
 
 # %%
 # Aggregate a given GroMEt graph that has EMMAA agent metadata for all nodes
@@ -37,7 +54,7 @@ def aggregate_emmaa_graph(graph: Dict) -> Tuple[Dict, Dict, Dict, Tuple[Dict, Di
 
     # Dict of all rate junctions by UID
     dict_rates = {node['id']: node for node in graph['nodes'] if node['nodeType'] == 'Junction' if 'Rate' in node['nodeSubType']}
-    dict_states = {node['id']: {agent['name']: agent for agent in node['metadata'][0]['indra_agent_references']} for node in graph['nodes'] if node['nodeType'] == 'Junction' if 'State' in node['nodeSubType']}
+    dict_states = {node['id']: {agent['name']: agent for agent in node['metadata'][0][0]['indra_agent_references']} for node in graph['nodes'] if node['nodeType'] == 'Junction' if 'State' in node['nodeSubType']}
 
     # Dict of all INDRA agents referenced by the metadata of the state junctions
     # dict_agents = {agent: metadata for __, agents in dict_states.items() for agent, metadata in agents.items()}
@@ -137,7 +154,7 @@ for (x, g, t) in zip(fig.axes, (G, G_agg), titles):
     x.title.set_text(f"{t} ({len(g.nodes)} nodes, {len(g.edges)} edges)")
 
 
-# fig.savefig('../figures/marm_model_gromet_collapse_parsed.png', dpi = 150)
+fig.savefig('../figures/marm_model_gromet_collapse_parsed.png', dpi = 150)
 
 p = c = s = g = x = t = w = fig = ax = titles = None
 del p, c, s, g, x, t, w, fig, ax, titles
