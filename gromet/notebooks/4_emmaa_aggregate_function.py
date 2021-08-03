@@ -13,7 +13,7 @@
 
 from typing import Dict, Tuple
 import networkx as nx
-
+import copy
 import os
 import json
 import numpy as np
@@ -41,8 +41,8 @@ with open(graph_path, 'r') as f:
     graph = json.load(f)
 
 
-deno_command = parser_path = data_dir = dist_dir = gromet_path = graph_path = f = None
-del deno_command, parser_path, data_dir, dist_dir, gromet_path, graph_path, f
+deno_command = parser_path = data_dir = dist_dir = gromet_path = f = None
+del deno_command, parser_path, data_dir, dist_dir, gromet_path, f
 
 
 # %%
@@ -133,9 +133,18 @@ def aggregate_emmaa_graph(graph: Dict) -> Tuple[Dict, Dict, Dict, Tuple[Dict, Di
     return (G, G_agg, graph_agg, (dict_rates, dict_groups))
 
 # %%
-
 G, G_agg, graph_agg, (dict_rates, dict_groups) = aggregate_emmaa_graph(graph = graph)
 
+# %%
+
+p = graph_path.split('.')
+p.insert(1, '_agg.')
+p = ''.join(p)
+with open(p, 'w') as f:
+    json.dump(graph_agg, f, indent = 2)
+
+f = p = None
+del f, p
 
 # %%
 # Plot outputs
@@ -158,5 +167,95 @@ fig.savefig('../figures/marm_model_gromet_collapse_parsed.png', dpi = 150)
 
 p = c = s = g = x = t = w = fig = ax = titles = None
 del p, c, s, g, x, t, w, fig, ax, titles
+
+# %%
+# Similar to `aggregate_emmaa_graph`
+# Preserves original graph structure
+# INDRA-agent groups are just assigned to the node `parent` attribute and added as extra, disconnected nodes
+def aggregate_emmaa_graph_reversible(graph: Dict) -> Dict:
+
+    def tuple2str(t: Tuple) -> str:
+        return ' + '.join(list(t))
+
+
+    # Dict of all graph nodes by UID
+    dict_nodes = {node['id']: node for node in graph['nodes']}
+
+    # Dict of all rate junctions by UID
+    dict_rates = {node['id']: node for node in graph['nodes'] if node['nodeType'] == 'Junction' if 'Rate' in node['nodeSubType']}
+    dict_states = {node['id']: {agent['name']: agent for agent in node['metadata'][0][0]['indra_agent_references']} for node in graph['nodes'] if node['nodeType'] == 'Junction' if 'State' in node['nodeSubType']}
+
+    # Dict of all INDRA agents referenced by the metadata of the state junctions
+    # dict_agents = {agent: metadata for __, agents in dict_states.items() for agent, metadata in agents.items()}
+
+    # Dict of all INDRA agents (and combinations thereof) referenced by the state junctions
+    # == 'groups'
+    dict_groups = {tuple(sorted(agents.keys())): [] for __, agents in dict_states.items()}
+    for s, agents in dict_states.items():
+        i = tuple(sorted(agents.keys()))
+        dict_groups[i].append(s)
+
+    # Mapping between a given state junction UID and the group tuple to which it belongs
+    map_states_groups = {state: tuple(sorted(agents.keys())) for state, agents in dict_states.items()}
+
+    # Generate output
+    graph_agg = copy.deepcopy(graph)
+    for node in graph_agg['nodes']:
+        if 'State' in node['nodeSubType']:
+            node['parent'] = tuple2str(map_states_groups[node['id']])
+
+    # Add the group nodes (with `parent` = '0')
+    graph_agg['nodes'] += [{
+            'id': tuple2str(group), 
+            'concept': 'Relation', 
+            'role': None,
+            'label': tuple2str(group),
+            'nodeType': 'Box',
+            'dataType': None,
+            'parent': '0',
+            'nodeSubType': ['Relation'],
+            'metadata': [dict_nodes[n]['metadata'][0] for n in l]
+        } for group, l in dict_groups.items()]
+
+
+    # Get the 1-hop neighbours of every rate-junction node
+    dict_rate_neighbours = {rate_id: [] for rate_id in dict_rates}
+    for edge in graph['edges']:
+        if edge['source'] in dict_rates.keys():
+            dict_rate_neighbours[edge['source']].append(edge['target'])
+        
+        if edge['target'] in dict_rates.keys():
+            dict_rate_neighbours[edge['target']].append(edge['source'])
+
+
+    # Assigned parenthood of rate-junction nodes
+    # If all neighbours have the same parent, assign this parent to it, otherwise `parent` = '0'
+    for node in graph_agg['nodes']:
+
+        if 'Rate' in node['nodeSubType']:
+
+            d = {tuple2str(map_states_groups[n]): None for n in dict_rate_neighbours[node['id']]}
+
+            if len(d) == 1:
+                node['parent'] = list(d.keys())[0]
+            else:
+                node['parent'] = '0'
+
+
+    return graph_agg
+
+# %%
+graph_agg_rev = aggregate_emmaa_graph_reversible(graph)
+
+# %%
+
+p = graph_path.split('.')
+p.insert(1, '_agg_rev.')
+p = ''.join(p)
+with open(p, 'w') as f:
+    json.dump(graph_agg_rev, f, indent = 2)
+
+f = p = None
+del f, p
 
 # %%
