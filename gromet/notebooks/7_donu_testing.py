@@ -12,6 +12,7 @@
 import requests
 import json
 import matplotlib.pyplot as plt
+import numpy as np
 
 DONU_ENDPOINT = 'https://aske.galois.com/donu/'
 
@@ -180,7 +181,10 @@ print(f"{json.dumps(response_body, indent = 2)}")
 # }
 
 # %%[markdown]
-# # Describe Model Interface
+# # Simulate Basic SIR
+
+# %%[markdown]
+# ## Describe Model Interface
 
 model_def = models[18]
 __ = [model_def.pop(k, None) for k in ('type', 'source') if k not in model_def.keys()]
@@ -190,22 +194,21 @@ response_body = requests.post(DONU_ENDPOINT, json = {'command': 'describe-model-
 # %%
 # print(f"{json.dumps(response_body, indent = 2)}")
 
-print(f"{'i':>3} | {'Role':<15} | {'Name':10} | {'Metadata':15}")
+print(f"{'i':>3} | {'Role':<15} | {'UID':<15} | {'Name':<10} | {'Metadata':15}")
 for k, v in response_body['result'].items():
-    __ = [print(f"{i:>3} | {k:<15} | {obj['metadata']['name']:<10} | {obj['metadata'].__repr__()}") for i, obj in enumerate(v)]
+    __ = [print(f"{i:>3} | {k:<15} | {obj['uid']:<15} | {obj['metadata']['name']:<10} | {obj['metadata'].__repr__()}") for i, obj in enumerate(v)]
 
-#   i | Role            | Name       | Metadata       
-#   0 | measures        | I          | {'name': 'I', 'type': 'Integer'}
-#   1 | measures        | R          | {'name': 'R', 'type': 'Integer'}
-#   2 | measures        | S          | {'name': 'S', 'type': 'Integer'}
-#   0 | parameters      | I          | {'name': 'I', 'group': 'Initial State', 'type': 'Integer'}
-#   1 | parameters      | R          | {'name': 'R', 'group': 'Initial State', 'type': 'Integer'}
-#   2 | parameters      | S          | {'name': 'S', 'group': 'Initial State', 'type': 'Integer'}
-#   3 | parameters      | beta       | {'name': 'beta', 'group': 'Rate', 'type': 'Real'}
-#   4 | parameters      | gamma      | {'name': 'gamma', 'group': 'Rate', 'type': 'Real'}
 
-# %%[markdown]
-# # Simulate
+#   i | Role            | UID             | Name       | Metadata       
+#   0 | measures        | J:I             | I          | {'name': 'I', 'type': 'Integer'}
+#   1 | measures        | J:R             | R          | {'name': 'R', 'type': 'Integer'}
+#   2 | measures        | J:S             | S          | {'name': 'S', 'type': 'Integer'}
+#   0 | parameters      | J:I_init        | I          | {'name': 'I', 'group': 'Initial State', 'type': 'Integer'}
+#   1 | parameters      | J:R_init        | R          | {'name': 'R', 'group': 'Initial State', 'type': 'Integer'}
+#   2 | parameters      | J:S_init        | S          | {'name': 'S', 'group': 'Initial State', 'type': 'Integer'}
+#   3 | parameters      | J:beta_rate     | beta       | {'name': 'beta', 'group': 'Rate', 'type': 'Real'}
+#   4 | parameters      | J:gamma_rate    | gamma      | {'name': 'gamma', 'group': 'Rate', 'type': 'Real'}
+
 
 # %%[markdown]
 # ## Set Model Parameter Values
@@ -213,11 +216,21 @@ for k, v in response_body['result'].items():
 parameters = response_body['result']['parameters']
 
 parameters_set = {p['uid']: p['default'] for p in parameters}
-parameters_set['J:beta_rate'] = 1.0 / 10.0 / 100
-parameters_set['J:gamma_rate'] = 1.0 / 14.0 / 100
 
-print(f"{'i':>3} | {'UID':<15} | {'Name':<15} | {'Default':10} ")
-__ = [print(f"{i:>3} | {p['uid']:<15} | {p['metadata']['name']:<15} | {p['default']:<10} ") for i, p in enumerate(parameters)]
+# %%
+
+T_doubling = 5.0
+T_recovery = 14.0
+
+parameters_set['J:S_init'] = 0.97
+parameters_set['J:I_init'] = 0.03
+parameters_set['J:R_init'] = 0.0
+parameters_set['J:beta_rate'] = 1.0 / T_recovery + (2 ** (1.0 / T_doubling) - 1)
+parameters_set['J:gamma_rate'] = 1.0 / T_recovery
+
+
+print(f"{'i':>3} | {'UID':<15} | {'Name':<15} | {'Default':<10} | {'Set':<10}")
+__ = [print(f"{i:>3} | {p['uid']:<15} | {p['metadata']['name']:<15} | {p['default']:>10} | {parameters_set[p['uid']]:>10} ") for i, p in enumerate(parameters)]
 
 
 # %%[markdown]
@@ -228,17 +241,67 @@ request_body = {
     'sim-type': 'gsl',
     'definition': model_def,
     'start': 0,
-    'end': 100,
-    'step': 0.,
+    'end': 120,
+    'step': 0.5,
     'parameters': parameters_set
 }
 
 response_body = requests.post(DONU_ENDPOINT, json = request_body).json()
 
-
+# %%
 fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (8, 6))
 __ = [ax.plot(response_body['result'][0]['times'], v, label = k) for k, v in response_body['result'][0]['values'].items()]
-__ = plt.setp(ax, xlabel = 'Times', ylabel = 'Measures')
+__ = plt.setp(ax, xlabel = 'Times (days)', ylabel = 'Measures', title = f"{model_def['source']['model']} (T_doubling = {T_doubling} days, T_recovery = {T_recovery} days)")
 __ = ax.legend()
+
+fig.savefig(f'../figures/donu_testing_sir_gromet.png', dpi = 150)
+
+fig = ax = None
+del fig, ax
+
+# %%[markdown]
+# # Simulate MARM Model
+
+# %%
+model_def = models[16]
+__ = [model_def.pop(k, None) for k in ('type', 'source') if k not in model_def.keys()]
+
+response_body = requests.post(DONU_ENDPOINT, json = {'command': 'describe-model-interface', 'definition': model_def}).json()
+parameters = response_body['result']['parameters']
+
+parameters_set = {p['uid']: 1000.0 if 'default' not in p.keys() else p['default'] for p in parameters}
+# parameters_set = {p['uid']: 0.0 if 'default' not in p.keys() else 1.0 if p['default'] >= 10000.0 else p['default'] for p in parameters}
+
+request_body = {
+    'command': 'simulate',
+    'sim-type': 'gsl',
+    'definition': model_def,
+    'start': 0,
+    'end': 50,
+    'step': 0.25,
+    'parameters': parameters_set
+}
+
+response_body = requests.post(DONU_ENDPOINT, json = request_body).json()
+
+# %%
+
+x = np.array(response_body['result'][0]['times'])
+y = np.array(list(response_body['result'][0]['values'].keys()))
+A = np.array([v for __, v in response_body['result'][0]['values'].items()])
+
+# i = np.argsort(A[:, 0])[::-1]
+i = np.argsort(A[:, -1] - A[:, 0])[::-1]
+
+# %%
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
+h = ax.imshow(A[i, :] - A[i, 0, np.newaxis], cmap = plt.get_cmap('RdBu_r'), vmin = -1.2e4, vmax = 1.2e4, extent = [x[0], x[-1], len(y), 0], interpolation = 'none')
+__ = plt.setp(ax, xlabel = 'Times', ylabel = 'Measures', title = f"Relative Change ({model_def['source']['model']})")
+__ = plt.colorbar(h, ax = ax)
+
+fig.savefig(f'../figures/donu_testing_marm.png', dpi = 150)
+
+fig = ax = None
+del fig, ax
 
 # %%
