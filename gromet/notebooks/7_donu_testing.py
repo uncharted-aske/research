@@ -13,6 +13,7 @@ import requests
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+import re
 
 DONU_ENDPOINT = 'https://aske.galois.com/donu/'
 
@@ -290,14 +291,22 @@ x = np.array(response_body['result'][0]['times'])
 y = np.array(list(response_body['result'][0]['values'].keys()))
 A = np.array([v for __, v in response_body['result'][0]['values'].items()])
 
+# Sort signals together
 # i = np.argsort(A[:, 0])[::-1]
 i = np.argsort(A[:, -1] - A[:, 0])[::-1]
+
+# Simplifiy the names
+y_ = np.array([''.join(re.split(r"[(:)]", name)[1::2]) for name in y])
+
 
 # %%
 fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (12, 12))
 h = ax.imshow(A[i, :] - A[i, 0, np.newaxis], cmap = plt.get_cmap('RdBu_r'), vmin = -1.2e4, vmax = 1.2e4, extent = [x[0], x[-1], len(y), 0], interpolation = 'none')
 __ = plt.setp(ax, xlabel = 'Times', ylabel = 'Measures', title = f"Relative Change ({model_def['source']['model']})")
 __ = plt.colorbar(h, ax = ax)
+
+__ = plt.setp(ax, yticks = range(len(y)), yticklabels = y_)
+__ = plt.setp(plt.getp(ax, 'yticklabels'), rotation = 30, fontsize = 'small')
 
 fig.savefig(f'../figures/donu_testing_marm.png', dpi = 150)
 
