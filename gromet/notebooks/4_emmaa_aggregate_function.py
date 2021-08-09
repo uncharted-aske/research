@@ -30,7 +30,7 @@ dist_dir = '/home/nliu/projects/aske/research/gromet/dist/august_2021_demo_repo/
 gromet_path = data_dir + 'emmaa_models/marm_model_gromet_2021-06-28-17-07-14.json'
 graph_path = dist_dir + 'emmaa_models/marm_model_gromet_2021-06-28-17-07-14_graph.json'
 
-__ = os.system(deno_command + ' ' + parser_path + ' ' + gromet_path + ' ' + graph_path)
+# __ = os.system(deno_command + ' ' + parser_path + ' ' + gromet_path + ' ' + graph_path)
 
 
 with open(gromet_path, 'r') as f:
@@ -367,14 +367,22 @@ def aggregate_emmaa_graph_reversible_rategroups(graph: Dict) -> Dict:
     for node in graph_agg['nodes']:
         if 'Rate' in node['nodeSubType']:
             node['parent'] = tuple(dict_rate_neighbours_groups[node['id']]).__repr__()
-            print(node['parent'])
+
+
+
+    print(f"Number of State Nodes: {len(dict_states)}")
+    print(f"Number of Rate Nodes: {len(dict_rates)}")
+    print(f"Number of State Groups: {len(dict_groups)}")
+    print(f"Number of Rate Groups: {len(dict_rategroups)}")
+
 
 
     return graph_agg
 
 # %%
-graph_agg_rev_rategroups = aggregate_emmaa_graph_reversible(graph)
+graph_agg_rev_rategroups = aggregate_emmaa_graph_reversible_rategroups(graph)
 
+# %%
 p = graph_path.split('.')
 p.insert(1, '_agg_rev_rategroups.')
 p = ''.join(p)
