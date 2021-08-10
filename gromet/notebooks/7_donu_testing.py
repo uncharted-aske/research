@@ -314,3 +314,53 @@ fig = ax = None
 del fig, ax
 
 # %%
+# # List Datasets
+
+datasets = requests.post(DONU_ENDPOINT, json = {'command': 'list-datasets'}).json()['result']
+
+# %%
+# [{'source': {'model': 'example.json'},
+#   'name': 'Example Data',
+#   'description': 'Example data drawn from SIR model'},
+#  {'source': {'model': 'sir_sample.json'},
+#   'name': 'Sample SIR Data',
+#   'description': 'Sample data generated from a SIR model'},
+#  {'source': {'model': 'sir_noise.json'},
+#   'name': 'SIR Infected with Noise',
+#   'description': 'Infected values from SIR model with added noise'}]
+
+# %% 
+# ## Get Datasets
+
+# %%
+dataset = requests.post(DONU_ENDPOINT, json = {'command': 'get-dataset', 'source': datasets[0]['source']}).json()['result']
+
+# %%
+# {'name': 'Example Data',
+#  'description': 'Example data drawn from SIR model',
+#  'columns': [{'values': [3,
+#     570.9758710681087,
+#     177.8779579737781,
+#     53.66360145338841,
+#     16.175249034797183],
+#    'name': 'I',
+#    'description': 'Infected Population'},
+#   {'values': [0,
+#     412.987493166334,
+#     821.8532404022537,
+#     946.2589265257153,
+#     983.7715119765173],
+#    'name': 'R',
+#    'description': 'Recovered Population'},
+#   {'values': [997,
+#     16.036635765557786,
+#     0.2688016239687889,
+#     0.07747202089688701,
+#     0.05323898868597068],
+#    'name': 'S',
+#    'description': 'Susceptible Population'},
+#   {'values': [0, 30, 60, 90, 120],
+#    'name': 'time',
+#    'description': 'Time (in days)'}]}
+
+# %%
