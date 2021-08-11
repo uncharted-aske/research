@@ -231,7 +231,6 @@ export class GroMEt2Graph extends GroMEtMap {
 
             const idStack = [...this.idStack];
             while (idStack.length) {
-                console.log(parentID, idStack[idStack.length - 1]);
                 if (idStack.pop() === parentID) {
                     return this.getStackID(idStack, parentID, graphID);
                 }
