@@ -133,7 +133,11 @@ export class GroMEt2Graph extends GroMEtMap {
     }
 
     private getID(...IDs: Array<string | number>): string {
-        return `${this.idStack.join('::')}${IDs.length ? `::${IDs.join('::')}`: ''}`;
+        return this.getStackID(this.idStack, ...IDs);
+    }
+
+    private getStackID(stack: number[], ...IDs: Array<string | number>): string {
+        return `${stack.join('::')}${IDs.length ? `::${IDs.join('::')}`: ''}`;
     }
 
     private registerUID(uid: string): number {
@@ -216,6 +220,32 @@ export class GroMEt2Graph extends GroMEtMap {
             metadata: [port.metadata, ...this.getVariableMetadata(port.uid)].filter(v => Boolean(v)),
         };
         graph.nodes.push(node);
+    }
+
+    private getPortCallID(nodeID: string): string {
+        const graphID = this.registerUID(nodeID);
+        // if the node is a port, check the parent ID
+        try {
+            const port = this.getElement(nodeID, this.ports);
+            const parentID = this.registerUID(port.box);
+
+            const idStack = [...this.idStack];
+            while (idStack.length) {
+                console.log(parentID, idStack[idStack.length - 1]);
+                if (idStack.pop() === parentID) {
+                    return this.getStackID(idStack, parentID, graphID);
+                }
+            }
+        } catch {}
+        return this.getID(graphID);
+    }
+
+    private parsePortCall(port: PortCall, parent: string | null, graph: GraphSpec): void {
+        this.parsePort(port, parent, graph);
+        graph.edges.push({
+            source: this.getID(),
+            target: this.getPortCallID(port.call),
+        });
     }
 
     private getWireNodeID(nodeID: string): string {
@@ -414,8 +444,11 @@ export class GroMEt2Graph extends GroMEtMap {
                 break;
 
             case 'Port':
-            case 'PortCall':
                 this.parsePort(element as Port, parent, graph);
+                break;
+
+            case 'PortCall':
+                this.parsePortCall(element as PortCall, parent, graph);
                 break;
 
             case 'Wire':
