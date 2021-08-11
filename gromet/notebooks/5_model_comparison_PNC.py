@@ -99,6 +99,17 @@ def compare_graphs(G1: Any, G2: Any, map: Optional[Dict], leg_id: Optional[int] 
                         pos_map[rn + j] = np.array([k, 2 * l])
                         k += 1
 
+
+            # Align mapped nodes along x-axis
+            for k, v in map['legs'][G2.graph['uid']][leg_id].items():
+
+                src = rename[0] + k
+                tgt = rename[1] + v
+
+                x = np.max([pos_map[src][0], pos_map[tgt][0]])
+                pos_map[src][0] = x
+                pos_map[tgt][0] = x
+
         else:
 
             # KK Layout
@@ -132,21 +143,8 @@ def compare_graphs(G1: Any, G2: Any, map: Optional[Dict], leg_id: Optional[int] 
             h = nx.draw_networkx_labels(G_map_subg, pos = pos_map, ax = ax, font_color = 'tab:gray', horizontalalignment = 'left', verticalalignment = 'bottom')
             __ = [t.set_rotation(45) for __, t in h.items()]
 
-
         G_map_sube = G_map.edge_subgraph([edge for edge in G_map.edges if G_map.nodes[edge[0]]['model_uid'] != G_map.nodes[edge[1]]['model_uid']])
         nx.draw_networkx_edges(G_map_sube, pos = pos_map, ax = ax, edge_color = 'tab:green')
-
-
-        # nx.draw(
-        #     G_map, pos = pos_map, 
-        #     node_size = node_size,
-        #     node_color = node_col, 
-        #     #cmap = 'tab10', vmin = 0, vmax = 9, 
-        #     edge_color = edge_col, 
-        #     # edge_cmap = 'tab10', edge_vmin = 0, edge_vmax = 9, 
-        #     with_labels = True, 
-        #     ax = ax
-        # )
 
         __ = plt.setp(ax, title = f"{G1.graph['uid']} -> {G2.graph['uid']}", aspect = 1.0, ylim = (-1.5, 3.5))
 

@@ -189,7 +189,7 @@ def generate_linear_layout(G: Any, offset: Optional[Dict] = None, draw: Optional
 
 # %%
 # Draw NX Object
-def draw_graph(G: Any, pos: Dict, ax: Optional[Any] = None, node_args: Optional[Dict] = None, edge_args: Optional[Dict] = None, label_args: Optional[Dict] = None, G_full: Optional[Any] = None, label_key: Optional[str] = 'label') -> Any:
+def draw_graph(G: Any, pos: Dict, ax: Optional[Any] = None, node_args: Optional[Dict] = None, edge_args: Optional[Dict] = None, label_args: Optional[Dict] = None, legend_args: Optional[Dict] = None, G_full: Optional[Any] = None, label_key: Optional[str] = 'label') -> Any:
 
     if ax == None:
         fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (20, 5))
@@ -216,7 +216,7 @@ def draw_graph(G: Any, pos: Dict, ax: Optional[Any] = None, node_args: Optional[
         edge_args = {
             'edge_color': 'tab:gray',
             'alpha': 0.5,
-            'connectionstyle': 'arc3,rad=0.2',
+            'connectionstyle': 'arc3,rad=0.15',
         }
 
     if label_args == None:
@@ -228,7 +228,24 @@ def draw_graph(G: Any, pos: Dict, ax: Optional[Any] = None, node_args: Optional[
             'labels': {node: G.nodes[node][label_key] for node in G.nodes},
         }
 
-    h_nodes = nx.draw_networkx_nodes(G, pos = pos, ax = ax, **node_args)
+    if legend_args == None:
+
+        if len(node_args) > 0:
+
+            legend_elements = [
+                mpl.lines.Line2D(
+                    [0], [0], marker = 'o', color = 'w', label = t, markersize = 20,
+                    markerfacecolor = node_cmap(node_norm(val))
+                ) for t, val in node_types.items()
+            ]
+
+            legend_args = {
+                'loc': 'lower right',
+                'ncol': len(legend_elements)
+            }
+
+    if len(node_args) > 0:
+        h_nodes = nx.draw_networkx_nodes(G, pos = pos, ax = ax, **node_args)
 
     if len(edge_args) > 0:
         h_edges = nx.draw_networkx_edges(G, pos = pos, ax = ax, **edge_args)
@@ -239,10 +256,13 @@ def draw_graph(G: Any, pos: Dict, ax: Optional[Any] = None, node_args: Optional[
 
     __ = plt.setp(ax, ylim = (-3, 3))
 
-    legend_elements = [mpl.lines.Line2D([0], [0], marker = 'o', color = 'w', label = t, markerfacecolor = node_cmap(node_norm(val)), markersize = 20) for t, val in node_types.items()]
-    ax.legend(handles = legend_elements, loc = 'lower right', ncol = len(legend_elements))
+    if len(legend_args) > 0:
+        # ax.legend(handles = legend_elements, loc = 'lower right', ncol = len(legend_elements))
+        ax.legend(handles = legend_elements, **legend_args)
+
 
     return None
+
 
 # %%
 # Generate linear layout that is layered by the parent-child hierarchy of the graph
@@ -319,37 +339,52 @@ __ = generate_linear_layout(G_sir_pnc, draw = True)
 pos_sir_pnc = generate_linear_layout_with_hierarchy(G_sir_pnc, draw = True)
 
 # %%
-# Comparison graph
-
+# Mock comparison graph
 G_union = nx.union(G, G_sir_pnc, rename = ('FN-', 'PNC-'))
-
-fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (20, 5))
-
-x = {node: p + 2 * np.array([0, 1]) for node, p in pos.items()}
-y = {node: p - 2 * np.array([0, 1]) for node, p in pos_sir_pnc.items()}
-__ = draw_graph(G, pos = x, ax = ax, G_full = G_union, label_key = 'label')
-__ = draw_graph(G_sir_pnc, pos = y, ax = ax, G_full = G_union, label_key = 'label')
-
-
-# Mock comparison mapping
 edges = list(G_union.edges)
-G_union.remove_edges_from(edges)
-G_union.add_edges_from([
+edges_map = [
     ('PNC-0', 'FN-0'),
-    ('PNC-0::2', 'FN-0::7'),
-    ('PNC-0::5', 'FN-0::8'),
+    ('PNC-0::2', 'FN-0::1'),
+    ('PNC-0::5', 'FN-0::2'),
     ('PNC-0::3', 'FN-0::12'),
     ('PNC-0::9', 'FN-0::20'),
     ('PNC-0::11', 'FN-0::9'),
-])
-x = {'FN-' + node: val for node, val in x.items() if node != None}
-y = {'PNC-' + node: val for node, val in y.items() if node != None}
+]
+G_union.remove_edges_from(edges)
+G_union.add_edges_from(edges_map)
 
-__ = draw_graph(G = G_union, pos = {**x, **y}, ax = ax, label_args = {}, edge_args = {'edge_color': 'tab:cyan', 'alpha': 0.5, 'connectionstyle': 'arc3,rad=0.2'})
 
+# Parallel positions
+p = {node: p + 2 * np.array([0, 1]) for node, p in pos.items()}
+p_sir_pnc = {node: p - 2 * np.array([0, 1]) for node, p in pos_sir_pnc.items()}
+
+# Align mapped nodes
+for src, tgt, __ in G_union.edges:
+
+    src = ''.join(src.split('-')[1:])
+    tgt = ''.join(tgt.split('-')[1:])
+
+    # i = np.max([p_sir_pnc[src][0], p[tgt][0]])
+    # p_sir_pnc[src][0] = i
+    p_sir_pnc[src][0] = p[tgt][0]
+    # p[tgt][0] = i
+
+    print(f"{src} {tgt} {i}")
+
+
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (20, 5))
+__ = draw_graph(G, pos = p, ax = ax, G_full = G_union, label_key = 'label')
+__ = draw_graph(G_sir_pnc, pos = p_sir_pnc, ax = ax, G_full = G_union, label_key = 'label')
+
+
+p = {'FN-' + node: val for node, val in p.items() if node != None}
+p_sir_pnc = {'PNC-' + node: val for node, val in p_sir_pnc.items() if node != None}
+pos_map = {**p, **p_sir_pnc}
+
+__ = draw_graph(G = G_union, pos = pos_map, ax = ax, node_args = {}, label_args = {}, legend_args = {}, edge_args = {'edge_color': 'tab:cyan', 'alpha': 0.5})
 __ = plt.setp(ax, ylim = (-3, 5))
 
-# fig.savefig(f'../figures/comparison_GrFN_PNC_linear.png', dpi = 150)
+fig.savefig(f'../figures/comparison_GrFN_PNC_linear.png', dpi = 150)
 
 fig = ax = None
 del fig, ax
