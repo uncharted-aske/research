@@ -4,11 +4,12 @@ declare namespace GroMEt {
     /**
      * Metadatum types:
      * (*) <Any>.CodeSpanReference
+     * (*) <Gromet>.ModelDescription  # provides textual description and name of the model
      * (*) <Gromet>.ModelInterface  # designates variables, parameters, initial_conditions
      * (*) <Gromet>.TextualDocumentReferenceSet
      * (*) <Gromet>.CodeCollectionReference
      * (*) <Box>.EquationDefinition
-     * (*) <Variable>.TextDefinition
+     * (*) <Variable>.TextDescription
      * (*) <Variable>.TextParameter
      * () <Variable>.EquationParameter
      *
@@ -108,10 +109,37 @@ declare namespace GroMEt {
     type Metadata = Metadatum[] | null;
     
     
+    //  MetadatumAny = NewType('MetadatumAny', Metadatum)
+    interface MetadatumAny extends Metadatum {
+    }
+
+    //  MetadatumGromet = NewType('MetadatumGromet', Metadatum)
+    interface MetadatumGromet extends Metadatum {
+    }
+
+    //  MetadatumBox = NewType('MetadatumBox', Metadatum)
+    interface MetadatumBox extends Metadatum {
+    }
+
+    //  MetadatumVariable = NewType('MetadatumVariable', Metadatum)
+    interface MetadatumVariable extends Metadatum {
+    }
+
+    //  MetadatumJunction = NewType('MetadatumJunction', Metadatum)
+    interface MetadatumJunction extends Metadatum {
+    }
+
     //  =============================================================================
     //  Metadata components
     //  =============================================================================
     
+    interface TextSpan {
+        page: number;
+        block: number;
+        char_begin: number;
+        char_end: number;
+    }
+
     interface TextExtraction {
         /**
          * Text extraction.
@@ -123,10 +151,7 @@ declare namespace GroMEt {
          *   'char_begin' and 'char_end' are relative to the 'block'.
          */
         document_reference_uid: UidDocumentReference;
-        page: number;
-        block: number;
-        char_begin: number;
-        char_end: number;
+        text_spans: TextSpan[];
     }
 
     interface EquationExtraction {
@@ -161,7 +186,7 @@ declare namespace GroMEt {
     //  CodeSpanReference
     //  -----------------------------------------------------------------------------
     
-    interface CodeSpanReference extends Metadatum {
+    interface CodeSpanReference extends MetadatumAny {
         /**
          * host: <Any>
          * Code span references may be associated with any GroMEt object.
@@ -186,14 +211,25 @@ declare namespace GroMEt {
     //  ModelInterface
     //  -----------------------------------------------------------------------------
     
-    interface ModelInterface extends Metadatum {
+    interface ModelDescription extends MetadatumGromet {
         /**
+         * host: <Gromet>
+         * Provides summary textual description of the model
+         *     along with a human-readable name.
+         */
+        name: string;
+        description: string;
+    }
+
+    interface ModelInterface extends MetadatumGromet {
+        /**
+         * host: <Gromet>
          * Explicit definition of model interface.
          * The interface identifies explicit roles of these variables
          * 'variables': All model variables (anything that can be measured)
          * 'parameters': Variables that are generally set to explicit values
          *     (either by default or in experiment spec).
-         *     Often these remain constant during execution/simultation,
+         *     Often these remain constant during execution/simulation,
          *     although they may be updated by the model during
          *     execution/simulation depending on conditions.
          * 'initial_conditions': Variables that typically take an initial
@@ -226,19 +262,28 @@ declare namespace GroMEt {
         name: string;
     }
 
+    interface BibjsonIdentifier {
+        type: string;
+        id: string;
+    }
+
+    interface BibjsonLinkObject {
+        type: string; // will become: BibjsonLinkType
+        location: string;
+    }
+
     interface Bibjson {
         /**
          * Placeholder for bibjson JSON object; format described in:
          *     http://okfnlabs.org/bibjson/
          */
-        title: string;
+        title: string | null;
         author: BibjsonAuthor[];
-        type: string;
-        website: { [key: string]: any };
-        timestamp: string;
-        file: string;
-        file_url: string;
-        identifier: { [key: string]: any }[];
+        type: string | null;
+        website: BibjsonLinkObject;
+        timestamp: string | null;
+        link: BibjsonLinkObject[];
+        identifier: BibjsonIdentifier[];
     }
 
     interface TextualDocumentReference {
@@ -251,14 +296,14 @@ declare namespace GroMEt {
          */
         uid: UidDocumentReference;
         global_reference_id: GlobalReferenceId;
-        cosmos_id: string;
-        cosmos_version_number: string;
-        automates_id: string;
-        automates_version_number: string;
+        cosmos_id: string | null;
+        cosmos_version_number: string | null;
+        automates_id: string | null;
+        automates_version_number: string | null;
         bibjson: Bibjson;
     }
 
-    interface TextualDocumentReferenceSet extends Metadatum {
+    interface TextualDocumentReferenceSet extends MetadatumGromet {
         /**
          * host: <Gromet>
          * A collection of references to textual documents
@@ -271,7 +316,7 @@ declare namespace GroMEt {
     //  CodeCollectionReference
     //  -----------------------------------------------------------------------------
     
-    interface CodeCollectionReference extends Metadatum {
+    interface CodeCollectionReference extends MetadatumGromet {
         /**
          * host: <Gromet>
          * Reference to a code collection (i.e., repository)
@@ -289,7 +334,7 @@ declare namespace GroMEt {
     //  EquationDefinition
     //  -----------------------------------------------------------------------------
     
-    interface EquationDefinition extends Metadatum {
+    interface EquationDefinition extends MetadatumBox {
         /**
          * host: <Box>
          * Association of an equation extraction with a Box
@@ -304,26 +349,28 @@ declare namespace GroMEt {
     //  =============================================================================
     
     //  -----------------------------------------------------------------------------
-    //  TextDefinition
+    //  TextDescription
     //  -----------------------------------------------------------------------------
     
-    interface TextDefinition extends Metadatum {
+    interface TextDescription extends MetadatumVariable {
         /**
          * host: <Variable>
-         * Association of text definition of host derived from text source.
+         * Association of text description of host derived from text source.
          * 'variable_identifier': char/string representation of the variable.
          * 'variable_definition': text definition of the variable.
+         * 'description_type': type of description, e.g., definition
          */
         text_extraction: TextExtraction;
         variable_identifier: string;
-        variable_definition: string;
+        variable_description: string;
+        description_type: string;
     }
 
     //  -----------------------------------------------------------------------------
     //  TextParameter
     //  -----------------------------------------------------------------------------
     
-    interface TextParameter extends Metadatum {
+    interface TextParameter extends MetadatumVariable {
         /**
          * host: <Variable>
          * Association of parameter values extracted from text.
@@ -334,16 +381,28 @@ declare namespace GroMEt {
     }
 
     //  -----------------------------------------------------------------------------
+    //  TextParameter
+    //  -----------------------------------------------------------------------------
+    
+    interface TextUnit extends MetadatumVariable {
+        /**
+         * host: <Variable>
+         * Association of variable unit type extracted from text.
+         */
+        text_extraction: TextExtraction;
+        unit: string;
+    }
+
+    //  -----------------------------------------------------------------------------
     //  EquationParameter
     //  -----------------------------------------------------------------------------
     
-    interface EquationParameter extends Metadatum {
+    interface EquationParameter extends MetadatumVariable {
         /**
          * host: <Variable>
          * Association of parameter value extracted from equation.
          */
         equation_extraction: EquationExtraction;
-        variable_uid: UidVariable;
         value: string; // eventually Literal?
     }
 
@@ -356,7 +415,7 @@ declare namespace GroMEt {
     //  INDRA Metadatums
     //  -----------------------------------------------------------------------------
     
-    interface ReactionReference extends Metadatum {
+    interface ReactionReference extends MetadatumJunction {
         /**
          * host: <Junction> : PNC Rate
          */
@@ -365,10 +424,10 @@ declare namespace GroMEt {
         is_reverse: boolean;
     }
 
-    interface IndraAgent {
-    }
-
-    interface IndraAgentReferenceSet extends Metadatum {
+    type IndraAgent = { [key: string]: any };
+    
+    
+    interface IndraAgentReferenceSet extends MetadatumJunction {
         /**
          * host: <Junction> : PNC State
          */
@@ -382,6 +441,34 @@ declare namespace GroMEt {
     //  =============================================================================
     
     /**
+     * Changes 2021-07-10:
+     * () Added Variable/Type/Gromet/Variable/Junction/etc. Metadatum sub-types that
+     *     we can use to determine which Metdatums that inherit from those are
+     *     available at different locations in the GroMEt.
+     * () Made the following fields in TextualDocumentReference optional
+     *     cosmos_id, cosmos_version_number, automates_id, automates_version_number
+     * () Created a BibJSON identifier type: {“type”: str , “id”: str }
+     * () Made all fields (except identifier) under Bibjson optional
+     * () Changed TextExtraction:
+     *     list of: “text_spans”: array, required
+     * () Added TextSpan: page, block, char_begin, char_end -- all required
+     * () ALL arrays (lists) are required (even if empty)
+     *     ONE EXCEPTION: all metadata fields can be None (not updating type)
+     * () Updated Bibjson: Removed the “file” and “file_url” in favor of “link”
+     *     link is a List of LinkObject types
+     * () Added LinkObject: Has the following required fields:
+     *     type : currently str, but eventually will be BibJSONLinkType (TODO Paul)
+     *         string options include: “url”, “gdrive”, etc
+     *     location : a string that can be used to locate whatever is referenced by the Bibjson
+     * () Changed TextDescription
+     *     Renamed TextDefinition → TextDescription  (including fields)
+     *     added field ‘description_type’
+     * () Changed EquationParameter
+     *     dropped “variable_id” -- not needed (as it is associated in the metadata of the variable
+     *
+     * 
+     *
+     * 
      * Changes 2021-06-10:
      * () Started migration of GrFN metadata types to GroMEt metadatum types.
      */
@@ -425,9 +512,9 @@ declare namespace GroMEt {
      *
      * 
      * Event-driven programming
-     * () No static trace (directed edges from one fn to another), 
+     * () No static trace (directed edges from one fn to another),
      *     so a generalization of side-effects
-     *     Requires undirected, which corresponds to under-specification 
+     *     Requires undirected, which corresponds to under-specification
      */
     
     //  -----------------------------------------------------------------------------
@@ -520,6 +607,13 @@ declare namespace GroMEt {
          * Representation of an explicit reference to a primitive operator
          */
         name: UidOp;
+    }
+
+    interface RefLiteral extends GrometElm {
+        /**
+         * Representation of an explicit reference to a declared Literal
+         */
+        name: UidLiteral;
     }
 
     //  -----------------------------------------------------------------------------
@@ -629,7 +723,15 @@ declare namespace GroMEt {
     interface Literal extends TypedGrometElm {
         /**
          * Literal base. (A kind of GAT Nullary Term Constructor)
-         * A literal is an instance of a Type
+         * A literal is an instance of a Type.
+         *
+         * 
+         * If a Literal is to be "referred to" in multiple places in the model,
+         *     then assign it a 'uid' and place its declaration in the
+         *     'literals' field of the top-level Gromet.
+         *     This is referred to as a 'named Literal'
+         *         (where in this case, by "name" I mean the uid)
+         * Example of a simple "inline" Literal
          */
         uid: UidLiteral | null; // allows anonymous literals
         value: Val; // TODO
@@ -831,160 +933,187 @@ declare namespace GroMEt {
          */
     }
 
-    interface Conditional extends Box { // BoxDirected
+    interface Conditional extends Box {
         /**
          * Conditional
          *     ( TODO:
          *         Assumes no side effects.
-         *         Assumes no breaks.
+         *         Assumes no breaks/continues.
          *     )
          * ( NOTE: the following notes make references to elements as they
          *         appear in Clay's gromet visual notation. )
          * Terminology:
-         *     *branch Predicate* (a type of Expression computing a
-         *         boolean) represents the branch conditional test whose
-         *         outcome determines whether the branch will be executed.
-         *     *branch Function* represents the computation of anything in
-         *         the branch
+         *     *branch Predicate* (a Predicate is a type of Expression
+         *         with a single Boolean PortOutput): represents the branch
+         *         conditional test whose outcome determines whether the
+         *         branch will be evaluated.
+         *     *branch body*: represents the computation of anything in the
+         *         branch.
+         *         If the branch body only involves computing a single variable,
+         *             then it is an Expression.
+         *         If the branch body computes more than one variable, then it
+         *             is a Function.
          *     A *branch* itself consists of a Tuple of:
-         *             <Predicate>, <Function>, List[UidWire]
-         *         The UidWire list denotes the set of wires relevant for
-         *             completely wiring the branch Cond and Fn to the
-         *             Conditional input and output Ports.
+         *         (1) branch predicate (Predicate)
+         *         (2) branch body (Union[Expression, Function])
          * Port conventions:
-         *     Being a BoxDirected, a Conditional has a set of
-         *         input and output Ports.
-         *     *input* Ports capture any values of state/variables
-         *         from the scope outside of the Conditional Box that
-         *         are required by any branch Predicate or Function.
-         *         (think of the input Ports as representing the relevant
-         *         "variable environment" to the Conditional.)
-         *     We can then think of each branch Function as a possible
+         *     A Conditional has a set of PortInput and PortOutput type
+         *         Ports/PortCalls that define the Conditional's "input"
+         *         and "output" *interface*.
+         *     The ports on the Predicates, Expressions and Functions
+         *         of the branch predicate and body will (mostly) be
+         *         PortCalls that reference the corresponding Ports
+         *         in the Conditional Port interface.
+         *         (The one exception is the Predicate PortOutput, which
+         *         is just a regular Port of value_type Boolean that
+         *         itself is determined by the Predicate but does not get
+         *         "read" by another model element; it is instead
+         *         used in evaluation to determine branch choice.)
+         *     *input* Ports (type PortInput) of the Conditional interface
+         *         capture any values of variables from the scope
+         *         outside of the Conditional Box that are required by any
+         *         branch Predicate or body.
+         *         (Think of the PortInput Ports as representing the
+         *         relevant "variable environment" to the Conditional.)
+         *     We can then think of each branch body as a possible
          *         modification to the "variable environment" of the
-         *         input Ports. When a branch Function is evaluated, it
-         *         may preserve the values from some or all of the original
-         *         input ports, or it may modify them, and/or it may
-         *         introduce *new* variables resulting in corresponding
-         *         new output Ports.
-         *     From the perspective of the output Ports of the Conditional,
-         *         we need to consider all of the possible new variable
-         *         environment changes made by the selection of any branch.
-         *         Doing so permits us to treat the Conditional as a modular
+         *         input Ports. When a branch body Expression/Function is
+         *         evaluated, it may: (a) preserve the values from some
+         *         or all of the original input ports, or (b) modify the
+         *         variable values introduced by those input ports,
+         *         and/or (c) introduce *new* variables resulting in
+         *         corresponding new output Ports.
+         *     From the perspective of the PortOutput type ports of the
+         *         Conditional output interface, we need to consider all
+         *         of the possible new variable environment changes made
+         *         by the selection of any branch.
+         *         Representing all possible branch environment variabels
+         *         permits us to treat the Conditional as a modular
          *         building-block to other model structures.
-         *         To achieve this, each branch Function must include in its
-         *         output_ports a set of Ports that represent any of the
-         *         "new variables" introduced by any branch Function.
-         *         This allows us to have a single output_ports set for the
-         *         entire Conditional, and whichever branch Function is
-         *         evaluated, those Ports will be defined.
-         *     NOTE: this does NOT mean those Ports are "Wired" and carry
-         *         values; branch Function B1 may introduce a new variable
-         *         "x" that branch Function B2 does not; B2 must still have
-         *         a Port corresponding to "x", but it will not be Wired to
-         *         anything -- it carries no value.
-         *     Each branch Predicate has a single Boolean Port devoted to
-         *         determining whether the branch is selected (when True).
-         * Definition: A Conditional is a...
-         *     Sequence (List) of branches:
-         *         Tuple[Predicate, Function, List[UidWire]]
-         *     Each branch Predicate has a single boolean output Port
-         *         whose state determines whether the branch Function
-         *         will be evaluated to produce the state of the Conditional
-         *         output Ports.
-         * Interpretation:
-         *     GrFN provides unambiguous full data flow semantics.
-         *     Here (for now), a gromet Conditional provides some abstraction
-         *         away from pure data flow (but it is directly recoverable
-         *         if desired).
-         *     The interpretation convention:
-         *         Branches are visited in order until the current branch
-         *             Predicate evals to True
-         *         If a branch Predicates evaluates to True, then branch
-         *             Function takes the Conitional input_ports and sets
-         *             determines the output_ports of the Conditional
-         *             according to its internal components.
-         *         If all no branch Predicate evaluats to True, then pass
-         *             input Ports to outputs and new Ports have undefined
-         *             values.
+         *         The Conditional PortOutput interface will therefore have a
+         *         corresponding PortOutput port for each possible variable
+         *         introduced in any branch body.
+         *     In cases where a PortOutput port of the Conditional represents
+         *         a variable that may not be set by a branch (or none of the
+         *         branches conditions evaluate to True and there is no *else*
+         *         branch body), but the variable represented by that port
+         *         *is* represented by a Port in the PortInput interface,
+         *         then the PortOutput will be a PortCall that 'call's the
+         *         PortInput Port.
+         * Evaluation semantics:
+         *     Branches are visited in order until the current branch
+         *         Predicate evals to True.
+         *     If a branch Predicate evaluates to True, then the branch
+         *         body Expression/Function uses the values of the
+         *         Conditional PortInput Ports referred to ('call'ed by) the
+         *         body PortCalls and computes the resulting values of
+         *         variables (represented by the PortOutput PortCalls of the
+         *         body Expression or Function) in that branch;
+         *         The PortOutput PortCalls of the branch then 'call'
+         *         the corresponding PortOutput Ports in the Conditional
+         *         output interface, setting their values.
+         *     Any PortOutput ports NOT called by a branch body will then
+         *         either:
+         *         (1) themselves be PortCalls that call the corresponding
+         *             PortInput interface Ports to retrieve the variable's
+         *             original value, or
+         *         (2) have undefined (None) values.
+         *     An "else" branch has no branch Predicate -- the branch
+         *         body is directly evaluated. Only the last branch
+         *         may have no branch Predicate.
+         *     Finally, if none of the branch Predicates evaluate to True
+         *         and there is no "else" branch, then evaluation 'passes':
+         *         any PortOutput PortCalls in the Conditional output interface
+         *         will get their values from their 'call'ed PortInput,
+         *         or have undefined values.
+         *
+         * 
+         *     TODO Updating that branch body MUST have Expression/Function
          */
-        //  branches is a List of
-        //    ( <Predicate>1, <Function>, [<UidWire>+] )
-        branches: Array<[Predicate | null, Function, UidWire[]]>;
+        //  branches is a List of UidBox references to
+        //    ( <Predicate>1, <Expression,Function> )
+        branches: Array<[UidBox | null, UidBox]>;
     }
 
-    interface Loop extends Box, HasContents { // BoxDirected
+    interface Loop extends Box, HasContents {
         /**
          * Loop
          *     ( TODO:
          *         Assumes no side-effects.
          *         Assumes no breaks.
          *     )
-         * A BoxDirected that "loops" until an exit_condition (Predicate)
+         * A Box that "loops" until an exit_condition (Predicate)
          *     is True.
-         *     By "loop", you can think of iteratively making a copies of
-         *         the Loop and wiring the previous Loop instance output_ports
-         *         to the input_ports of the next Loop instance.
-         *         (wiring of output-to-input Ports is done is order
-         *          of the Ports).
-         * Definition / Terminology:
-         *     A Loop has a *body* (because it is a Box), that
-         *         represents the "body" of the loop.
+         *     By "loop", you can think of iteratively making copies of the
+         *         Loop and wiring the previous Loop instance PortOutputs
+         *         to the PortInput Ports of the next Loop instance.
+         *     "Wiring"/correspondence of output-to-input Ports is
+         *         accomplished by the PortOutput ports being
+         *         PortCalls that directly denote (call) their
+         *         corresponding PortInput Port.
+         * Terminology:
+         *     A Loop has a contents (because it is a HasContents)
+         *         -- wires, junctions, boxes -- that represent the
+         *         *body* of the loop.
          *     A Loop has an *exit_condition*, a Predicate that
          *         determines whether to evaluate the loop.
-         *     A Loop has input_ports and output_ports (being
-         *         a BoxDirected).
-         *         A portion of the input_ports represent Ports
-         *             set by the incoming external "environment"
+         *     A Loop has PortInput and PortOutput ports.
+         *         A portion of the PortInput Ports acquire values
+         *             by the incoming external "environment"
          *             of the Loop.
-         *         The remaining of the input_ports represent
-         *             Ports to store state values that may be
-         *             introduced within the Loop body
-         *             but are not themselves initially used in
-         *             (read by) the loop body wiring.
+         *         The remaining of the PortInput Ports represent
+         *             Ports to capture the state variables that may
+         *             be introduced within the Loop body but not
+         *             originating from the incoming external
+         *             "environment".
          *             In the initial evaluation of the loop,
-         *             these Ports have no values; after one
-         *             iteration of the Loop, these Ports
-         *             may have their values assigned by the
-         *             Loop body.
-         *     Each input_port is "matched" to an output_port,
-         *         based on the Port order within the input_ports
-         *         and output_ports lists.
-         *     A Loop has a *port_map* is a bi-directional map
-         *         that pairs each Loop output Port with each Loop
-         *         input Port, determining what the Loop input Port
-         *         value will be based on the previous Loop iteration.
-         *         Some input Port values will not be changed as a
+         *             these Ports have no values OR the Port
+         *             has an initial 'value' Literal
+         *             (e.g., initializing a loop index).
+         *             After iteration through the loop, these
+         *             Ports may have their values assigned/changed
+         *             by the Loop body; these values are then used
+         *             to set the PortInput values for the start of
+         *             the next iteration through the loop.
+         *     Each PortInput Port is "paired" with (called by) a
+         *         PortOutput PortCall.
+         *     Some PortInput Port values will not be changed as a
          *         result of the Loop body, so these values "pass
-         *         through" to that input's paired output.
+         *         through" to that input's paired output PortCall.
          *         Others may be changed by the Loop body evaluation.
-         * Interpretation:
-         *     The Loop exit_condition is evaluated at the very
-         *         beginning before evaluating any of the Loop
-         *         body wiring.
+         * Evaluation semantics:
+         *     The Loop exit_condition Predicate is evaluated at
+         *         the very beginning before evaluating any of the
+         *         Loop body wiring.
          *         IF True (the exit_condition evaluates to True),
-         *             then the values of the Ports in input_ports
-         *             are passed directly to their corresponding
-         *             Ports in output_ports; The output_ports then
-         *             represent the final value/state of the Loop
-         *             output_ports.
+         *             then the PortOutput PortCalls have their
+         *             values set by the PortInput Ports they call,
+         *             skipping over any intervening computation in
+         *             Loop body.
          *         IF False (the exit_condition evaluates to False),
          *             then the Loop body wiring is evaluated to
-         *             determine the state of each output Port value.
-         *             The values of each output Port are then assined
-         *             to the Port's corresponding input Port and
-         *             the next Loop iteration is begun.
+         *             determine the state of each PortOutput
+         *             PortCall value.
+         *             The values of each PortOutput PortCall are
+         *             then assigned to the PortCall's 'call'ed
+         *             PortInput Port and the next Loop iteration
+         *             is begun.
          *     This basic semantics supports both standard loop
          *         semantics:
          *         () while: the exit_condition is tested first.
-         *         () repeat until: an initial input Port set to False
+         *         () repeat until: an initial PortInput Port for flagging
+         *             the first Loop iteration is set to False to
          *             make the initial exit_condition evaluation fail
          *             and is thereafter set to True in the Loop body.
          */
-        exit_condition: Predicate | null;
+        exit_condition: UidBox | null;
     }
 
     //  --------------------
     //  Variable
+    
+    type VariableState = UidPort | UidWire | UidJunction;
+    
     
     interface Variable extends TypedGrometElm {
         /**
@@ -995,9 +1124,17 @@ declare namespace GroMEt {
          * Currently, (b) will be represented in Metadata.
          *
          * 
+         * 'states' represents the set of model Valued components
+         *     that constitute the Variables
+         * 'proxy_state' denotes the single model element that can
+         *     be used as a representative proxy for the variable
+         *     (e.g., visualization).
+         *
+         * 
          */
         uid: UidVariable;
-        states: Array<UidPort | UidWire | UidJunction>;
+        proxy_state: VariableState;
+        states: VariableState[];
     }
 
     //  --------------------
@@ -1027,6 +1164,38 @@ declare namespace GroMEt {
     //  -----------------------------------------------------------------------------
     
     /**
+     * Changes 2021-06-22:
+     * () Added 'proxy_state' field to store single Valued model component from the
+     *     Variable state set that can be used as a proxy for the variable.
+     *
+     * 
+     * Changes 2021-06-21:
+     * () Changes to Conditional:
+     *     () The conditional branch body may now be either an Expression or Function.
+     *     () Explicitly documented that there is no need for any Wires between
+     *         the Conditional input Ports and the branch Predicate and body ports,
+     *         since these will always have the same corresponding Ports
+     *         (similar to how Wires are not needed in Expressions/Expr);
+     *         In this case, this is implemented by having the PortInput Ports to the
+     *         branch Predicate and the branch body Expression/Function be PortCalls
+     *         that 'call' the corresponding Conditional PortInput Ports;
+     *         and similarly for branch body output Ports to the corresponding
+     *         conditional output Ports: the branch body Expression/Function
+     *         output Ports will be PortCalls to the Conditional PortOutput Ports.
+     *         And in the case that a branch body does not 'call' one of the defined
+     *         Conditional PortOutputs BUT that output port corresponds to an input
+     *         port, then that PortOutput will be a PortCall that 'call's the
+     *         corresponding PortInput to get its value.
+     *     - the 'wiring diagram' schema figure (in the gromet/docs/) has been updated.
+     * () Changes to Loop:
+     *     () The PortOutput ports will be PortCalls that call their
+     *         corresponding PortInput Ports to unambiguously determine
+     *         the output-to-input correspondence.
+     *         This removes the requirement that the correspondence is
+     *         derived from the order in which the Ports are referenced
+     *         in the Loop's 'ports' list.
+     *
+     * 
      * Changes 2021-06-13:
      * () Changed RefFn to RefBox (as reference could be to any defined Box)
      * () Remove UidFn as not needed; instead use general UidBox (e.g., by RefBox)
@@ -1045,24 +1214,24 @@ declare namespace GroMEt {
      * () Added the following mechanism by which a Box can be "called"
      *         in an arbitrary number of different contexts within the gromet.
      *     This include adding the following two TypedGrometElms:
-     *     (1) BoxCall: A type of Box --- being a Box, the BoxCall itself has 
-     *         it's own UidBox uid (to represent the instance) and its own 
-     *         list of Ports (to wire it within a context). 
-     *         The BoxCall adds a 'call' field that will consist of the UidBox 
-     *             of another Box that will serve as the "definition" of the 
+     *     (1) BoxCall: A type of Box --- being a Box, the BoxCall itself has
+     *         it's own UidBox uid (to represent the instance) and its own
+     *         list of Ports (to wire it within a context).
+     *         The BoxCall adds a 'call' field that will consist of the UidBox
+     *             of another Box that will serve as the "definition" of the
      *             BoxCall.
-     *         An arbitrary number of different BoxCalls may "call" this 
-     *             "definition" Box. There is nothing else about the 
-     *             "definition" Box that makes it a definition -- just that 
+     *         An arbitrary number of different BoxCalls may "call" this
+     *             "definition" Box. There is nothing else about the
+     *             "definition" Box that makes it a definition -- just that
      *             it is being called by a BoxCall.
      *         The BoxCall itself will have no internal contents, it's
      *             internals are defined by the "definition" Box.
-     *         For each Port in the "definition" Box, BoxCall will have 
-     *             a corresponding PortCall Port; this PortCall will reference 
-     *             the "definition" Box Port. 
-     *     (2) PortCall: A tye of Port -- being a Port, the PortCall has it's 
-     *         own UidPort uid (to represent the instance), and adds a 'call' 
-     *         field that will be the UidPort of the  Port on the "definition" 
+     *         For each Port in the "definition" Box, BoxCall will have
+     *             a corresponding PortCall Port; this PortCall will reference
+     *             the "definition" Box Port.
+     *     (2) PortCall: A tye of Port -- being a Port, the PortCall has it's
+     *         own UidPort uid (to represent the instance), and adds a 'call'
+     *         field that will be the UidPort of the  Port on the "definition"
      *         Box referenced by a BoxCall.
      *         The 'box' field of the PortCall will be the UidBox of the BoxCall
      *             instance.
@@ -1079,8 +1248,8 @@ declare namespace GroMEt {
      *     exclusively by the 'type' attribute of any TypedGrometElm.
      *     This is a much more clean way of separating syntax (the elements) from
      *         their semantics (how to interpret or differentially visualize).
-     *     A Model Framework will designate what types are the TypedGrometElms may be. 
-     *     For example, a Function Network will have 
+     *     A Model Framework will designate what types are the TypedGrometElms may be.
+     *     For example, a Function Network will have
      *         Port types: PortInput, PortOutput
      *         Wire types: WireDirected, WireUndirected
      *     For example, a Bilayer will have
@@ -1102,13 +1271,13 @@ declare namespace GroMEt {
      *     Top-level Box now has 'ports' attribute. This is still required
      *         as we need to preserve information about ordering of Ports,
      *         both for positional arguments and for pairing inputs to outputs in Loop.
-     * () Valued now includes 'value_type' attribute. 
-     *     Previously was using Port, Junction and Wire 'type' to capture the 
-     *         value type, but now the value type will be explicitly represented 
+     * () Valued now includes 'value_type' attribute.
+     *     Previously was using Port, Junction and Wire 'type' to capture the
+     *         value type, but now the value type will be explicitly represented
      *         by the value_type attribute.
      *     The 'type' attribute will instead be reserved for Model Framework type.
      * () Added 'name' to TypedGrometElm, so all children can be named
-     *     The purpose of name: provide model domain-relevant identifier to model component 
+     *     The purpose of name: provide model domain-relevant identifier to model component
      * () Metadatum is no longer a TypedGrometElm, just a GrometElm, as it is not
      *     itself a component of a model; it is data *about* a model component.
      * () Gromet object: added 'literals' and 'junctions' attributes
