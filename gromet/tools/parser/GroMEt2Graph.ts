@@ -15,6 +15,8 @@ import Junction = GroMEt.Junction;
 import Gromet = GroMEt.Gromet;
 import ModelInterface = GroMEt.ModelInterface;
 import {GroMEtMap} from './GroMEtMap.ts';
+import Loop = GroMEt.Loop;
+import Conditional = GroMEt.Conditional;
 
 export class GroMEt2Graph extends GroMEtMap {
     private idStack: number[] = [];
@@ -131,7 +133,11 @@ export class GroMEt2Graph extends GroMEtMap {
     }
 
     private getID(...IDs: Array<string | number>): string {
-        return `${this.idStack.join('::')}${IDs.length ? `::${IDs.join('::')}`: ''}`;
+        return this.getStackID(this.idStack, ...IDs);
+    }
+
+    private getStackID(stack: number[], ...IDs: Array<string | number>): string {
+        return `${stack.join('::')}${IDs.length ? `::${IDs.join('::')}`: ''}`;
     }
 
     private registerUID(uid: string): number {
@@ -140,6 +146,17 @@ export class GroMEt2Graph extends GroMEtMap {
             // console.log(`${uid} => ${this.idMap.get(uid)}`);
         }
         return this.idMap.get(uid) as number;
+    }
+
+    private createFauxBox(name: string, syntax: string): Box {
+        return {
+            name,
+            syntax,
+            uid: `_GEN_FAUX_ID_${this.uniqueID++}_`,
+            ports: null,
+            type: null,
+            metadata: null,
+        }
     }
 
     private parseBox(box: Box, parent: string | null, graph: GraphSpec): void {
@@ -203,6 +220,31 @@ export class GroMEt2Graph extends GroMEtMap {
             metadata: [port.metadata, ...this.getVariableMetadata(port.uid)].filter(v => Boolean(v)),
         };
         graph.nodes.push(node);
+    }
+
+    private getPortCallID(nodeID: string): string {
+        const graphID = this.registerUID(nodeID);
+        // if the node is a port, check the parent ID
+        try {
+            const port = this.getElement(nodeID, this.ports);
+            const parentID = this.registerUID(port.box);
+
+            const idStack = [...this.idStack];
+            while (idStack.length) {
+                if (idStack.pop() === parentID) {
+                    return this.getStackID(idStack, parentID, graphID);
+                }
+            }
+        } catch {}
+        return this.getID(graphID);
+    }
+
+    private parsePortCall(port: PortCall, parent: string | null, graph: GraphSpec): void {
+        this.parsePort(port, parent, graph);
+        graph.edges.push({
+            source: this.getID(),
+            target: this.getPortCallID(port.call),
+        });
     }
 
     private getWireNodeID(nodeID: string): string {
@@ -366,6 +408,34 @@ export class GroMEt2Graph extends GroMEtMap {
         graph.nodes.push(node);
     }
 
+    private parseLoop(loop: Loop, parent: string | null, graph: GraphSpec): void {
+        this.parseBox(loop, parent, graph);
+        this.parseHasContents(loop, parent, graph);
+        if (loop.exit_condition) {
+            const box = this.getElement(loop.exit_condition, this.boxes);
+            this.parseElement(box, this.getID(), graph);
+        }
+    }
+
+    private parseConditional(conditional: Conditional, parent: string | null, graph: GraphSpec): void {
+        this.parseBox(conditional, parent, graph);
+
+        for (let i = 0, n = conditional.branches.length; i < n; ++i) {
+            const branch = conditional.branches[i];
+            const faux = this.createFauxBox(`branch ${i}`, 'Function') as GroMEt.Function;
+            faux.wires = null;
+            faux.junctions = null;
+            faux.boxes = [];
+
+            if (branch[0]) {
+                faux.boxes.push(branch[0]);
+            }
+            faux.boxes.push(branch[1]);
+
+            this.parseElement(faux, this.getID(), graph);
+        }
+    }
+
     private _parseElement(element: GrometElm, parent: string | null, graph: GraphSpec, out?: string): void {
         switch (element.syntax) {
             case 'Function':
@@ -373,14 +443,18 @@ export class GroMEt2Graph extends GroMEtMap {
                 break;
 
             case 'Port':
-            case 'PortCall':
                 this.parsePort(element as Port, parent, graph);
+                break;
+
+            case 'PortCall':
+                this.parsePortCall(element as PortCall, parent, graph);
                 break;
 
             case 'Wire':
                 this.parseWire(element as Wire, parent, graph);
                 break;
 
+            case 'Predicate':
             case 'Expression':
                 this.parseExpression(element as Expression, parent, graph);
                 break;
@@ -403,6 +477,14 @@ export class GroMEt2Graph extends GroMEtMap {
 
             case 'Junction':
                 this.parseJunction(element as Junction, parent, graph);
+                break;
+
+            case 'Loop':
+                this.parseLoop(element as Loop, parent, graph);
+                break;
+
+            case 'Conditional':
+                this.parseConditional(element as Conditional, parent, graph);
                 break;
 
             default:
