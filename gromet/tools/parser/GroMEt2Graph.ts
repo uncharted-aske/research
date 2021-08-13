@@ -241,10 +241,11 @@ export class GroMEt2Graph extends GroMEtMap {
 
     private parsePortCall(port: PortCall, parent: string | null, graph: GraphSpec): void {
         this.parsePort(port, parent, graph);
-        graph.edges.push({
-            source: this.getID(),
-            target: this.getPortCallID(port.call),
-        });
+        // PortCall edges should be ignored
+        // graph.edges.push({
+        //     source: this.getID(),
+        //     target: this.getPortCallID(port.call),
+        // });
     }
 
     private getWireNodeID(nodeID: string): string {
