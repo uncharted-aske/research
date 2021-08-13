@@ -243,7 +243,7 @@ request_body = {
     'definition': model_def,
     'start': 0,
     'end': 120,
-    'step': 0.5,
+    'step': 5,
     'parameters': parameters_set
 }
 
@@ -251,7 +251,7 @@ response_body = requests.post(DONU_ENDPOINT, json = request_body).json()
 
 # %%
 fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (8, 6))
-__ = [ax.plot(response_body['result'][0]['times'], v, label = k) for k, v in response_body['result'][0]['values'].items()]
+__ = [ax.plot(response_body['result'][0]['times'], v, marker = '.', label = k) for k, v in response_body['result'][0]['values'].items()]
 __ = plt.setp(ax, xlabel = 'Times (days)', ylabel = 'Measures', title = f"{model_def['source']['model']} (T_doubling = {T_doubling} days, T_recovery = {T_recovery} days)")
 __ = ax.legend()
 
