@@ -1,5 +1,6 @@
 interface NodeSpec {
     id: string;
+    grometID: string | null;
     concept: string;
     role: string[];
     label: string;
