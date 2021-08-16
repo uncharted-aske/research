@@ -5,11 +5,10 @@
 
 # %%[markdown]
 # Content:
-# * Parse directly the "loop" and CHIME GroMEt examples from UAZ/Clay
+# * Load SimpleSIR and (mini) CHIME 
 # * 
 
 # %%
-import os
 import json
 import networkx as nx
 import numpy as np
@@ -18,31 +17,33 @@ import matplotlib.pyplot as plt
 from typing import Dict, Tuple, Any, Optional
 
 # %%[markdown]
-# # Run the Dario parser over the GroMEt
+# # Load Model Data
 
-deno_command = 'deno run --allow-write --allow-read'
-parser_path = '/home/nliu/projects/aske/research/gromet/tools/parse.ts'
-data_dir = '/home/nliu/projects/aske/research/gromet/data/uaz/'
-dist_dir = '/home/nliu/projects/aske/research/gromet/dist/uaz/'
+# %%
 
-gromet = []
-graph = []
-for p in ('loop/loop_ex2_gromet_FunctionNetwork_correction', 'conditional/cond_ex1_gromet_FunctionNetwork', 'CHIME/CHIME_SIR_v01_gromet_FunctionNetwork_by_hand'):
+path = "/home/nliu/projects/aske/research/gromet/data/august_2021_demo_repo/Simple_SIR/SimpleSIR_metadata_gromet_FunctionNetwork.json"
+with open(path, 'r') as f:
+    gromet_sir = json.load(f)
 
-    gromet_path = data_dir + f'{p}.json'
-    graph_path = dist_dir + f'{p}_graph.json'
+path = "/home/nliu/projects/aske/research/gromet/dist/august_2021_demo_repo/Simple_SIR/SimpleSIR_metadata_gromet_FunctionNetwork_graph.json"
+with open(path, 'r') as f:
+    graph_sir = json.load(f)
 
-    __ = os.system(deno_command + ' ' + parser_path + ' ' + gromet_path + ' ' + graph_path)
+path = "/home/nliu/projects/aske/research/gromet/data/uaz/CHIME/CHIME_SIR_v01_gromet_FunctionNetwork_by_hand.json"
+with open(path, 'r') as f:
+    gromet_chime = json.load(f)
 
-    with open(gromet_path, 'r') as f:
-        gromet.append(json.load(f))
+path = "/home/nliu/projects/aske/research/gromet/dist/uaz/CHIME/CHIME_SIR_v01_gromet_FunctionNetwork_by_hand_graph.json"
+with open(path, 'r') as f:
+    graph_chime = json.load(f)
 
-    with open(graph_path, 'r') as f:
-        graph.append(json.load(f))
+path = "/home/nliu/projects/aske/research/gromet/data/uaz/gromet_intersection_graph/gig__SimpleSIR_metadata-CHIME_SIR_v01.json"
+with open(path, 'r') as f:
+    comparison_sir_chime = json.load(f)
 
 
-deno_command = parser_path = data_dir = dist_dir = gromet_path = f = p = None
-del deno_command, parser_path, data_dir, dist_dir, gromet_path, f, p
+f = None
+del f
 
 
 # %%
@@ -196,7 +197,7 @@ def generate_linear_layout(G: Any, offset: Optional[Dict] = None, draw: Optional
     return pos
 
 # Draw NX Object
-def draw_graph(G: Any, pos: Dict, ax: Optional[Any] = None, node_args: Optional[Dict] = None, edge_args: Optional[Dict] = None, label_args: Optional[Dict] = None, legend_args: Optional[Dict] = None, G_full: Optional[Any] = None, label_key: Optional[str] = 'label') -> Any:
+def draw_graph(G: Any, pos: Dict, ax: Optional[Any] = None, node_args: Optional[Dict] = None, edge_args: Optional[Dict] = None, label_args: Optional[Dict] = None, legend_args: Optional[Dict] = None, G_full: Optional[Any] = None, label_key: Optional[str] = 'label', label_angle: Optional[int] = 15) -> Any:
 
     if ax == None:
         fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (20, 5))
@@ -259,7 +260,7 @@ def draw_graph(G: Any, pos: Dict, ax: Optional[Any] = None, node_args: Optional[
 
     if len(label_args) > 0:
         h_labels = nx.draw_networkx_labels(G, pos = pos, ax = ax, **label_args)
-        __ = [t.set_rotation(15) for __, t in h_labels.items()]
+        __ = [t.set_rotation(label_angle) for __, t in h_labels.items()]
 
     __ = plt.setp(ax, ylim = (-3, 3))
 
@@ -271,7 +272,7 @@ def draw_graph(G: Any, pos: Dict, ax: Optional[Any] = None, node_args: Optional[
     return None
 
 # Generate linear layout that is layered by the parent-child hierarchy of the graph
-def generate_linear_layout_with_hierarchy(G: Any, draw: Optional[bool] = False, ax: Optional[Any] = None) -> Dict:
+def generate_linear_layout_with_hierarchy(G: Any, draw: Optional[bool] = False, ax: Optional[Any] = None, draw_graph_args: Optional[Dict] = {}) -> Dict:
 
     if (draw == True) & (ax == None):
         fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (20, 5))
@@ -297,45 +298,147 @@ def generate_linear_layout_with_hierarchy(G: Any, draw: Optional[bool] = False, 
             pos_full = {**pos_full, **pos}
 
             if draw == True:
-                __ = draw_graph(G_sub, pos = pos, ax = ax, G_full = G)
+                __ = draw_graph(G_sub, pos = pos, ax = ax, G_full = G, **draw_graph_args)
 
     if draw == True:
         __ = plt.setp(ax, ylim = (-1, max_node_level + 1))
     
     return pos_full
 
+# Calculate lineage of nodes of a given parsed graph
+def calculate_node_lineage(graph: Any) -> Dict:
+
+    map_ids_nodes = {node['id']: node for node in graph['nodes']}
+    node_lineage = {node['id']: [] for node in graph['nodes']}
+
+    for node_id in node_lineage.keys():
+
+        node_temp = map_ids_nodes[node_id]
+
+        while node_temp['parent'] != None:
+
+            node_lineage[node_id].append(node_temp['parent'])
+
+            node_temp = map_ids_nodes[node_temp['parent']]
+
+        # Reverse order to ancestor-to-parent
+        node_lineage[node_id] = node_lineage[node_id][::-1]
+
+    return node_lineage
+
+
+# %%[markdown]
+# ## Draw FN SimpleSIR Model
 
 # %%
+G_sir = generate_nx_obj(graph = graph_sir)
+__ = add_missing_edges(G = G_sir)
+__ = promote_edges(G = G_sir)
 
-G = generate_nx_obj(graph = graph[0])
+# __ = generate_linear_layout(G_sir, draw = True)
+pos_sir = generate_linear_layout_with_hierarchy(G_sir, draw = True)
 
-G.remove_edge('0::6::14', '0::6::5')
-G.remove_edge('0::6::15', '0::6::13')
-G.remove_edge('0::6::10', '0::6::8')
-
-__ = add_missing_edges(G = G)
-__ = promote_edges(G = G)
-# __ = generate_linear_layout(G, draw = True)
-
-__ = generate_linear_layout_with_hierarchy(G, draw = True)
+# %%[markdown]
+# ## Draw FN CHIME Model
 
 # %%
+G_chime = generate_nx_obj(graph = graph_chime)
+__ = add_missing_edges(G = G_chime)
+__ = promote_edges(G = G_chime)
 
-G = generate_nx_obj(graph = graph[1])
-
-__ = add_missing_edges(G = G)
-__ = promote_edges(G = G)
-# __ = generate_linear_layout(G, draw = True)
-
-__ = generate_linear_layout_with_hierarchy(G, draw = True)
+# __ = generate_linear_layout(G_chime, draw = True)
+pos_chime = generate_linear_layout_with_hierarchy(G_chime, draw = True, draw_graph_args = {'label_key': 'grometID', 'label_angle': 30})
 
 
 # %%
-G = generate_nx_obj(graph = graph[2])
+# Comparison graph
+G_comp = nx.union(G_sir, G_chime, rename = ('SIR-', 'CHIME-'))
+edges = list(G_comp.edges)
+G_comp.remove_edges_from(edges)
 
-__ = add_missing_edges(G = G)
-__ = promote_edges(G = G)
-# __ = generate_linear_layout(G, draw = True)
 
-__ = generate_linear_layout_with_hierarchy(G, draw = True)
+# Map variables to their states
+map_vars_states_sir = {var['uid']: var['states'] for var in gromet_sir['variables']}
+map_vars_states_chime = {var['uid']: var['states'] for var in gromet_chime['variables']}
 
+
+# Map GroMEt IDs to Dario-Parser IDs
+map_grometID_id_sir = {node['grometID']: node['id'] for node in graph_sir['nodes']}
+map_grometID_id_chime = {node['grometID']: node['id'] for node in graph_chime['nodes']}
+
+
+# Calculate node lineage to get hierarchical level
+node_lineage_sir = calculate_node_lineage(graph = graph_sir)
+node_lineage_chime = calculate_node_lineage(graph = graph_chime)
+
+# Truncate state lists to lowest hierarchical level only
+# Exclude wires since they are not nodes
+for var, states in map_vars_states_sir.items():
+    x = {state: node_lineage_sir[map_grometID_id_sir[state]] for state in states if state in map_grometID_id_sir.keys()}
+    i = np.argmin([len(v) for __, v in x.items()])
+    map_vars_states_sir[var] = [list(x.keys())[i]]
+
+for var, states in map_vars_states_chime.items():
+    x = {state: node_lineage_chime[map_grometID_id_chime[state]] for state in states if state in map_grometID_id_chime.keys()}
+    i = np.argmin([len(v) for __, v in x.items()])
+    map_vars_states_chime[var] = [list(x.keys())[i]]
+
+var = states = i = x = None
+del var, states, i, x
+
+
+# Comparison edges (many-to-many -> one-to-one)
+comparison_edges = {
+    (map_grometID_id_sir[state_1], map_grometID_id_chime[state_2])
+    for common_nodes in comparison_sir_chime['common_nodes'] for var_1 in common_nodes['g1_variable'] for state_1 in map_vars_states_sir[var_1] for var_2 in common_nodes['g2_variable'] for state_2 in map_vars_states_chime[var_2]
+    if (state_1 in map_grometID_id_sir.keys()) & (state_2 in map_grometID_id_chime)
+}
+
+
+# Problem: 
+# * too many comparison edges since it was one-to-one in terms of variables
+# * but each variable has many states
+# * 8 hyperedges -> 55 simple edges
+
+# Temporary solution:
+# Only retain the lowest-level pairing by truncate the state lists (^)
+
+
+__ = G_comp.add_edges_from([
+    (
+        'SIR-' + src, 
+        'CHIME-' + tgt, 
+        0
+    ) 
+    for src, tgt in comparison_edges
+])
+
+# %%
+# Parallel positions
+p_chime = {node: p + 2 * np.array([0, 1]) for node, p in pos_chime.items()}
+p_sir = {node: p - 2 * np.array([0, 1]) for node, p in pos_sir.items()}
+
+
+# # Align mapped nodes
+# for src, tgt, __ in G_comp.edges:
+
+#     src = ''.join(src.split('-')[1:])
+#     tgt = ''.join(tgt.split('-')[1:])
+
+#     p_sir[src][0] = p_chime[tgt][0]
+
+#     print(f"{src} ---> {tgt}")
+
+
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (20, 5))
+__ = draw_graph(G_chime, pos = p_chime, ax = ax, G_full = G_comp, label_key = 'label')
+__ = draw_graph(G_sir, pos = p_sir, ax = ax, G_full = G_comp, label_key = 'label')
+
+p_chime = {'CHIME-' + node: val for node, val in p_chime.items() if node != None}
+p_sir = {'SIR-' + node: val for node, val in p_sir.items() if node != None}
+p_comp = {**p_chime, **p_sir}
+
+__ = draw_graph(G = G_comp, pos = p_comp, ax = ax, node_args = {}, label_args = {}, legend_args = {}, edge_args = {'edge_color': 'tab:cyan', 'alpha': 0.5})
+__ = plt.setp(ax, ylim = (-3, 5))
+
+# %%
