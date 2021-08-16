@@ -357,42 +357,56 @@ edges = list(G_comp.edges)
 G_comp.remove_edges_from(edges)
 
 
-# Map variables to their states
-map_vars_states_sir = {var['uid']: var['states'] for var in gromet_sir['variables']}
-map_vars_states_chime = {var['uid']: var['states'] for var in gromet_chime['variables']}
-
-
 # Map GroMEt IDs to Dario-Parser IDs
 map_grometID_id_sir = {node['grometID']: node['id'] for node in graph_sir['nodes']}
 map_grometID_id_chime = {node['grometID']: node['id'] for node in graph_chime['nodes']}
 
 
-# Calculate node lineage to get hierarchical level
-node_lineage_sir = calculate_node_lineage(graph = graph_sir)
-node_lineage_chime = calculate_node_lineage(graph = graph_chime)
+if False:
 
-# Truncate state lists to lowest hierarchical level only
-# Exclude wires since they are not nodes
-for var, states in map_vars_states_sir.items():
-    x = {state: node_lineage_sir[map_grometID_id_sir[state]] for state in states if state in map_grometID_id_sir.keys()}
-    i = np.argmin([len(v) for __, v in x.items()])
-    map_vars_states_sir[var] = [list(x.keys())[i]]
-
-for var, states in map_vars_states_chime.items():
-    x = {state: node_lineage_chime[map_grometID_id_chime[state]] for state in states if state in map_grometID_id_chime.keys()}
-    i = np.argmin([len(v) for __, v in x.items()])
-    map_vars_states_chime[var] = [list(x.keys())[i]]
-
-var = states = i = x = None
-del var, states, i, x
+    # Map variables to their states
+    map_vars_states_sir = {var['uid']: var['states'] for var in gromet_sir['variables']}
+    map_vars_states_chime = {var['uid']: var['states'] for var in gromet_chime['variables']}
 
 
-# Comparison edges (many-to-many -> one-to-one)
-comparison_edges = {
-    (map_grometID_id_sir[state_1], map_grometID_id_chime[state_2])
-    for common_nodes in comparison_sir_chime['common_nodes'] for var_1 in common_nodes['g1_variable'] for state_1 in map_vars_states_sir[var_1] for var_2 in common_nodes['g2_variable'] for state_2 in map_vars_states_chime[var_2]
-    if (state_1 in map_grometID_id_sir.keys()) & (state_2 in map_grometID_id_chime)
-}
+    # Calculate node lineage to get hierarchical level
+    node_lineage_sir = calculate_node_lineage(graph = graph_sir)
+    node_lineage_chime = calculate_node_lineage(graph = graph_chime)
+
+    # Truncate state lists to lowest hierarchical level only
+    # Exclude wires since they are not nodes
+    for var, states in map_vars_states_sir.items():
+        x = {state: node_lineage_sir[map_grometID_id_sir[state]] for state in states if state in map_grometID_id_sir.keys()}
+        i = np.argmin([len(v) for __, v in x.items()])
+        map_vars_states_sir[var] = [list(x.keys())[i]]
+
+    for var, states in map_vars_states_chime.items():
+        x = {state: node_lineage_chime[map_grometID_id_chime[state]] for state in states if state in map_grometID_id_chime.keys()}
+        i = np.argmin([len(v) for __, v in x.items()])
+        map_vars_states_chime[var] = [list(x.keys())[i]]
+
+    var = states = i = x = None
+    del var, states, i, x
+
+
+    # Comparison edges (many-to-many -> one-to-one)
+    comparison_edges = {
+        (map_grometID_id_sir[state_1], map_grometID_id_chime[state_2])
+        for common_nodes in comparison_sir_chime['common_nodes'] for var_1 in common_nodes['g1_variable'] for state_1 in map_vars_states_sir[var_1] for var_2 in common_nodes['g2_variable'] for state_2 in map_vars_states_chime[var_2]
+        if (state_1 in map_grometID_id_sir.keys()) & (state_2 in map_grometID_id_chime)
+    }
+
+
+if True:
+
+    # Alternative way to create these one-to-one mappings using "proxy_state"
+    map_vars_proxy_sir = {var['uid']: var['proxy_state'] for var in gromet_sir['variables']}
+    map_vars_proxy_chime = {var['uid']: var['proxy_state'] for var in gromet_chime['variables']}
+
+    comparison_edges = {
+        (map_grometID_id_sir[map_vars_proxy_sir[var_1]], map_grometID_id_chime[map_vars_proxy_chime[var_2]]) 
+        for common_nodes in comparison_sir_chime['common_nodes'] for var_1 in common_nodes['g1_variable'] for var_2 in common_nodes['g2_variable']
+    }
 
 
 # Problem: 
@@ -400,8 +414,11 @@ comparison_edges = {
 # * but each variable has many states
 # * 8 hyperedges -> 55 simple edges
 
-# Temporary solution:
+# Solution 1:
 # Only retain the lowest-level pairing by truncate the state lists (^)
+# 
+# Solution 2:
+# Use the "proxy_state" attribute of each variable
 
 
 __ = G_comp.add_edges_from([
