@@ -162,6 +162,7 @@ export class GroMEt2Graph extends GroMEtMap {
     private parseBox(box: Box, parent: string | null, graph: GraphSpec): void {
         const node: NodeSpec = {
             id: this.getID(),
+            grometID: box.uid,
             concept: box.syntax,
             role: this.getElementRoles(box.uid),
             label: box.name || box.uid,
@@ -210,6 +211,7 @@ export class GroMEt2Graph extends GroMEtMap {
     private parsePort(port: Port, parent: string | null, graph: GraphSpec): void {
         const node: NodeSpec = {
             id: this.getID(),
+            grometID: port.uid,
             concept: port.syntax,
             role: this.getElementRoles(port.uid),
             label: port.name || port.uid,
@@ -241,10 +243,11 @@ export class GroMEt2Graph extends GroMEtMap {
 
     private parsePortCall(port: PortCall, parent: string | null, graph: GraphSpec): void {
         this.parsePort(port, parent, graph);
-        graph.edges.push({
-            source: this.getID(),
-            target: this.getPortCallID(port.call),
-        });
+        // PortCall edges should be ignored
+        // graph.edges.push({
+        //     source: this.getID(),
+        //     target: this.getPortCallID(port.call),
+        // });
     }
 
     private getWireNodeID(nodeID: string): string {
@@ -307,6 +310,7 @@ export class GroMEt2Graph extends GroMEtMap {
                 const graphID = this.registerUID(id);
                 const node: NodeSpec = {
                     id: this.getID(graphID),
+                    grometID: null,
                     concept: exp.call.syntax,
                     role: [], // Expr does not have a uid
                     label: exp.call.name,
@@ -347,6 +351,7 @@ export class GroMEt2Graph extends GroMEtMap {
         const graphID = this.registerUID(id);
         const node: NodeSpec = {
             id: this.getID(graphID),
+            grometID: literal.uid,
             concept: literal.syntax,
             role: literal.uid ? this.getElementRoles(literal.uid) : [],
             label: literal.name || literal.value.val.toString(),
@@ -396,6 +401,7 @@ export class GroMEt2Graph extends GroMEtMap {
     private parseJunction(junction: Junction, parent: string | null, graph: GraphSpec): void {
         const node: NodeSpec = {
             id: this.getID(),
+            grometID: junction.uid,
             concept: junction.syntax,
             role: this.getElementRoles(junction.uid),
             label: junction.name || junction.uid,
