@@ -14,7 +14,7 @@ import networkx as nx
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from typing import Dict, Tuple, Any, Optional
+from typing import Dict, List, Tuple, Any, Optional
 
 # %%[markdown]
 # # Load Model Data
@@ -457,5 +457,55 @@ p_comp = {**p_chime, **p_sir}
 
 __ = draw_graph(G = G_comp, pos = p_comp, ax = ax, node_args = {}, label_args = {}, legend_args = {}, edge_args = {'edge_color': 'tab:cyan', 'alpha': 0.5})
 __ = plt.setp(ax, ylim = (-3, 5))
+
+fig.savefig(f'../figures/comparison_SimpleSIR_CHIME_FN.png', dpi = 150)
+
+# %%[markdown]
+# # Generate Output for HMI
+
+# %%
+# Generate a map between the variables of a GroMEt and its states
+# The first state is always the "proxy state"
+def generate_map_vars_states(gromet: Any, filter_nodes: Optional[List] = None) -> Any:
+
+    map_vars_states = {var['uid']: tuple({**{var['proxy_state']: None}, **{state: None for state in var['states']}}.keys()) for var in gromet['variables']}
+
+    if isinstance(filter_nodes, List):
+        for k, v in map_vars_states.items():
+            map_vars_states[k] = tuple([element for element in v if element in filter_nodes])
+
+    return map_vars_states
+
+# %%
+map_vars_states_sir = generate_map_vars_states(gromet = gromet_sir, filter_nodes = [node['grometID'] for node in graph_sir['nodes']])
+map_vars_states_chime = generate_map_vars_states(gromet = gromet_chime, filter_nodes = [node['grometID'] for node in graph_chime['nodes']])
+
+
+# %%
+
+output = {g1['uid']: {g2['uid']: {}} for g1 in (gromet_sir, gromet_chime) for g2 in (gromet_sir, gromet_chime) if g1 != g2}
+
+# %%
+# ## One-to-Many Comparison Edges
+
+# %%
+# For each state of the referenced variables in G1, map to the list of states in the corresponding variable in G2
+output[gromet_sir['uid']][gromet_chime['uid']] = { 
+    state: list(map_vars_states_chime[common_node['g2_variable'][0]])
+    for common_node in comparison_sir_chime['common_nodes'] 
+    for state in map_vars_states_sir[common_node['g1_variable'][0]]
+}
+
+# Vice versa
+output[gromet_chime['uid']][gromet_sir['uid']] = { 
+    state: list(map_vars_states_sir[common_node['g1_variable'][0]])
+    for common_node in comparison_sir_chime['common_nodes'] 
+    for state in map_vars_states_chime[common_node['g2_variable'][0]]
+}
+
+# %%
+path = "../dist/uaz/gromet_intersection_graph/gig__SimpleSIR_metadata-CHIME_SIR_v01_HMI.json"
+with open(path, 'w') as f:
+    json.dump(output, f, indent = 2)
 
 # %%
