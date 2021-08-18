@@ -22,17 +22,17 @@ from typing import Dict, Tuple, Any, Optional
 
 path = "../data/august_2021_demo_repo/Simple_SIR/SimpleSIR_metadata_gromet_PetriNetClassic.json"
 with open(path, 'r') as f:
-    model_sir = json.load(f)
+    gromet_sir = json.load(f)
 
 
 path = "../data/august_2021_demo_repo/AlgebraicJulia_models/chime+.json"
 with open(path, 'r') as f:
-    model_chimep = json.load(f)
+    gromet_chimep = json.load(f)
 
 
 path = "../data/august_2021_demo_repo/AlgebraicJulia_models/model_comparisons/sir_chime+.json"
 with open(path, 'r') as f:
-    map_sir_chimep = json.load(f)
+    comparison_sir_chimep = json.load(f)
 
 
 f = None
@@ -152,12 +152,42 @@ def compare_graphs(G1: Any, G2: Any, map: Optional[Dict], leg_id: Optional[int] 
 
 # %%
 
-G_sir = generate_nx_obj(gromet = model_sir)
-G_chimep = generate_nx_obj(gromet = model_chimep)
+G_sir = generate_nx_obj(gromet = gromet_sir)
+G_chimep = generate_nx_obj(gromet = gromet_chimep)
 
 for i in range(2):
-    G_map, fig = compare_graphs(G1 = G_sir, G2 = G_chimep, map = map_sir_chimep, leg_id = i, rename = ('SIR ', 'CHIME+ '), plot = True, plot_layout = 'linear')
-    fig.savefig(f'../figures/map_sir_chime+_{i}.png', dpi = 150)
+    G_map, fig = compare_graphs(G1 = G_sir, G2 = G_chimep, map = comparison_sir_chimep, leg_id = i, rename = ('SIR ', 'CHIME+ '), plot = True, plot_layout = 'linear')
+    fig.savefig(f'../figures/comparison_sir_chime+_{i}.png', dpi = 150)
 
+
+# %%
+# # Generate HMI Output
+
+# %%
+output = {g1['uid']: {g2['uid']: {j['uid']: [] for j in g1['junctions']}} for g1 in (gromet_sir, gromet_chimep) for g2 in (gromet_sir, gromet_chimep) if g1 != g2}
+
+
+g1 = gromet_sir
+g2 = gromet_chimep
+
+
+# For each leg and for each node in g1, add the mapped node from g2 to the list
+# 1st element of list = 1st leg
+# g1.node -> g2.node
+for leg in comparison_sir_chimep['legs'][g2['uid']]:
+    for node1, node2 in leg.items():
+        output[g1['uid']][g2['uid']][node1].append(node2)
+
+# Vice versa
+# g2.node -> g1.node
+for leg in comparison_sir_chimep['legs'][g2['uid']]:
+    for node1, node2 in leg.items():
+        output[g2['uid']][g1['uid']][node2].append(node1)
+
+# %%
+
+path = "../dist/august_2021_demo_repo/AlgebraicJulia_models/model_comparisons/sir_chime+_HMI.json"
+with open(path, 'w') as f:
+    json.dump(output, f, indent = 2)
 
 # %%
