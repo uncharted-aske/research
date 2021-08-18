@@ -24,25 +24,31 @@ import matplotlib.pyplot as plt
 
 deno_command = 'deno run --allow-write --allow-read'
 parser_path = '/home/nliu/projects/aske/research/gromet/tools/parse.ts'
-data_dir = '/home/nliu/projects/aske/research/gromet/data/august_2021_demo_repo/'
-dist_dir = '/home/nliu/projects/aske/research/gromet/dist/august_2021_demo_repo/'
+data_dir = '/home/nliu/projects/aske/research/gromet/data/august_2021_demo_repo/emmaa_models/'
+dist_dir = '/home/nliu/projects/aske/research/gromet/dist/august_2021_demo_repo/emmaa_models/'
 
-gromet_path = data_dir + 'emmaa_models/marm_model_gromet_2021-06-28-17-07-14.json'
-graph_path = dist_dir + 'emmaa_models/marm_model_gromet_2021-06-28-17-07-14_graph.json'
+files = os.listdir(data_dir)
+gromet = []
+graph = []
+for i, file in enumerate(files):
 
-# __ = os.system(deno_command + ' ' + parser_path + ' ' + gromet_path + ' ' + graph_path)
+    gromet_path = data_dir + file
+    graph_path = dist_dir + file.split('.')[0] + '_graph.json'
+
+    __ = os.system(deno_command + ' ' + parser_path + ' ' + gromet_path + ' ' + graph_path)
+
+    with open(gromet_path, 'r') as f:
+        gromet.append(json.load(f))
+
+    with open(graph_path, 'r') as f:
+        graph.append(json.load(f))
 
 
-with open(gromet_path, 'r') as f:
-    gromet = json.load(f)
+    print(f"{file}: {len(graph[i]['nodes'])} nodes, {len(graph[i]['edges'])} edges")
 
 
-with open(graph_path, 'r') as f:
-    graph = json.load(f)
-
-
-deno_command = parser_path = data_dir = dist_dir = gromet_path = f = None
-del deno_command, parser_path, data_dir, dist_dir, gromet_path, f
+deno_command = parser_path = data_dir = gromet_path = graph_path = file = f = None
+del deno_command, parser_path, data_dir, gromet_path, graph_path, file, f
 
 
 # %%
@@ -88,7 +94,11 @@ def aggregate_emmaa_graph(graph: Dict) -> Tuple[Dict, Dict, Dict, Tuple[Dict, Di
             tgt = map_states_groups[s2]
 
             if src != tgt:
-                p = nx.shortest_path(G_, source = s1, target = s2)
+
+                try:
+                    p = nx.shortest_path(G_, source = s1, target = s2)
+                except:
+                    p = []
 
                 if len(p) == 3:
                     dict_edges[(src, tgt)].append(None)
@@ -133,40 +143,42 @@ def aggregate_emmaa_graph(graph: Dict) -> Tuple[Dict, Dict, Dict, Tuple[Dict, Di
     return (G, G_agg, graph_agg, (dict_rates, dict_groups))
 
 # %%
-G, G_agg, graph_agg, (dict_rates, dict_groups) = aggregate_emmaa_graph(graph = graph)
+for file, g in zip(files, graph):
 
-# %%
+    try:
 
-p = graph_path.split('.')
-p.insert(1, '_agg.')
-p = ''.join(p)
-with open(p, 'w') as f:
-    json.dump(graph_agg, f, indent = 2)
+        if file != files[1]:
 
-f = p = None
-del f, p
+            G, G_agg, graph_agg, (dict_rates, dict_groups) = aggregate_emmaa_graph(graph = g)
 
-# %%
-# Plot outputs
+            p = dist_dir + file.split('.')[0] + '_graph_agg.json'
+            with open(p, 'w') as f:
+                json.dump(graph_agg, f, indent = 2)
 
-fig, ax = plt.subplots(nrows = 1, ncols = 2, figsize = (24, 12))
-titles = ("Full", "Collapsed")
+            # Plot outputs
+            fig, ax = plt.subplots(nrows = 1, ncols = 2, figsize = (24, 12))
+            titles = ("Full", "Collapsed")
 
-for (x, g, t) in zip(fig.axes, (G, G_agg), titles):
+            for (x, gg, t) in zip(fig.axes, (G, G_agg), titles):
 
-    p = nx.kamada_kawai_layout(g, weight = 'weight')
-    c = ['r' if g.nodes[n]['type'] == 'State' else 'b' for n in g.nodes]
-    s = [50 if n in dict_rates.keys() else 100 * len(dict_groups[n]) if n in dict_groups.keys() else 100 for n in g.nodes]
-    w = 0.5 * np.array(list(nx.get_edge_attributes(g, 'weight').values()))
+                p = nx.kamada_kawai_layout(gg, weight = 'weight')
+                c = ['r' if gg.nodes[n]['type'] == 'State' else 'b' for n in gg.nodes]
+                s = [50 if n in dict_rates.keys() else 100 * len(dict_groups[n]) if n in dict_groups.keys() else 100 for n in gg.nodes]
+                w = 0.5 * np.array(list(nx.get_edge_attributes(gg, 'weight').values()))
 
-    nx.draw(g, ax = x, pos = p, with_labels = False, node_color = c, node_size = s, width = w, alpha = 0.5, arrows = True)
-    x.title.set_text(f"{t} ({len(g.nodes)} nodes, {len(g.edges)} edges)")
+                nx.draw(gg, ax = x, pos = p, with_labels = False, node_color = c, node_size = s, width = w, alpha = 0.5, arrows = True)
+                x.title.set_text(f"{t} ({len(gg.nodes)} nodes, {len(gg.edges)} edges)")
 
 
-fig.savefig('../figures/marm_model_gromet_collapse_parsed.png', dpi = 150)
+            fig.savefig(f"../figures/{file.split('.')[0]}.png", dpi = 150)
 
-p = c = s = g = x = t = w = fig = ax = titles = None
-del p, c, s, g, x, t, w, fig, ax, titles
+    except:
+        print(f"Error: {file}")
+
+
+    file = g = f = p = p = c = s = gg = x = t = w = fig = ax = titles = None
+    del file, g, f, p, c, s, gg, x, t, w, fig, ax, titles
+
 
 # %%
 # Similar to `aggregate_emmaa_graph`
@@ -245,18 +257,23 @@ def aggregate_emmaa_graph_reversible(graph: Dict) -> Dict:
     return graph_agg
 
 # %%
-graph_agg_rev = aggregate_emmaa_graph_reversible(graph)
 
-# %%
+for file, g in zip(files, graph):
 
-p = graph_path.split('.')
-p.insert(1, '_agg_rev.')
-p = ''.join(p)
-with open(p, 'w') as f:
-    json.dump(graph_agg_rev, f, indent = 2)
+    try:
 
-f = p = None
-del f, p
+        graph_agg_rev = aggregate_emmaa_graph_reversible(graph = g)
+
+        p = dist_dir + file.split('.')[0] + '_graph_agg_rev.json'
+        with open(p, 'w') as f:
+            json.dump(graph_agg_rev, f, indent = 2)
+
+    except:
+        print(f"Error: {file}")
+
+
+    files = g = f = p = None
+    del files, g, f, p
 
 # %%
 # Similar to `aggregate_emmaa_graph_reversible`
@@ -380,16 +397,31 @@ def aggregate_emmaa_graph_reversible_rategroups(graph: Dict) -> Dict:
     return graph_agg
 
 # %%
-graph_agg_rev_rategroups = aggregate_emmaa_graph_reversible_rategroups(graph)
+
+for file, g in zip(files, graph):
+
+    graph_agg_rev_rategroups = aggregate_emmaa_graph_reversible_rategroups(graph = g)
+
+    p = dist_dir + file.split('.')[0] + '_agg_rev_rategroups.json'
+    p = ''.join(p)
+    with open(p, 'w') as f:
+        json.dump(graph_agg_rev_rategroups, f, indent = 2)
+
+    f = p = None
+    del f, p
 
 # %%
-p = graph_path.split('.')
-p.insert(1, '_agg_rev_rategroups.')
-p = ''.join(p)
-with open(p, 'w') as f:
-    json.dump(graph_agg_rev_rategroups, f, indent = 2)
+# Number of State Nodes: 74
+# Number of Rate Nodes: 399
+# Number of State Groups: 28
+# Number of Rate Groups: 121
 
-f = p = None
-del f, p
+# Number of State Nodes: 849
+# Number of Rate Nodes: 21592
+# Number of State Groups: 167
+# Number of Rate Groups: 177
 
-# %%
+# Number of State Nodes: 45
+# Number of Rate Nodes: 44
+# Number of State Groups: 31
+# Number of Rate Groups: 43
