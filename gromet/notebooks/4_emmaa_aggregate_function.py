@@ -50,6 +50,10 @@ for i, file in enumerate(files):
 deno_command = parser_path = data_dir = gromet_path = graph_path = file = f = None
 del deno_command, parser_path, data_dir, gromet_path, graph_path, file, f
 
+# %%
+# marm_model_gromet_2021-06-28-17-07-14.json: 474 nodes, 1207 edges
+# rasmachine_gromet_2021-06-28-17-29-57.json: 22442 nodes, 85874 edges
+# covid19_inflammasome_gromet_2021-08-17-17-47-36.json: 102 nodes, 206 edges
 
 # %%
 # Aggregate a given GroMEt graph that has EMMAA agent metadata for all nodes
@@ -272,8 +276,8 @@ for file, g in zip(files, graph):
         print(f"Error: {file}")
 
 
-    files = g = f = p = None
-    del files, g, f, p
+    file = g = f = p = None
+    del file, g, f, p
 
 # %%
 # Similar to `aggregate_emmaa_graph_reversible`
@@ -425,3 +429,19 @@ for file, g in zip(files, graph):
 # Number of Rate Nodes: 44
 # Number of State Groups: 31
 # Number of Rate Groups: 43
+
+# %%
+# Number of State Nodes: 74
+# Number of Rate Nodes: 399
+# Number of State Groups: 28
+# Number of Rate Groups: 118
+
+# Number of State Nodes: 849
+# Number of Rate Nodes: 21592
+# Number of State Groups: 167
+# Number of Rate Groups: 178
+
+# Number of State Nodes: 49
+# Number of Rate Nodes: 52
+# Number of State Groups: 32
+# Number of Rate Groups: 51
