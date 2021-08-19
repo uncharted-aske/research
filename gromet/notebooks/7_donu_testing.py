@@ -26,35 +26,39 @@ models = requests.post(DONU_ENDPOINT, json = {'command': 'list-models'}).json()[
 # %%
 # print(f"{json.dumps(response_body, indent = 2)}")
 
-print(f"{'i':>3} | {'Model':<50} | {'Type':15}")
-__ = [print(f"{i:>3} | {model['source']['model']:<50} | {model['type']:15}") for i, model in enumerate(models)]
+print(f"{'i':>3} | {'Model':<55} | {'Type':15}")
+__ = [print(f"{i:>3} | {model['source']['model']:<55} | {model['type']:15}") for i, model in enumerate(models)]
 
 
-#   i | Model                                              | Type                
-#   0 | sir-meta.easel                                     | easel               
-#   1 | sirsuper.easel                                     | easel               
-#   2 | sir-vd.easel                                       | easel               
-#   3 | sir.easel                                          | easel               
-#   4 | sirs.easel                                         | easel               
-#   5 | sir-no-parameters.easel                            | easel               
-#   6 | seird_hosp.easel                                   | easel               
-#   7 | sir.deq                                            | diff-eq             
-#   8 | sir-meta.easel                                     | gromet-prt          
-#   9 | sirsuper.easel                                     | gromet-prt          
-#  10 | sir-vd.easel                                       | gromet-prt          
-#  11 | sir.easel                                          | gromet-prt          
-#  12 | sirs.easel                                         | gromet-prt          
-#  13 | sir-no-parameters.easel                            | gromet-prt          
-#  14 | seird_hosp.easel                                   | gromet-prt          
-#  15 | seir.json                                          | gromet-pnc          
-#  16 | marm_model_gromet_2021-06-28-17-07-14.json         | gromet-pnc          
-#  17 | sird.json                                          | gromet-pnc          
-#  18 | sir.gromet                                         | gromet-pnc          
-#  19 | 3_city_seird.json                                  | gromet-pnc          
-#  20 | rasmachine_gromet_2021-06-28-17-29-57.json         | gromet-pnc          
-#  21 | seird.json                                         | gromet-pnc          
-#  22 | SimpleSIR_metadata_gromet_PetriNetClassic.json     | gromet-pnc          
-#  23 | SimpleSIR_metadata_gromet_FunctionNetwork.json     | gromet-fnet 
+#   i | Model                                                   | Type           
+#   0 | sir-meta.easel                                          | easel          
+#   1 | sirsuper.easel                                          | easel          
+#   2 | sir-vd.easel                                            | easel          
+#   3 | sir.easel                                               | easel          
+#   4 | seirp.easel                                             | easel          
+#   5 | sirs.easel                                              | easel          
+#   6 | sir-no-parameters.easel                                 | easel          
+#   7 | seird_hosp.easel                                        | easel          
+#   8 | sir.deq                                                 | diff-eq        
+#   9 | sir-meta.easel                                          | gromet-prt     
+#  10 | sirsuper.easel                                          | gromet-prt     
+#  11 | sir-vd.easel                                            | gromet-prt     
+#  12 | sir.easel                                               | gromet-prt     
+#  13 | seirp.easel                                             | gromet-prt     
+#  14 | sirs.easel                                              | gromet-prt     
+#  15 | sir-no-parameters.easel                                 | gromet-prt     
+#  16 | seird_hosp.easel                                        | gromet-prt     
+#  17 | chime+.json                                             | gromet-pnc     
+#  18 | seir.json                                               | gromet-pnc     
+#  19 | covid19_inflammasome_gromet_2021-08-17-17-47-36.json    | gromet-pnc     
+#  20 | marm_model_gromet_2021-06-28-17-07-14.json              | gromet-pnc     
+#  21 | sird.json                                               | gromet-pnc     
+#  22 | 3_city_seird.json                                       | gromet-pnc     
+#  23 | rasmachine_gromet_2021-06-28-17-29-57.json              | gromet-pnc     
+#  24 | seird.json                                              | gromet-pnc     
+#  25 | SimpleSIR_metadata_gromet_PetriNetClassic.json          | gromet-pnc     
+#  26 | CHIME_SIR_v01_gromet_FunctionNetwork_by_hand.json       | gromet-fnet    
+#  27 | SimpleSIR_metadata_gromet_FunctionNetwork.json          | gromet-fnet    
 
 # %%[markdown]
 # # Query Models
