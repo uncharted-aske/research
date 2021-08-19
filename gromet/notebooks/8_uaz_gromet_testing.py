@@ -27,7 +27,7 @@ dist_dir = '/home/nliu/projects/aske/research/gromet/dist/uaz/'
 
 gromet = []
 graph = []
-for p in ('loop/loop_ex2_gromet_FunctionNetwork_correction', 'conditional/cond_ex1_gromet_FunctionNetwork', 'CHIME/CHIME_SIR_v01_gromet_FunctionNetwork_by_hand'):
+for p in ('loop/loop_ex2_gromet_FunctionNetwork_correction', 'conditional/cond_ex1_gromet_FunctionNetwork', 'CHIME/CHIME_SIR_Base_intermediate_versions/CHIME_SIR_v01_gromet_FunctionNetwork_by_hand', 'CHIME/CHIME_SIR_Base_variables_gromet_FunctionNetwork'):
 
     gromet_path = data_dir + f'{p}.json'
     graph_path = dist_dir + f'{p}_graph.json'
@@ -309,10 +309,6 @@ def generate_linear_layout_with_hierarchy(G: Any, draw: Optional[bool] = False, 
 
 G = generate_nx_obj(graph = graph[0])
 
-G.remove_edge('0::6::14', '0::6::5')
-G.remove_edge('0::6::15', '0::6::13')
-G.remove_edge('0::6::10', '0::6::8')
-
 __ = add_missing_edges(G = G)
 __ = promote_edges(G = G)
 # __ = generate_linear_layout(G, draw = True)
@@ -325,7 +321,6 @@ G = generate_nx_obj(graph = graph[1])
 
 __ = add_missing_edges(G = G)
 __ = promote_edges(G = G)
-# __ = generate_linear_layout(G, draw = True)
 
 __ = generate_linear_layout_with_hierarchy(G, draw = True)
 
@@ -335,7 +330,17 @@ G = generate_nx_obj(graph = graph[2])
 
 __ = add_missing_edges(G = G)
 __ = promote_edges(G = G)
-# __ = generate_linear_layout(G, draw = True)
 
 __ = generate_linear_layout_with_hierarchy(G, draw = True)
 
+# %%
+G = generate_nx_obj(graph = graph[3])
+
+__ = add_missing_edges(G = G)
+__ = promote_edges(G = G)
+
+__ = generate_linear_layout_with_hierarchy(G, draw = True)
+
+
+
+# %%
