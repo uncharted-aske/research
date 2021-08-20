@@ -28,6 +28,7 @@ dist_dir = '/home/nliu/projects/aske/research/gromet/dist/uaz/'
 gromet = []
 graph = []
 for p in ('loop/loop_ex2_gromet_FunctionNetwork_correction', 'conditional/cond_ex1_gromet_FunctionNetwork', 'CHIME/CHIME_SIR_Base_intermediate_versions/CHIME_SIR_v01_gromet_FunctionNetwork_by_hand', 'CHIME/CHIME_SIR_Base_variables_gromet_FunctionNetwork'):
+# for p in ('CHIME/CHIME_SIR_Base_intermediate_versions/test1', 'CHIME/CHIME_SIR_Base_intermediate_versions/test2', 'CHIME/CHIME_SIR_Base_intermediate_versions/test3'):
 
     gromet_path = data_dir + f'{p}.json'
     graph_path = dist_dir + f'{p}_graph.json'
@@ -143,6 +144,7 @@ def promote_edges(G: Any) -> Any:
     edges_add = []
 
     for edge in G.edges:
+
         src_parent = G.nodes[edge[0]]['parent']
         tgt_parent = G.nodes[edge[1]]['parent']
 
@@ -340,7 +342,6 @@ __ = add_missing_edges(G = G)
 __ = promote_edges(G = G)
 
 __ = generate_linear_layout_with_hierarchy(G, draw = True)
-
 
 
 # %%
