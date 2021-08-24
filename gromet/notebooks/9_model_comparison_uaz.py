@@ -21,23 +21,49 @@ from typing import Dict, List, Tuple, Any, Optional
 
 # %%
 
-path = "/home/nliu/projects/aske/research/gromet/data/august_2021_demo_repo/Simple_SIR/SimpleSIR_metadata_gromet_FunctionNetwork.json"
+# path = "/home/nliu/projects/aske/research/gromet/data/august_2021_demo_repo/Simple_SIR/SimpleSIR_metadata_gromet_FunctionNetwork.json"
+# with open(path, 'r') as f:
+#     gromet_sir = json.load(f)
+
+# path = "/home/nliu/projects/aske/research/gromet/dist/august_2021_demo_repo/Simple_SIR/SimpleSIR_metadata_gromet_FunctionNetwork_graph.json"
+# with open(path, 'r') as f:
+#     graph_sir = json.load(f)
+
+# path = "/home/nliu/projects/aske/research/gromet/data/uaz/CHIME/CHIME_SIR_v01_gromet_FunctionNetwork_by_hand.json"
+# with open(path, 'r') as f:
+#     gromet_chime = json.load(f)
+
+# path = "/home/nliu/projects/aske/research/gromet/dist/uaz/CHIME/CHIME_SIR_v01_gromet_FunctionNetwork_by_hand_graph.json"
+# with open(path, 'r') as f:
+#     graph_chime = json.load(f)
+
+# path = "/home/nliu/projects/aske/research/gromet/data/uaz/gromet_intersection_graph/gig__SimpleSIR_metadata-CHIME_SIR_v01.json"
+# with open(path, 'r') as f:
+#     comparison_sir_chime = json.load(f)
+
+
+# f = None
+# del f
+
+# %%
+
+path = "/home/nliu/projects/aske/research/gromet/data/uaz/CHIME/CHIME_SIR_Base_variables_gromet_FunctionNetwork-with-metadata-CTM.json"
 with open(path, 'r') as f:
     gromet_sir = json.load(f)
 
-path = "/home/nliu/projects/aske/research/gromet/dist/august_2021_demo_repo/Simple_SIR/SimpleSIR_metadata_gromet_FunctionNetwork_graph.json"
+path = "/home/nliu/projects/aske/research/gromet/dist/uaz/CHIME/CHIME_SIR_Base_variables_gromet_FunctionNetwork-with-metadata-CTM_graph.json"
 with open(path, 'r') as f:
     graph_sir = json.load(f)
 
-path = "/home/nliu/projects/aske/research/gromet/data/uaz/CHIME/CHIME_SIR_v01_gromet_FunctionNetwork_by_hand.json"
+path = "/home/nliu/projects/aske/research/gromet/data/uaz/CHIME/CHIME_SVIIvR_variables_gromet_FunctionNetwork-with-metadata-CTM.json"
 with open(path, 'r') as f:
     gromet_chime = json.load(f)
 
-path = "/home/nliu/projects/aske/research/gromet/dist/uaz/CHIME/CHIME_SIR_v01_gromet_FunctionNetwork_by_hand_graph.json"
+path = "/home/nliu/projects/aske/research/gromet/dist/uaz/CHIME/CHIME_SVIIvR_variables_gromet_FunctionNetwork-with-metadata-CTM_graph.json"
 with open(path, 'r') as f:
     graph_chime = json.load(f)
 
-path = "/home/nliu/projects/aske/research/gromet/data/uaz/gromet_intersection_graph/gig__SimpleSIR_metadata-CHIME_SIR_v01.json"
+path = "/home/nliu/projects/aske/research/gromet/data/uaz/gromet_intersection_graph/gig__CHIME_SIR_Base_v01-CHIME_SVIIvR_v01.json"
 with open(path, 'r') as f:
     comparison_sir_chime = json.load(f)
 
@@ -262,7 +288,7 @@ def draw_graph(G: Any, pos: Dict, ax: Optional[Any] = None, node_args: Optional[
         h_labels = nx.draw_networkx_labels(G, pos = pos, ax = ax, **label_args)
         __ = [t.set_rotation(label_angle) for __, t in h_labels.items()]
 
-    __ = plt.setp(ax, ylim = (-3, 3))
+    # __ = plt.setp(ax, ylim = (-3, 3))
 
     if len(legend_args) > 0:
         # ax.legend(handles = legend_elements, loc = 'lower right', ncol = len(legend_elements))
@@ -455,10 +481,12 @@ p_chime = {'CHIME-' + node: val for node, val in p_chime.items() if node != None
 p_sir = {'SIR-' + node: val for node, val in p_sir.items() if node != None}
 p_comp = {**p_chime, **p_sir}
 
-__ = draw_graph(G = G_comp, pos = p_comp, ax = ax, node_args = {}, label_args = {}, legend_args = {}, edge_args = {'edge_color': 'tab:cyan', 'alpha': 0.5})
-__ = plt.setp(ax, ylim = (-3, 5))
+__ = draw_graph(G = G_comp, pos = p_comp, ax = ax, node_args = {}, label_args = {}, legend_args = {}, edge_args = {'edge_color': 'tab:cyan', 'alpha': 1.0})
+# __ = plt.setp(ax, ylim = (-3, 5))
+__ = plt.setp(ax, ylim = (-3, 12))
 
-fig.savefig(f'../figures/comparison_SimpleSIR_CHIME_FN.png', dpi = 150)
+# fig.savefig(f'../figures/comparison_SimpleSIR_CHIME_FN.png', dpi = 150)
+fig.savefig(f'../figures/comparison_SIRBase_SVIIR.png', dpi = 150)
 
 # %%[markdown]
 # # Generate Output for HMI
@@ -504,7 +532,9 @@ output[gromet_chime['uid']][gromet_sir['uid']] = {
 }
 
 # %%
-path = "../dist/uaz/gromet_intersection_graph/gig__SimpleSIR_metadata-CHIME_SIR_v01_HMI.json"
+# path = "../dist/uaz/gromet_intersection_graph/gig__SimpleSIR_metadata-CHIME_SIR_v01_HMI.json"
+path = "../dist/uaz/gromet_intersection_graph/gig__CHIME_SIR_Base_v01-CHIME_SVIIvR_v01_HMI.json"
+
 with open(path, 'w') as f:
     json.dump(output, f, indent = 2)
 

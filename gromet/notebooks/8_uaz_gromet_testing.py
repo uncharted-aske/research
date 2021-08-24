@@ -27,19 +27,30 @@ dist_dir = '/home/nliu/projects/aske/research/gromet/dist/uaz/'
 
 gromet = []
 graph = []
-for p in ('loop/loop_ex2_gromet_FunctionNetwork_correction', 'conditional/cond_ex1_gromet_FunctionNetwork', 'CHIME/CHIME_SIR_Base_intermediate_versions/CHIME_SIR_v01_gromet_FunctionNetwork_by_hand', 'CHIME/CHIME_SIR_Base_variables_gromet_FunctionNetwork'):
-# for p in ('CHIME/CHIME_SIR_Base_intermediate_versions/test1', 'CHIME/CHIME_SIR_Base_intermediate_versions/test2', 'CHIME/CHIME_SIR_Base_intermediate_versions/test3'):
+for p in (
+    'loop/loop_ex2_gromet_FunctionNetwork_correction', 
+    'conditional/cond_ex1_gromet_FunctionNetwork', 
+    'CHIME/CHIME_SIR_Base_intermediate_versions/CHIME_SIR_v01_gromet_FunctionNetwork_by_hand', 
+    'CHIME/CHIME_SIR_Base_variables_gromet_FunctionNetwork',
+    'CHIME/CHIME_SIR_Base_variables_gromet_FunctionNetwork-with-metadata-CTM', 
+    'CHIME/CHIME_SVIIvR_variables_gromet_FunctionNetwork-with-metadata-CTM'):
 
     gromet_path = data_dir + f'{p}.json'
     graph_path = dist_dir + f'{p}_graph.json'
 
     __ = os.system(deno_command + ' ' + parser_path + ' ' + gromet_path + ' ' + graph_path)
 
-    with open(gromet_path, 'r') as f:
-        gromet.append(json.load(f))
+    try:
+        with open(gromet_path, 'r') as f:
+            gromet.append(json.load(f))
+    except:
+        pass
 
-    with open(graph_path, 'r') as f:
-        graph.append(json.load(f))
+    try:
+        with open(graph_path, 'r') as f:
+            graph.append(json.load(f))
+    except:
+        pass
 
 
 deno_command = parser_path = data_dir = dist_dir = gromet_path = f = p = None
