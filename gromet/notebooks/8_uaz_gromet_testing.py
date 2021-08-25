@@ -28,12 +28,15 @@ dist_dir = '/home/nliu/projects/aske/research/gromet/dist/uaz/'
 gromet = []
 graph = []
 for p in (
-    'loop/loop_ex2_gromet_FunctionNetwork_correction', 
-    'conditional/cond_ex1_gromet_FunctionNetwork', 
-    'CHIME/CHIME_SIR_Base_intermediate_versions/CHIME_SIR_v01_gromet_FunctionNetwork_by_hand', 
-    'CHIME/CHIME_SIR_Base_variables_gromet_FunctionNetwork',
-    'CHIME/CHIME_SIR_Base_variables_gromet_FunctionNetwork-with-metadata-CTM', 
-    'CHIME/CHIME_SVIIvR_variables_gromet_FunctionNetwork-with-metadata-CTM'):
+    # 'loop/loop_ex2_gromet_FunctionNetwork_correction', 
+    # 'conditional/cond_ex1_gromet_FunctionNetwork', 
+    # 'CHIME/CHIME_SIR_Base_intermediate_versions/CHIME_SIR_v01_gromet_FunctionNetwork_by_hand', 
+    # 'CHIME/CHIME_SIR_Base_variables_gromet_FunctionNetwork',
+    # 'CHIME/CHIME_SIR_Base_variables_gromet_FunctionNetwork-with-metadata-CTM', 
+    # 'CHIME/CHIME_SVIIvR_variables_gromet_FunctionNetwork-with-metadata-CTM'
+    'CHIME/CHIME_SIR_Dyn_gromet_FunctionNetwork-with-vars-with-metadata--GroMEt',
+    'CHIME/CHIME_SVIIvR_Dyn_gromet_FunctionNetwork-with-vars-with-metadata--GroMEt'
+    ):
 
     gromet_path = data_dir + f'{p}.json'
     graph_path = dist_dir + f'{p}_graph.json'
