@@ -237,7 +237,7 @@ def draw_graph(G: Any, pos: Dict, ax: Optional[Any] = None, node_args: Optional[
         
         node_args = {
             # 'node_size': [len(get_node_children_nx(G, node_id = node)) for node in G.nodes],
-            'node_size': [100 for node in G.nodes],
+            'node_size': [20 for node in G.nodes],
             'node_color': [node_types[G.nodes[node]['nodeType']] for node in G.nodes],
             'cmap': 'tab10',
             'vmin': 0,
@@ -458,8 +458,8 @@ __ = G_comp.add_edges_from([
 
 # %%
 # Parallel positions
-p_chime = {node: p + 2 * np.array([0, 1]) for node, p in pos_chime.items()}
-p_sir = {node: p - 2 * np.array([0, 1]) for node, p in pos_sir.items()}
+p_chime = {node: p + 5 * np.array([0, 1]) for node, p in pos_chime.items()}
+p_sir = {node: p - 5 * np.array([0, 1]) for node, p in pos_sir.items()}
 
 
 # # Align mapped nodes
@@ -474,8 +474,8 @@ p_sir = {node: p - 2 * np.array([0, 1]) for node, p in pos_sir.items()}
 
 
 fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (20, 5))
-__ = draw_graph(G_chime, pos = p_chime, ax = ax, G_full = G_comp, label_key = 'label')
-__ = draw_graph(G_sir, pos = p_sir, ax = ax, G_full = G_comp, label_key = 'label')
+__ = draw_graph(G_chime, pos = p_chime, ax = ax, G_full = G_comp, label_key = 'label', label_args = {'font_size': 6, 'alpha': 0.1})
+__ = draw_graph(G_sir, pos = p_sir, ax = ax, G_full = G_comp, label_key = 'label', label_args = {'font_size': 6, 'alpha': 0.1})
 
 p_chime = {'CHIME-' + node: val for node, val in p_chime.items() if node != None}
 p_sir = {'SIR-' + node: val for node, val in p_sir.items() if node != None}
@@ -483,7 +483,7 @@ p_comp = {**p_chime, **p_sir}
 
 __ = draw_graph(G = G_comp, pos = p_comp, ax = ax, node_args = {}, label_args = {}, legend_args = {}, edge_args = {'edge_color': 'tab:cyan', 'alpha': 1.0})
 # __ = plt.setp(ax, ylim = (-3, 5))
-__ = plt.setp(ax, ylim = (-3, 12))
+__ = plt.setp(ax, ylim = (-6, 15))
 
 # fig.savefig(f'../figures/comparison_SimpleSIR_CHIME_FN.png', dpi = 150)
 fig.savefig(f'../figures/comparison_SIRBase_SVIIR.png', dpi = 150)
