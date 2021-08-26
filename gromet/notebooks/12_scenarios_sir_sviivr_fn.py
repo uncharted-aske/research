@@ -76,7 +76,6 @@ for x, scenario in zip(ax, model_inds):
             'J:main.i_day': 17.0,
             'J:main.N_p': 3,
             'J:main.infections_days': 14.0,
-            # 'J:main.relative_contact_rate': 0.05,
             'J:main.relative_contact_rate': 0.05,
         }
 
@@ -92,7 +91,6 @@ for x, scenario in zip(ax, model_inds):
             'J:main.infectious_days_vaccinated': 10,
             'J:main.vaccination_rate': 0.02,
             'J:main.vaccine_efficacy': 0.85,
-            # 'J:main.relative_contact_rate': 0.45,
             'J:main.relative_contact_rate': 0.45,
             # 'J:main.s_n': 1000,
             'J:main.s_n': 1.0 - 0.05,

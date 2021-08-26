@@ -6,9 +6,8 @@
 # %%[markdown]
 # Content:
 # * Interact with Donu API
-# * Test
+# * Test EMMAA Covid-19 PNC model
 # * Test function-network CHIME model
-# * Try  
 
 # %%
 import requests
@@ -26,8 +25,8 @@ DONU_ENDPOINT = 'https://aske.galois.com/donu/'
 models = requests.post(DONU_ENDPOINT, json = {'command': 'list-models'}).json()['result']
 
 # %%
-print(f"{'i':>3} | {'Model':<55} | {'Type':15}")
-__ = [print(f"{i:>3} | {model['source']['model']:<55} | {model['type']:15}") for i, model in enumerate(models)]
+print(f"{'i':>3} | {'Model':<70} | {'Type':15}")
+__ = [print(f"{i:>3} | {model['source']['model']:<70} | {model['type']:15}") for i, model in enumerate(models)]
 
 # %%[markdown]
 # # Simulate EMMAA COVID-19 Inflammasome Model
@@ -303,7 +302,7 @@ del fig, ax
 # %%[markdown]
 # ## Describe Model Interface
 
-model_def = models[27]
+model_def = models[29]
 __ = [model_def.pop(k, None) for k in ('type', 'source') if k not in model_def.keys()]
 
 response_body = requests.post(DONU_ENDPOINT, json = {'command': 'describe-model-interface', 'definition': model_def}).json()
@@ -311,7 +310,7 @@ response_body = requests.post(DONU_ENDPOINT, json = {'command': 'describe-model-
 # %%
 # print(f"{json.dumps(response_body, indent = 2)}")
 
-print(f"{'i':>3} | {'Role':<10} | {'UID':<23} | {'Default':>7}")
+print(f"{'i':>3} | {'Role':<10} | {'UID':<23} | {'Default':>7} | {'Description':<30}")
 for k, v in response_body['result'].items():
     for i, obj in enumerate(v):
         if 'default' in obj.keys():
@@ -319,7 +318,12 @@ for k, v in response_body['result'].items():
         else:
             j = 'None'
 
-        print(f"{i:>3} | {k:<10} | {obj['uid'][:20]:<23} | {j:>7}")
+        if 'Description' in obj['metadata'].keys():
+            l = obj['metadata']['Description']
+        else:
+            l = 'None'
+
+        print(f"{i:>3} | {k:<10} | {obj['uid'][:20]:<23} | {j:>7} | {l:<30}")
 
 # %%[markdown]
 # ## Set Model Parameter Values
