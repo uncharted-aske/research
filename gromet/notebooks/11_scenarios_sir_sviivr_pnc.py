@@ -188,6 +188,9 @@ plt.plot(dataset['columns'][0]['values'], dataset['columns'][1]['values'])
 
 
 # %%
+
+manifolds = []
+
 fig, ax = plt.subplots(nrows = 1, ncols = 2, figsize = (18, 6))
 
 for x, scenario in zip(ax, ('sir', 'sviivr')):
@@ -270,10 +273,12 @@ for x, scenario in zip(ax, ('sir', 'sviivr')):
     
     else:
         manifold = parameters_set['J:inf_uu_rate'] * np.array(measures_baseline['values']['J:S']) * np.array(measures_baseline['values']['J:I_U']) 
-        manifold += parameters_set['J:inf_uv_rate'] * np.array(measures_baseline['values']['J:S']) * np.array(measures_baseline['values']['J:I_V'])
-        manifold += parameters_set['J:inf_vu_rate'] * np.array(measures_baseline['values']['J:S']) * np.array(measures_baseline['values']['J:I_U'])
-        manifold += parameters_set['J:inf_vv_rate'] * np.array(measures_baseline['values']['J:S']) * np.array(measures_baseline['values']['J:I_V'])
-        # S*I_U*inf_uu + S*I_V*inf_uv + V*I_U*inf_vu + S*I_V*inf_vv
+        manifold += parameters_set['J:inf_vu_rate'] * np.array(measures_baseline['values']['J:S']) * np.array(measures_baseline['values']['J:I_V'])
+        manifold += parameters_set['J:inf_uv_rate'] * np.array(measures_baseline['values']['J:V']) * np.array(measures_baseline['values']['J:I_U'])
+        manifold += parameters_set['J:inf_vv_rate'] * np.array(measures_baseline['values']['J:V']) * np.array(measures_baseline['values']['J:I_V'])
+        
+
+    manifolds.append(manifold)
 
     y = x.twinx()
     y.plot(dataset['columns'][0]['values'][:-26], dataset['columns'][1]['values'][26:], color = 'k', label = f"{dataset['description']}")
