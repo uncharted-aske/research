@@ -184,8 +184,9 @@ datasets = requests.post(DONU_ENDPOINT, json = {'command': 'list-datasets'}).jso
 dataset = requests.post(DONU_ENDPOINT, json = {'command': 'get-dataset', 'source': datasets[9]['source']}).json()['result']
 
 # %%
-plt.plot(dataset['columns'][0]['values'], dataset['columns'][1]['values'])
-
+fig, ax = plt.subplots(nrows = 1, ncols = 1, figsize = (8, 6))
+ax.plot(dataset['columns'][0]['values'], dataset['columns'][1]['values'])
+__ = plt.setp(ax, xlabel = 'time (days)', ylabel = dataset['columns'][1]['name'])
 
 # %%
 
